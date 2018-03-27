@@ -2,7 +2,7 @@
 upload zipped shapefile workspace `golang`
 
 ## usage:
-- open main.go and change geoserver instance variables `WorkspaceName`,`ServerUrl`,`Username`,`Password`
+- open config.yml and change paramters
 - open your terminal or cmd and type ``` go run main.go```
 - open your browser and goto ```http://localhost:8081/```
 - choose your layer from hard disk and click upload
