@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var geoserverURL = "http://localhost:8080/geoserver/"
@@ -22,14 +23,27 @@ var uploadedPath = "./uploaded/"
 
 //GeoServer is configuration struct
 type GeoServer struct {
-	WorkspaceName string
-	ServerUrl     string
-	Username      string
-	Password      string
+	WorkspaceName string `yaml:"workspace"`
+	ServerUrl     string `yaml:"geoserver_url"`
+	Username      string `yaml:"username"`
+	Password      string `yaml:"password"`
 }
 
-var geoserver = GeoServer{WorkspaceName: workspace, ServerUrl: geoserverURL, Username: "admin", Password: "geoserver"}
+var geoserver GeoServer
 
+func (g *GeoServer) loadConfig() *GeoServer {
+
+	yamlFile, err := ioutil.ReadFile("config.yml")
+	if err != nil {
+		log.Printf("yamlFile.Get err   #%v ", err)
+	}
+	err = yaml.Unmarshal(yamlFile, g)
+	if err != nil {
+		log.Fatalf("Unmarshal: %v", err)
+	}
+
+	return g
+}
 func handleUploaded(file *bytes.Buffer, filename string) string {
 	_ = os.Mkdir(uploadedPath, 0700)
 	filepath := uploadedPath + filename
@@ -62,6 +76,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 	tmplt.Execute(w, geoserver)
 }
 func main() {
+	geoserver.loadConfig()
 	r := mux.NewRouter()
 	r.HandleFunc("/", index)
 	s := http.StripPrefix("/static/", http.FileServer(http.Dir("./static/")))
