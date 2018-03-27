@@ -17,8 +17,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var geoserverURL = "http://localhost:8080/geoserver/"
-var workspace = "golang"
 var uploadedPath = "./uploaded/"
 
 //GeoServer is configuration struct
