@@ -98,7 +98,7 @@ func (g *GeoServer) CreateDataStore(name string, dbName string, host string, por
 				<name>%s</name>
 				<connectionParameters>
 				<host>%s</host>
-				<port>%d</port>
+				<port>%s</port>
 				<database>%s</database>
 				<user>%s</user>
 				<passwd>%s</passwd>
