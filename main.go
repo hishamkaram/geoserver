@@ -18,6 +18,7 @@ var uploadedPath = "./uploaded/"
 
 var gsCatalog geoserver.GeoServer
 
+//ContextData hold template data
 type ContextData struct {
 	Geoserver geoserver.GeoServer
 	Code      int

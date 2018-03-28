@@ -2,11 +2,13 @@ package geoserver
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
@@ -18,6 +20,33 @@ type GeoServer struct {
 	ServerURL     string `yaml:"geoserver_url"`
 	Username      string `yaml:"username"`
 	Password      string `yaml:"password"`
+}
+
+//Workspace is the Workspace Object
+type Workspace struct {
+	Name string
+	Href string
+}
+
+// Datastore holds geoserver store
+type Datastore struct {
+	Name         string
+	Href         string
+	Type         string
+	Enabled      bool
+	workspace    Workspace
+	Default      bool `json:"_default"`
+	featureTypes string
+}
+
+// Datastores holds a list of geoserver stores
+type Datastores struct {
+	DataStore []Datastore
+}
+
+// DataStoreQuery holds datastores query ("api json")
+type DataStoreQuery struct {
+	DataStores Datastores
 }
 
 //LoadConfig load geoserver config from yaml file
@@ -32,6 +61,29 @@ func (g *GeoServer) LoadConfig(configFile string) *GeoServer {
 		log.Fatalf("Unmarshal: %v", err)
 	}
 	return g
+}
+func (g *GeoServer) doGet(url string, accept string) ([]byte, int) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		panic(err)
+	}
+	req.SetBasicAuth(g.Username, g.Password)
+	if accept != "" {
+		req.Header.Add("Accept", fmt.Sprintf("%s", accept))
+	}
+	resp, httpErr := client.Do(req)
+	if httpErr != nil {
+		panic(httpErr)
+	} else {
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+		if resp.StatusCode != 201 {
+			fmt.Printf("%s \n", string(body))
+		}
+		fmt.Printf("%s \t response Status:%s \n", url, resp.Status)
+		return body, resp.StatusCode
+	}
 }
 func (g *GeoServer) doPost(url string, data []byte, dataType string) ([]byte, int) {
 	client := &http.Client{}
@@ -85,14 +137,68 @@ func (g *GeoServer) createWorkspace() ([]byte, int) {
 	data := []byte(xml)
 	return g.doPost(targetURL, data, "text/xml")
 }
+func isEmpty(object interface{}) bool {
+	if object == nil {
+		return true
+	} else if object == "" {
+		return true
+	} else if object == false {
+		return true
+	}
+	if reflect.ValueOf(object).Kind() == reflect.Struct {
+		empty := reflect.New(reflect.TypeOf(object)).Elem().Interface()
+		if reflect.DeepEqual(object, empty) {
+			return true
+		}
+	}
+	return false
+}
+
+//GetDatastores query geoserver datastores for current workspace
+func (g *GeoServer) GetDatastores() []Datastore {
+	//TODO: check if workspace exist before creating it
+	var targetURL = fmt.Sprintf("%srest/workspaces/%s/datastores", g.ServerURL, g.WorkspaceName)
+	response, code := g.doGet(targetURL, "application/json")
+	if code != 200 {
+		log.Println(string(response))
+	}
+	var query DataStoreQuery
+	err := json.Unmarshal([]byte(response), &query)
+	if err != nil {
+		panic(err)
+	}
+	if !isEmpty(query.DataStores) && (len(query.DataStores.DataStore) > 0) {
+		return query.DataStores.DataStore
+	}
+	return nil
+}
+
+//GetDatastoreDetails query geoserver datastore for current workspace
+func (g *GeoServer) GetDatastoreDetails(datastoreName string) Datastore {
+	//TODO: check if workspace exist before creating it
+	var targetURL = fmt.Sprintf("%srest/workspaces/%s/datastores/%s", g.ServerURL, g.WorkspaceName, datastoreName)
+	response, code := g.doGet(targetURL, "application/json")
+	if code != 200 {
+		log.Println(string(response))
+	}
+	type DatastoreDetails struct {
+		Datastore Datastore `json:"dataStore"`
+	}
+	var query DatastoreDetails
+	err := json.Unmarshal([]byte(response), &query)
+	if err != nil {
+		panic(err)
+	}
+	return query.Datastore
+}
 func (g *GeoServer) getShpdatastore(filename string) string {
 	name := strings.TrimSuffix(filename, filepath.Ext(filename))
 	return name
 
 }
 
-//CreateDataStore create a datastore under current workspace
-func (g *GeoServer) CreateDataStore(name string, dbName string, host string, port string, dbUser string, dbPass string) ([]byte, int) {
+//CreateDatastore create a datastore under current workspace
+func (g *GeoServer) CreateDatastore(name string, dbName string, host string, port string, dbUser string, dbPass string) ([]byte, int) {
 	//TODO: check if data exist before creating it
 	rawXML := `<dataStore>
 				<name>%s</name>
@@ -118,12 +224,12 @@ func (g *GeoServer) shpFiledsName(filename string) string {
 }
 
 //UploadShapeFile upload shapefile to geoserver
-func (g *GeoServer) UploadShapeFile(fileURI string, dataStoreName string) ([]byte, int) {
+func (g *GeoServer) UploadShapeFile(fileURI string, datastoreName string) ([]byte, int) {
 	filename := filepath.Base(fileURI)
-	if dataStoreName == "" {
-		dataStoreName = g.shpFiledsName(filename)
+	if datastoreName == "" {
+		datastoreName = g.shpFiledsName(filename)
 	}
-	targetURL := fmt.Sprintf("%srest/workspaces/%s/datastores/%s/file.shp", g.ServerURL, g.WorkspaceName, dataStoreName)
+	targetURL := fmt.Sprintf("%srest/workspaces/%s/datastores/%s/file.shp", g.ServerURL, g.WorkspaceName, datastoreName)
 	shapeFileBinary, err := ioutil.ReadFile(fileURI)
 	if err != nil {
 		log.Fatal(err)
