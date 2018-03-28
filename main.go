@@ -18,6 +18,11 @@ var uploadedPath = "./uploaded/"
 
 var gsCatalog geoserver.GeoServer
 
+type ContextData struct {
+	Geoserver geoserver.GeoServer
+	Code      int
+}
+
 func handleUploaded(file *bytes.Buffer, filename string) string {
 	_ = os.Mkdir(uploadedPath, 0700)
 	filepath := uploadedPath + filename
@@ -30,7 +35,7 @@ func handleUploaded(file *bytes.Buffer, filename string) string {
 	return filepath
 }
 func index(w http.ResponseWriter, r *http.Request) {
-
+	tmplData := ContextData{Geoserver: gsCatalog, Code: 0}
 	if r.Method == "POST" {
 		file, handler, err := r.FormFile("fileupload")
 		defer file.Close()
@@ -43,13 +48,12 @@ func index(w http.ResponseWriter, r *http.Request) {
 		}
 		uploadedPath := handleUploaded(buf, handler.Filename)
 		fileLocation, _ := filepath.Abs(uploadedPath)
-		success, _ := gsCatalog.UploadShapeFile(fileLocation, "")
-		fmt.Println(success)
+		response, statusCode := gsCatalog.UploadShapeFile(fileLocation, "")
+		tmplData.Code = statusCode
+		fmt.Println(response, statusCode)
 	}
-	tmplt := template.New("home.html")
-	tmplt, _ = tmplt.ParseFiles("templates/home.html")
-
-	tmplt.Execute(w, gsCatalog)
+	tmplt, _ := template.ParseFiles("templates/home.html")
+	tmplt.Execute(w, tmplData)
 }
 func main() {
 	fileLocation, _ := filepath.Abs("./config.yml")
