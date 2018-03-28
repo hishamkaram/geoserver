@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/mux"
-	"github.com/hishamkaram/uploadShapeFile/geoserver"
+	"github.com/hishamkaram/gsbinding/geoserver"
 )
 
 var uploadedPath = "./uploaded/"
