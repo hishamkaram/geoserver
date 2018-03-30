@@ -9,17 +9,23 @@ import (
 
 //Workspace is the Workspace Object
 type Workspace struct {
-	Name string `json:",omitempty"`
-	Href string `json:",omitempty"`
+	Name string `json:"name,omitempty"`
+	Href string `json:"href,omitempty"`
+}
+
+//WorkspaceBody is the api body
+type WorkspaceBody struct {
+	Workspace Workspace `json:"workspace,omitempty"`
 }
 
 //CreateWorkspace function to create current geoserver struct workspace
 func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, statusCode int) {
 	//TODO: check if workspace exist before creating it
-	var xml = fmt.Sprintf("<workspace><name>%s</name></workspace>", workspaceName)
+	var workspace = Workspace{Name: workspaceName}
+	serializedWorkspace, _ := g.SerializeStruct(WorkspaceBody{Workspace: workspace})
 	var targetURL = fmt.Sprintf("%srest/workspaces", g.ServerURL)
-	data := bytes.NewBuffer([]byte(xml))
-	_, responseCode := g.DoPost(targetURL, data, xmlType, jsonType)
+	data := bytes.NewBuffer(serializedWorkspace)
+	_, responseCode := g.DoPost(targetURL, data, jsonType+"; charset=utf-8", jsonType)
 	statusCode = responseCode
 	if responseCode != statusCreated {
 		created = false
@@ -76,5 +82,3 @@ func (g *GeoServer) GetWorkspaces() (workspaces []Workspace, statusCode int) {
 	workspaces = workspaceResponse.Workspaces.Workspace
 	return
 }
-
-//TODO: ChangeWorkSpace

@@ -10,9 +10,14 @@ import (
 
 //Style holds geoserver style
 type Style struct {
-	Name     string `json:",omitempty"`
-	Href     string `json:",omitempty"`
-	Filename string `json:",omitempty"`
+	Name     string `json:"name,omitempty"`
+	Href     string `json:"href,omitempty"`
+	Filename string `json:"filename,omitempty"`
+}
+
+//StyleBody is the api body
+type StyleBody struct {
+	Style Style `json:"style,omitempty"`
 }
 
 // Styles holds a list of geoserver styles
@@ -41,11 +46,12 @@ func (g *GeoServer) GetStyles() (styles []Style, statusCode int) {
 //CreateStyle create geoserver sld
 func (g *GeoServer) CreateStyle(styleName string) (created bool, statusCode int) {
 	targetURL := fmt.Sprintf("%srest/styles", g.ServerURL)
-	xml := bytes.NewBuffer([]byte(fmt.Sprintf(`<style><name>%s</name><filename>%s.sld</filename></style>`,
-		styleName, styleName)))
-	_, responseCode := g.DoPost(targetURL, xml, xmlType, jsonType)
+	var style = Style{Name: styleName, Filename: styleName + ".sld"}
+	serializedStyle, _ := g.SerializeStruct(StyleBody{Style: style})
+	xml := bytes.NewBuffer(serializedStyle)
+	_, responseCode := g.DoPost(targetURL, xml, jsonType, jsonType)
 	statusCode = responseCode
-	if responseCode != statusOk {
+	if responseCode != statusCreated {
 		created = false
 		return
 	}

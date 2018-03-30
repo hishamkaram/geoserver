@@ -1,6 +1,7 @@
 package geoserver
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -72,7 +73,7 @@ func IsEmpty(object interface{}) bool {
 
 //DoPut helper function to create put request
 func (g *GeoServer) DoPut(url string, data io.Reader, dataType string, accept string) ([]byte, int) {
-	req, err := g.GetGeoserverRequest(url, postMethod, accept, data, dataType)
+	req, err := g.GetGeoserverRequest(url, putMethod, accept, data, dataType)
 	if err != nil {
 		panic(err)
 	}
@@ -115,4 +116,14 @@ func (g *GeoServer) DoDelete(url string, accept string, query map[string]string)
 	fmt.Printf("%s \t response Status:%s \n", url, response.Status)
 	return body, response.StatusCode
 
+}
+
+//SerializeStruct convert struct to json
+func (g *GeoServer) SerializeStruct(structObj interface{}) ([]byte, error) {
+	serializedStruct, err := json.Marshal(&structObj)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return serializedStruct, nil
 }
