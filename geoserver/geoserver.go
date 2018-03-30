@@ -13,8 +13,8 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// IStyle define all geoserver style operations
-type IStyle interface {
+// StyleService define all geoserver style operations
+type StyleService interface {
 
 	// GetStyles
 	GetStyles() (styles []Style, statusCode int)
@@ -31,8 +31,8 @@ type IStyle interface {
 	DeleteStyle(styleName string, purge bool) (deleted bool, statusCode int)
 }
 
-// IWorkspace define all geoserver workspace operations
-type IWorkspace interface {
+// WorkspaceService define all geoserver workspace operations
+type WorkspaceService interface {
 
 	// WorkspaceExists check if workspace in geoserver or not
 	WorkspaceExists(workspaceName string) (exists bool, statusCode int)
@@ -47,8 +47,8 @@ type IWorkspace interface {
 	DeleteWorkspace(workspaceName string, recurse bool) (deleted bool, statusCode int)
 }
 
-// IDatastore define all geoserver datastore operations
-type IDatastore interface {
+// DatastoreService define all geoserver datastore operations
+type DatastoreService interface {
 	// DatastoreExists checks if a datastore exists in a workspace
 	DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, statusCode int)
 
@@ -65,8 +65,8 @@ type IDatastore interface {
 	DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, statusCode int)
 }
 
-// IFeatureType define all geoserver featuretype operations
-type IFeatureType interface {
+// FeatureTypeService define all geoserver featuretype operations
+type FeatureTypeService interface {
 	// TODO:implement
 	// FeatureTypeExists
 
@@ -80,19 +80,19 @@ type IFeatureType interface {
 	// DeleteFeatureType
 }
 
-// IAbout define all geoserver About operations
-type IAbout interface {
+// AboutService define all geoserver About operations
+type AboutService interface {
 	//IsRunning check if geoserver is running return true and statusCode of request
 	IsRunning() (running bool, statusCode int)
 }
 
 // Catalog is geoserver interface that define all operatoins
 type Catalog interface {
-	IWorkspace
-	IDatastore
-	IFeatureType
-	IStyle
-	IAbout
+	WorkspaceService
+	DatastoreService
+	FeatureTypeService
+	StyleService
+	AboutService
 	// GetshpFiledsName datastore name from shapefile name
 	GetShpdatastore(filename string) string
 
