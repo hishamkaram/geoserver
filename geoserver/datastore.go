@@ -9,21 +9,14 @@ import (
 
 // Datastore holds geoserver store
 type Datastore struct {
-	Name                 string
-	Href                 string
-	Type                 string
-	Enabled              bool
-	Workspace            Workspace
-	Default              bool   `json:"_default"`
-	FeatureTypes         string `json:"featureTypes"`
-	dbUser               string
-	dbPass               string
-	connectionParameters DatastoreConnectionParams
-}
-
-// Datastores holds a list of geoserver stores
-type Datastores struct {
-	DataStore []Datastore
+	Name                 string                    `json:",omitempty"`
+	Href                 string                    `json:",omitempty"`
+	Type                 string                    `json:",omitempty"`
+	Enabled              bool                      `json:",omitempty"`
+	Workspace            Workspace                 `json:",omitempty"`
+	Default              bool                      `json:"_default,omitempty"`
+	FeatureTypes         string                    `json:"featureTypes,omitempty"`
+	ConnectionParameters DatastoreConnectionParams `json:"connectionParameters,omitempty"`
 }
 
 // DatastoreConnection holds paramters to create new datastore
@@ -37,11 +30,6 @@ type DatastoreConnection struct {
 	Type   string
 }
 
-// DatastoreResponse holds datastores query ("api json")
-type DatastoreResponse struct {
-	DataStores Datastores
-}
-
 // ConnectionParamter is  item  in entry paramter in datastore connection paramters
 type ConnectionParamter struct {
 	Name  string `json:"@key"`
@@ -50,18 +38,18 @@ type ConnectionParamter struct {
 
 // DatastoreConnectionParams in datastore json
 type DatastoreConnectionParams struct {
-	Entry []ConnectionParamter
+	Entry []ConnectionParamter `json:",omitempty"`
 }
 
 // ParseConnectionParameters convert from @key and $ to proper key and value
 func (datastore *Datastore) ParseConnectionParameters() (paramters map[string]string) {
 	paramters = make(map[string]string)
-	if datastore.connectionParameters.Entry != nil {
-		for _, paramter := range datastore.connectionParameters.Entry {
+	if datastore.ConnectionParameters.Entry != nil {
+		for _, paramter := range datastore.ConnectionParameters.Entry {
 			paramters[paramter.Name] = paramter.Value
 		}
 	}
-	return
+	return paramters
 
 }
 
@@ -88,8 +76,12 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []Datastore,
 		datastores = nil
 		return
 	}
-	var query DatastoreResponse
-	err := json.Unmarshal([]byte(response), &query)
+	var query struct {
+		DataStores struct {
+			DataStore []Datastore
+		}
+	}
+	err := json.Unmarshal(response, &query)
 	if err != nil {
 		panic(err)
 	}
@@ -112,7 +104,7 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 		Datastore Datastore `json:"dataStore"`
 	}
 	var query DatastoreDetails
-	err := json.Unmarshal([]byte(response), &query)
+	err := json.Unmarshal(response, &query)
 	if err != nil {
 		panic(err)
 	}
@@ -138,7 +130,7 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 	xml := fmt.Sprintf(rawXML,
 		datastoreConnection.Name,
 		datastoreConnection.Host,
-		datastoreConnection.Port,
+		strconv.Itoa(datastoreConnection.Port),
 		datastoreConnection.DBName,
 		datastoreConnection.DBUser,
 		datastoreConnection.DBPass,
@@ -154,4 +146,17 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 	created = true
 	return
 
+}
+
+//DeleteDatastore delete geoserver datastore and its reources
+func (g *GeoServer) DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, statusCode int) {
+	url := fmt.Sprintf("%s/rest/workspaces/%s/datastores/%s", g.ServerURL, workspaceName, datastoreName)
+	_, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
+	statusCode = responseCode
+	if responseCode != statusOk {
+		deleted = false
+		return
+	}
+	deleted = true
+	return
 }

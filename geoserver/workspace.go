@@ -9,13 +9,8 @@ import (
 
 //Workspace is the Workspace Object
 type Workspace struct {
-	Name string
-	Href string
-}
-
-//WorkspaceResponse respreseent json from api
-type WorkspaceResponse struct {
-	Workspace []Workspace
+	Name string `json:",omitempty"`
+	Href string `json:",omitempty"`
 }
 
 //CreateWorkspace function to create current geoserver struct workspace
@@ -62,20 +57,23 @@ func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (created
 
 //GetWorkspaces  get all geoserver workspaces
 func (g *GeoServer) GetWorkspaces() (workspaces []Workspace, statusCode int) {
-	url := fmt.Sprintf("%s/rest/workspaces", g.ServerURL)
+	url := fmt.Sprintf("%srest/workspaces", g.ServerURL)
 	response, responseCode := g.DoGet(url, jsonType, nil)
 	statusCode = responseCode
 	if responseCode != statusOk {
 		workspaces = nil
 		return
 	}
-	var workspaceResponse WorkspaceResponse
-	err := json.Unmarshal([]byte(response), &workspaceResponse)
+	var workspaceResponse struct {
+		Workspaces struct {
+			Workspace []Workspace
+		}
+	}
+	err := json.Unmarshal(response, &workspaceResponse)
 	if err != nil {
 		panic(err)
 	}
-
-	workspaces = workspaceResponse.Workspace
+	workspaces = workspaceResponse.Workspaces.Workspace
 	return
 }
 

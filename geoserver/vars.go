@@ -10,6 +10,7 @@ const (
 	zipType            = "application/zip"
 	appXMLType         = "application/xml"
 	xmlType            = "text/xml"
+	sldType            = "application/vnd.ogc.sld+xml"
 	contentTypeHeader  = "Content-Type"
 	acceptHeader       = "Accept"
 	getMethod          = "GET"
