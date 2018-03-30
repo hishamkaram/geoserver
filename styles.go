@@ -8,11 +8,30 @@ import (
 	"strconv"
 )
 
+// StyleService define all geoserver style operations
+type StyleService interface {
+
+	// GetStyles
+	GetStyles() (styles []Resource, statusCode int)
+
+	//CreateStyle create geoserver sld
+	CreateStyle(styleName string) (created bool, statusCode int)
+
+	//UploadStyle upload geoserver sld
+	UploadStyle(data io.Reader, styleName string) (success bool, statusCode int)
+
+	//DeleteStyle delete geoserver style
+	DeleteStyle(styleName string, purge bool) (deleted bool, statusCode int)
+}
+
 //Style holds geoserver style
 type Style struct {
-	Name     string `json:"name,omitempty"`
-	Href     string `json:"href,omitempty"`
-	Filename string `json:"filename,omitempty"`
+	Name            string `json:",omitempty"`
+	Format          string `json:",omitempty"`
+	Filename        string `json:",omitempty"`
+	LanguageVersion struct {
+		Version string `json:",omitempty"`
+	} `json:",omitempty"`
 }
 
 //StyleBody is the api body
@@ -26,7 +45,7 @@ type Styles struct {
 }
 
 //GetStyles return list of geoserver styles
-func (g *GeoServer) GetStyles() (styles []Style, statusCode int) {
+func (g *GeoServer) GetStyles() (styles []Resource, statusCode int) {
 	targetURL := fmt.Sprintf("%srest/styles", g.ServerURL)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	statusCode = responseCode
@@ -34,7 +53,9 @@ func (g *GeoServer) GetStyles() (styles []Style, statusCode int) {
 		styles = nil
 		return
 	}
-	var stylesResponse Styles
+	var stylesResponse struct {
+		Style []Resource `json:",omitempty"`
+	}
 	err := json.Unmarshal(response, &stylesResponse)
 	if err != nil {
 		panic(err)

@@ -7,6 +7,24 @@ import (
 	"strconv"
 )
 
+// DatastoreService define all geoserver datastore operations
+type DatastoreService interface {
+	// DatastoreExists checks if a datastore exists in a workspace
+	DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, statusCode int)
+
+	// GetDatastores return datastores in a workspace
+	GetDatastores(workspaceName string) (datastores []Resource, statusCode int)
+
+	// GetDatastoreDetails get specific datastore
+	GetDatastoreDetails(workspaceName string, datastoreName string) (datastore Datastore, statusCode int)
+
+	//CreateDatastore create a datastore under provided workspace
+	CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, statusCode int)
+
+	// DeleteDatastore deletes a datastore
+	DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, statusCode int)
+}
+
 // Datastore holds geoserver store
 type Datastore struct {
 	Name                 string                    `json:",omitempty"`
@@ -67,7 +85,7 @@ func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, 
 }
 
 //GetDatastores query geoserver datastores for current workspace
-func (g *GeoServer) GetDatastores(workspaceName string) (datastores []Datastore, statusCode int) {
+func (g *GeoServer) GetDatastores(workspaceName string) (datastores []Resource, statusCode int) {
 	//TODO: check if workspace exist before creating it
 	var targetURL = fmt.Sprintf("%srest/workspaces/%s/datastores", g.ServerURL, workspaceName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
@@ -78,7 +96,7 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []Datastore,
 	}
 	var query struct {
 		DataStores struct {
-			DataStore []Datastore
+			DataStore []Resource
 		}
 	}
 	err := json.Unmarshal(response, &query)

@@ -7,6 +7,22 @@ import (
 	"strconv"
 )
 
+// WorkspaceService define all geoserver workspace operations
+type WorkspaceService interface {
+
+	// WorkspaceExists check if workspace in geoserver or not
+	WorkspaceExists(workspaceName string) (exists bool, statusCode int)
+
+	// GetWorkspaces get geoserver workspaces
+	GetWorkspaces() (workspaces []Resource, statusCode int)
+
+	// CreateWorkspace creates a workspace
+	CreateWorkspace(workspaceName string) (created bool, statusCode int)
+
+	// DeleteWorkspace deletes a workspace
+	DeleteWorkspace(workspaceName string, recurse bool) (deleted bool, statusCode int)
+}
+
 //Workspace is the Workspace Object
 type Workspace struct {
 	Name string `json:"name,omitempty"`
@@ -62,7 +78,7 @@ func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (created
 }
 
 //GetWorkspaces  get all geoserver workspaces
-func (g *GeoServer) GetWorkspaces() (workspaces []Workspace, statusCode int) {
+func (g *GeoServer) GetWorkspaces() (workspaces []Resource, statusCode int) {
 	url := fmt.Sprintf("%srest/workspaces", g.ServerURL)
 	response, responseCode := g.DoGet(url, jsonType, nil)
 	statusCode = responseCode
@@ -72,7 +88,7 @@ func (g *GeoServer) GetWorkspaces() (workspaces []Workspace, statusCode int) {
 	}
 	var workspaceResponse struct {
 		Workspaces struct {
-			Workspace []Workspace
+			Workspace []Resource
 		}
 	}
 	err := json.Unmarshal(response, &workspaceResponse)
