@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/hishamkaram/gsbinding/geoserver"
+	"github.com/hishamkaram/geoserver"
 )
 
 var uploadedPath = "./uploaded/"
