@@ -60,20 +60,15 @@ func (g *GeoServer) CreateStyle(styleName string) (created bool, statusCode int)
 }
 
 //UploadStyle upload geoserver sld
-func (g *GeoServer) UploadStyle(data *io.Reader, styleName string) (style Style, statusCode int) {
+func (g *GeoServer) UploadStyle(data io.Reader, styleName string) (success bool, statusCode int) {
 	targetURL := fmt.Sprintf("%srest/styles/%s", g.ServerURL, styleName)
-	response, responseCode := g.DoPost(targetURL, *data, sldType, jsonType)
+	_, responseCode := g.DoPut(targetURL, data, sldType, jsonType)
 	statusCode = responseCode
 	if responseCode != statusOk {
-		style = Style{}
+		success = false
 		return
 	}
-	var stylesResponse Style
-	err := json.Unmarshal(response, &stylesResponse)
-	if err != nil {
-		panic(err)
-	}
-	style = stylesResponse
+	success = true
 	return
 }
 

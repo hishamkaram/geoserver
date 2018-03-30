@@ -55,6 +55,7 @@ func main() {
 	gsCatalog.HTTPClient = &http.Client{}
 	gsCatalog.LoadConfig(fileLocation)
 
+	// sld :=
 	//Test if geoserver is running
 	// isRunning, code := gsCatalog.IsRunning()
 	// fmt.Printf("\nGeoserver status : %s \n StatusCode: %s\n", strconv.FormatBool(isRunning), strconv.Itoa(code))
@@ -68,6 +69,18 @@ func main() {
 	//Test if workspace exist
 	// exists, _ := gsCatalog.WorkspaceExists("NotFound")
 	// fmt.Println(strconv.FormatBool(exists))
+
+	//Test Create Style
+	// created, _ := gsCatalog.CreateStyle("test_sld")
+	// fmt.Println(strconv.FormatBool(created))
+
+	//Test upload sld
+	// sld, err := ioutil.ReadFile("sample/museum_nyc.sld") // just pass the file name
+	// if err != nil {
+	// 	fmt.Print(err)
+	// }
+	// style, _ := gsCatalog.UploadStyle(bytes.NewBuffer(sld), "test_sld")
+	// fmt.Println(style)
 
 	//Test Create Workspace
 	// created, _ := gsCatalog.CreateWorkspace("test")

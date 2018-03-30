@@ -23,9 +23,7 @@ type StyleService interface {
 	CreateStyle(styleName string) (created bool, statusCode int)
 
 	//UploadStyle upload geoserver sld
-	UploadStyle(data *io.Reader, styleName string) (style Style, statusCode int)
-	// TODO:implement
-	// ChangeSLD
+	UploadStyle(data io.Reader, styleName string) (success bool, statusCode int)
 
 	//DeleteStyle delete geoserver style
 	DeleteStyle(styleName string, purge bool) (deleted bool, statusCode int)
