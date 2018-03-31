@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/hishamkaram/geoserver)](https://goreportcard.com/report/github.com/hishamkaram/geoserver)
+[![Documentation](https://godoc.org/github.com/hishamkaram/geoserver?status.svg)](https://godoc.org/github.com/hishamkaram/geoserver?)
 # Geoserver
 geoserver is a Go library for manipulating a GeoServer instance via the GeoServer REST API.
 
