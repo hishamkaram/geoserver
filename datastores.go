@@ -2,7 +2,6 @@ package geoserver
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"strconv"
 )
@@ -10,19 +9,19 @@ import (
 // DatastoreService define all geoserver datastore operations
 type DatastoreService interface {
 	// DatastoreExists checks if a datastore exists in a workspace
-	DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, statusCode int)
+	DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, err error)
 
 	// GetDatastores return datastores in a workspace
-	GetDatastores(workspaceName string) (datastores []Resource, statusCode int)
+	GetDatastores(workspaceName string) (datastores []Resource, err error)
 
 	// GetDatastoreDetails get specific datastore
-	GetDatastoreDetails(workspaceName string, datastoreName string) (datastore Datastore, statusCode int)
+	GetDatastoreDetails(workspaceName string, datastoreName string) (datastore Datastore, err error)
 
 	//CreateDatastore create a datastore under provided workspace
-	CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, statusCode int)
+	CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error)
 
 	// DeleteDatastore deletes a datastore
-	DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, statusCode int)
+	DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, err error)
 }
 
 // Datastore holds geoserver store
@@ -72,12 +71,12 @@ func (datastore *Datastore) ParseConnectionParameters() (paramters map[string]st
 }
 
 //DatastoreExists check if datastore in geoserver
-func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, statusCode int) {
+func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, err error) {
 	url := fmt.Sprintf("%s/rest/workspaces/%s/datastores/%s", g.ServerURL, workspaceName, datastoreName)
 	_, responseCode := g.DoGet(url, jsonType, map[string]string{"quietOnNotFound": strconv.FormatBool(quietOnNotFound)})
-	statusCode = responseCode
 	if responseCode != statusOk {
 		exists = false
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	exists = true
@@ -85,13 +84,13 @@ func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, 
 }
 
 //GetDatastores query geoserver datastores for current workspace
-func (g *GeoServer) GetDatastores(workspaceName string) (datastores []Resource, statusCode int) {
+func (g *GeoServer) GetDatastores(workspaceName string) (datastores []Resource, err error) {
 	//TODO: check if workspace exist before creating it
 	var targetURL = fmt.Sprintf("%srest/workspaces/%s/datastores", g.ServerURL, workspaceName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
-	statusCode = responseCode
 	if responseCode != statusOk {
 		datastores = nil
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	var query struct {
@@ -99,22 +98,19 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []Resource, 
 			DataStore []Resource
 		}
 	}
-	err := json.Unmarshal(response, &query)
-	if err != nil {
-		panic(err)
-	}
+	g.DeSerializeJSON(response, &query)
 	datastores = query.DataStores.DataStore
 	return
 }
 
 //GetDatastoreDetails query geoserver datastore for current workspace
-func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName string) (datastore Datastore, statusCode int) {
+func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName string) (datastore Datastore, err error) {
 	//TODO: check if workspace exist before creating it
 	var targetURL = fmt.Sprintf("%srest/workspaces/%s/datastores/%s", g.ServerURL, workspaceName, datastoreName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
-	statusCode = responseCode
 	if responseCode != statusOk {
 		datastore = Datastore{}
+		err = statusErrorMapping[responseCode]
 		return
 
 	}
@@ -122,17 +118,14 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 		Datastore Datastore `json:"dataStore"`
 	}
 	var query DatastoreDetails
-	err := json.Unmarshal(response, &query)
-	if err != nil {
-		panic(err)
-	}
+	g.DeSerializeJSON(response, &query)
 	datastore = query.Datastore
 	return
 
 }
 
 //CreateDatastore create a datastore under provided workspace
-func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, statusCode int) {
+func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error) {
 	//TODO: check if data exist before creating it
 	rawXML := `<dataStore>
 				<name>%s</name>
@@ -156,10 +149,10 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 	targetURL := fmt.Sprintf("%s/rest/workspaces/%s/datastores", g.ServerURL, workspaceName)
 	data := bytes.NewReader([]byte(xml))
 	response, responseCode := g.DoPost(targetURL, data, xmlType, jsonType)
-	statusCode = responseCode
 	if responseCode != statusCreated {
 		g.logger.Warn(string(response))
 		created = false
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	created = true
@@ -168,13 +161,13 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 }
 
 //DeleteDatastore delete geoserver datastore and its reources
-func (g *GeoServer) DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, statusCode int) {
+func (g *GeoServer) DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, err error) {
 	url := fmt.Sprintf("%s/rest/workspaces/%s/datastores/%s", g.ServerURL, workspaceName, datastoreName)
 	response, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
-	statusCode = responseCode
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		deleted = false
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	deleted = true

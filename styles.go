@@ -9,21 +9,20 @@ import (
 
 // StyleService define all geoserver style operations
 type StyleService interface {
-
 	// GetStyles
-	GetStyles(workspaceName string) (styles []Resource, statusCode int)
+	GetStyles(workspaceName string) (styles []Resource, err error)
 
 	//CreateStyle create geoserver sld
-	CreateStyle(workspaceName string, styleName string) (created bool, statusCode int)
+	CreateStyle(workspaceName string, styleName string) (created bool, err error)
 
 	//UploadStyle upload geoserver sld
-	UploadStyle(data io.Reader, workspaceName string, styleName string) (success bool, statusCode int)
+	UploadStyle(data io.Reader, workspaceName string, styleName string) (success bool, err error)
 
 	//DeleteStyle delete geoserver style
-	DeleteStyle(workspaceName string, styleName string, purge bool) (deleted bool, statusCode int)
+	DeleteStyle(workspaceName string, styleName string, purge bool) (deleted bool, err error)
 
 	//GetStyle return specific of geoserver style
-	GetStyle(workspaceName string, styleName string) (style Style, statusCode int)
+	GetStyle(workspaceName string, styleName string) (style Style, err error)
 }
 
 //Style holds geoserver style
@@ -47,16 +46,16 @@ type Styles struct {
 }
 
 //GetStyles return list of geoserver styles
-func (g *GeoServer) GetStyles(workspaceName string) (styles []Resource, statusCode int) {
+func (g *GeoServer) GetStyles(workspaceName string) (styles []Resource, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
 	targetURL := fmt.Sprintf("%srest/%sstyles", g.ServerURL, workspaceName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
-	statusCode = responseCode
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		styles = nil
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	var stylesResponse struct {
@@ -68,16 +67,16 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []Resource, statusCo
 }
 
 //GetStyle return specific of geoserver style
-func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style Style, statusCode int) {
+func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style Style, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
 	targetURL := fmt.Sprintf("%srest/%sstyles/%s", g.ServerURL, workspaceName, styleName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
-	statusCode = responseCode
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		style = Style{}
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	var stylesResponse StyleBody
@@ -87,7 +86,7 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style Styl
 }
 
 //CreateStyle create geoserver sld
-func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created bool, statusCode int) {
+func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
@@ -96,10 +95,10 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	serializedStyle, _ := g.SerializeStruct(StyleBody{Style: style})
 	xml := bytes.NewBuffer(serializedStyle)
 	response, responseCode := g.DoPost(targetURL, xml, jsonType, jsonType)
-	statusCode = responseCode
 	if responseCode != statusCreated {
 		g.logger.Warn(string(response))
 		created = false
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	created = true
@@ -107,16 +106,16 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 }
 
 //UploadStyle upload geoserver sld
-func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName string) (success bool, statusCode int) {
+func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName string) (success bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
 	targetURL := fmt.Sprintf("%srest/%sstyles/%s", g.ServerURL, workspaceName, styleName)
 	response, responseCode := g.DoPut(targetURL, data, sldType, jsonType)
-	statusCode = responseCode
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		success = false
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	success = true
@@ -124,16 +123,16 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 }
 
 //DeleteStyle delete geoserver style
-func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bool) (deleted bool, statusCode int) {
+func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bool) (deleted bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
 	url := fmt.Sprintf("%s/rest/%sstyles/%s", g.ServerURL, workspaceName, styleName)
 	response, responseCode := g.DoDelete(url, jsonType, map[string]string{"purge": strconv.FormatBool(purge)})
-	statusCode = responseCode
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		deleted = false
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	deleted = true

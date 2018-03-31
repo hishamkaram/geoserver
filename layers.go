@@ -12,20 +12,20 @@ import (
 // LayerService define  geoserver layers operations
 type LayerService interface {
 	//GetLayers  get all geoserver layers
-	GetLayers(workspaceName string) (layers []Resource, statusCode int)
+	GetLayers(workspaceName string) (layers []Resource, err error)
 	// GetshpFiledsName datastore name from shapefile name
 	GetShpdatastore(filename string) string
 
 	// UploadShapeFile upload shapefile to geoserver
 	UploadShapeFile(fileURI string, WorkspaceName string, datastoreName string) ([]byte, int)
 	//GetLayer  get specific Layer
-	GetLayer(workspaceName string, layerName string) (layer Layer, statusCode int)
+	GetLayer(workspaceName string, layerName string) (layer Layer, err error)
 
 	//UpdateLayer  update geoserver layer
-	UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, statusCode int)
+	UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, err error)
 
 	//DeleteLayer delete geoserver layer and its reources
-	DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, statusCode int)
+	DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, err error)
 }
 
 //Resource geoserver resource
@@ -94,16 +94,16 @@ func (g *GeoServer) UploadShapeFile(fileURI string, WorkspaceName string, datast
 }
 
 //GetLayers  get all geoserver layers
-func (g *GeoServer) GetLayers(workspaceName string) (layers []Resource, statusCode int) {
+func (g *GeoServer) GetLayers(workspaceName string) (layers []Resource, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	url := fmt.Sprintf("%srest/%slayers", g.ServerURL, workspaceName)
-	response, responseCode := g.DoGet(url, jsonType, nil)
-	statusCode = responseCode
+	targetURL := fmt.Sprintf("%srest/%slayers", g.ServerURL, workspaceName)
+	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		layers = nil
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	var layerResponse struct {
@@ -117,16 +117,16 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []Resource, statusCo
 }
 
 //GetLayer  get geoserver layer
-func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer Layer, statusCode int) {
+func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer Layer, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	url := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
-	response, responseCode := g.DoGet(url, jsonType, nil)
-	statusCode = responseCode
+	targetURL := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
+	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		layer = Layer{}
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	var layerResponse struct {
@@ -138,19 +138,19 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer Laye
 }
 
 //UpdateLayer  update geoserver layer
-func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, statusCode int) {
+func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	url := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
+	targetURL := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
 	data := LayerBody{Layer: layer}
 
 	serializedLayer, _ := g.SerializeStruct(data)
-	response, responseCode := g.DoPut(url, bytes.NewBuffer(serializedLayer), jsonType, jsonType)
-	statusCode = responseCode
+	response, responseCode := g.DoPut(targetURL, bytes.NewBuffer(serializedLayer), jsonType, jsonType)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		modified = false
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	modified = true
@@ -158,16 +158,16 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 }
 
 //DeleteLayer delete geoserver layer and its reources
-func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, statusCode int) {
+func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	url := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
-	response, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
-	statusCode = responseCode
+	targetURL := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
+	response, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		deleted = false
+		err = statusErrorMapping[responseCode]
 		return
 	}
 	deleted = true
