@@ -58,18 +58,6 @@ type DatastoreConnectionParams struct {
 	Entry []ConnectionParamter `json:",omitempty"`
 }
 
-// ParseConnectionParameters convert from @key and $ to proper key and value
-func (datastore *Datastore) ParseConnectionParameters() (paramters map[string]string) {
-	paramters = make(map[string]string)
-	if datastore.ConnectionParameters.Entry != nil {
-		for _, paramter := range datastore.ConnectionParameters.Entry {
-			paramters[paramter.Name] = paramter.Value
-		}
-	}
-	return paramters
-
-}
-
 //DatastoreExists check if datastore in geoserver
 func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, err error) {
 	url := fmt.Sprintf("%s/rest/workspaces/%s/datastores/%s", g.ServerURL, workspaceName, datastoreName)
