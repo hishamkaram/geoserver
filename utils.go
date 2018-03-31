@@ -2,7 +2,6 @@ package geoserver
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"reflect"
@@ -21,16 +20,13 @@ func (g *GeoServer) DoGet(url string, accept string, query map[string]string) ([
 		}
 		req.URL.RawQuery = q.Encode()
 	}
-	response, responseErr := g.HTTPClient.Do(req)
+	response, responseErr := g.httpClient.Do(req)
 	if responseErr != nil {
 		panic(responseErr)
 	}
 	defer response.Body.Close()
 	body, _ := ioutil.ReadAll(response.Body)
-	if response.StatusCode != statusOk {
-		fmt.Printf("%s \n", string(body))
-	}
-	fmt.Printf("%s \t response Status:%s \n", url, response.Status)
+	g.logger.Infof("%s \t response Status=%s", url, response.Status)
 	return body, response.StatusCode
 }
 
@@ -40,16 +36,13 @@ func (g *GeoServer) DoPost(url string, data io.Reader, dataType string, accept s
 	if err != nil {
 		panic(err)
 	}
-	response, responseErr := g.HTTPClient.Do(req)
+	response, responseErr := g.httpClient.Do(req)
 	if responseErr != nil {
 		panic(responseErr)
 	}
 	defer response.Body.Close()
 	body, _ := ioutil.ReadAll(response.Body)
-	if response.StatusCode != statusCreated {
-		fmt.Printf("%s \n", string(body))
-	}
-	fmt.Printf("%s \t response Status:%s \n", url, response.Status)
+	g.logger.Infof("%s \t response Status=%s", url, response.Status)
 	return body, response.StatusCode
 }
 
@@ -77,16 +70,13 @@ func (g *GeoServer) DoPut(url string, data io.Reader, dataType string, accept st
 	if err != nil {
 		panic(err)
 	}
-	response, responseErr := g.HTTPClient.Do(req)
+	response, responseErr := g.httpClient.Do(req)
 	if responseErr != nil {
 		panic(responseErr)
 	}
 	defer response.Body.Close()
 	body, _ := ioutil.ReadAll(response.Body)
-	if response.StatusCode != statusOk {
-		fmt.Printf("%s \n", string(body))
-	}
-	fmt.Printf("%s \t response Status:%s \n", url, response.Status)
+	g.logger.Infof("%s \t response Status=%s", url, response.Status)
 	return body, response.StatusCode
 
 }
@@ -104,16 +94,13 @@ func (g *GeoServer) DoDelete(url string, accept string, query map[string]string)
 		}
 		req.URL.RawQuery = q.Encode()
 	}
-	response, responseErr := g.HTTPClient.Do(req)
+	response, responseErr := g.httpClient.Do(req)
 	if responseErr != nil {
 		panic(responseErr)
 	}
 	defer response.Body.Close()
 	body, _ := ioutil.ReadAll(response.Body)
-	if response.StatusCode != statusOk {
-		fmt.Printf("%s \n", string(body))
-	}
-	fmt.Printf("%s \t response Status:%s \n", url, response.Status)
+	g.logger.Infof("%s \t response Status=%s", url, response.Status)
 	return body, response.StatusCode
 
 }
@@ -122,7 +109,7 @@ func (g *GeoServer) DoDelete(url string, accept string, query map[string]string)
 func (g *GeoServer) SerializeStruct(structObj interface{}) ([]byte, error) {
 	serializedStruct, err := json.Marshal(&structObj)
 	if err != nil {
-		fmt.Println(err)
+		g.logger.Fatal(err)
 		return nil, err
 	}
 	return serializedStruct, nil
@@ -132,7 +119,7 @@ func (g *GeoServer) SerializeStruct(structObj interface{}) ([]byte, error) {
 func (g *GeoServer) DeSerializeJSON(response []byte, structObj interface{}) (err error) {
 	err = json.Unmarshal(response, &structObj)
 	if err != nil {
-		fmt.Println(err)
+		g.logger.Fatal(err)
 	}
 	return nil
 }

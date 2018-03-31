@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -15,7 +16,8 @@ type GeoServer struct {
 	ServerURL     string `yaml:"geoserver_url"`
 	Username      string `yaml:"username"`
 	Password      string `yaml:"password"`
-	HTTPClient    *http.Client
+	httpClient    *http.Client
+	logger        *logrus.Logger
 }
 
 //LoadConfig load geoserver config from yaml file
@@ -32,6 +34,12 @@ func (g *GeoServer) LoadConfig(configFile string) *GeoServer {
 	return g
 }
 
+//SetLogger sets instance logger
+func (g *GeoServer) SetLogger() *GeoServer {
+	g.logger = GetLogger()
+	return g
+}
+
 // GetGeoserverRequest creates a HTTP request with geoserver credintails and header
 func (g *GeoServer) GetGeoserverRequest(
 	targetURL string,
@@ -41,6 +49,7 @@ func (g *GeoServer) GetGeoserverRequest(
 	contentType string) (request *http.Request, err error) {
 	request, err = http.NewRequest(method, targetURL, data)
 	if err != nil {
+		g.logger.Fatal("Error Creating Geoserver Request\t", err)
 		return
 	}
 	if data != nil {

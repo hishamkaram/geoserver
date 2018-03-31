@@ -155,9 +155,10 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 		datastoreConnection.Type)
 	targetURL := fmt.Sprintf("%s/rest/workspaces/%s/datastores", g.ServerURL, workspaceName)
 	data := bytes.NewReader([]byte(xml))
-	_, responseCode := g.DoPost(targetURL, data, xmlType, jsonType)
+	response, responseCode := g.DoPost(targetURL, data, xmlType, jsonType)
 	statusCode = responseCode
 	if responseCode != statusCreated {
+		g.logger.Warn(string(response))
 		created = false
 		return
 	}
@@ -169,9 +170,10 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 //DeleteDatastore delete geoserver datastore and its reources
 func (g *GeoServer) DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, statusCode int) {
 	url := fmt.Sprintf("%s/rest/workspaces/%s/datastores/%s", g.ServerURL, workspaceName, datastoreName)
-	_, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
+	response, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
 	statusCode = responseCode
 	if responseCode != statusOk {
+		g.logger.Warn(string(response))
 		deleted = false
 		return
 	}

@@ -2,7 +2,6 @@ package geoserver
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"strconv"
 )
@@ -41,9 +40,10 @@ func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, statusC
 	serializedWorkspace, _ := g.SerializeStruct(WorkspaceBody{Workspace: workspace})
 	var targetURL = fmt.Sprintf("%srest/workspaces", g.ServerURL)
 	data := bytes.NewBuffer(serializedWorkspace)
-	_, responseCode := g.DoPost(targetURL, data, jsonType+"; charset=utf-8", jsonType)
+	response, responseCode := g.DoPost(targetURL, data, jsonType+"; charset=utf-8", jsonType)
 	statusCode = responseCode
 	if responseCode != statusCreated {
+		g.logger.Warn(string(response))
 		created = false
 		return
 	}
@@ -54,9 +54,10 @@ func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, statusC
 //WorkspaceExists check if workspace exists in geoserver
 func (g *GeoServer) WorkspaceExists(workspaceName string) (exists bool, statusCode int) {
 	url := fmt.Sprintf("%s/rest/workspaces/%s", g.ServerURL, workspaceName)
-	_, responseCode := g.DoGet(url, jsonType, nil)
+	response, responseCode := g.DoGet(url, jsonType, nil)
 	statusCode = responseCode
 	if responseCode != statusOk {
+		g.logger.Warn(string(response))
 		exists = false
 		return
 	}
@@ -67,9 +68,10 @@ func (g *GeoServer) WorkspaceExists(workspaceName string) (exists bool, statusCo
 //DeleteWorkspace delete geoserver workspace and its reources
 func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (deleted bool, statusCode int) {
 	url := fmt.Sprintf("%s/rest/workspaces/%s", g.ServerURL, workspaceName)
-	_, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
+	response, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
 	statusCode = responseCode
 	if responseCode != statusOk {
+		g.logger.Warn(string(response))
 		deleted = false
 		return
 	}
@@ -83,6 +85,7 @@ func (g *GeoServer) GetWorkspaces() (workspaces []Resource, statusCode int) {
 	response, responseCode := g.DoGet(url, jsonType, nil)
 	statusCode = responseCode
 	if responseCode != statusOk {
+		g.logger.Warn(string(response))
 		workspaces = nil
 		return
 	}
@@ -91,10 +94,7 @@ func (g *GeoServer) GetWorkspaces() (workspaces []Resource, statusCode int) {
 			Workspace []Resource
 		}
 	}
-	err := json.Unmarshal(response, &workspaceResponse)
-	if err != nil {
-		panic(err)
-	}
+	g.DeSerializeJSON(response, &workspaceResponse)
 	workspaces = workspaceResponse.Workspaces.Workspace
 	return
 }

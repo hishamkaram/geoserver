@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -86,7 +85,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, WorkspaceName string, datast
 		datastoreName)
 	shapeFileBinary, err := ioutil.ReadFile(fileURI)
 	if err != nil {
-		log.Fatal(err)
+		g.logger.Fatal(err)
 	}
 
 	g.CreateWorkspace(WorkspaceName)
@@ -100,6 +99,7 @@ func (g *GeoServer) GetLayers() (layers []Resource, statusCode int) {
 	response, responseCode := g.DoGet(url, jsonType, nil)
 	statusCode = responseCode
 	if responseCode != statusOk {
+		g.logger.Warn(string(response))
 		layers = nil
 		return
 	}
@@ -119,6 +119,7 @@ func (g *GeoServer) GetLayer(layerName string) (layer Layer, statusCode int) {
 	response, responseCode := g.DoGet(url, jsonType, nil)
 	statusCode = responseCode
 	if responseCode != statusOk {
+		g.logger.Warn(string(response))
 		layer = Layer{}
 		return
 	}
@@ -136,9 +137,10 @@ func (g *GeoServer) UpdateLayer(layerName string, layer Layer) (modified bool, s
 	data := LayerBody{Layer: layer}
 
 	serializedLayer, _ := g.SerializeStruct(data)
-	_, responseCode := g.DoPut(url, bytes.NewBuffer(serializedLayer), jsonType, jsonType)
+	response, responseCode := g.DoPut(url, bytes.NewBuffer(serializedLayer), jsonType, jsonType)
 	statusCode = responseCode
 	if responseCode != statusOk {
+		g.logger.Warn(string(response))
 		modified = false
 		return
 	}
@@ -148,10 +150,11 @@ func (g *GeoServer) UpdateLayer(layerName string, layer Layer) (modified bool, s
 
 //DeleteLayer delete geoserver layer and its reources
 func (g *GeoServer) DeleteLayer(layerName string, recurse bool) (deleted bool, statusCode int) {
-	url := fmt.Sprintf("%s/rest/layers/%s", g.ServerURL, layerName)
-	_, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
+	url := fmt.Sprintf("%srest/layers/%s", g.ServerURL, layerName)
+	response, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
 	statusCode = responseCode
 	if responseCode != statusOk {
+		g.logger.Warn(string(response))
 		deleted = false
 		return
 	}
