@@ -24,8 +24,12 @@ type WorkspaceService interface {
 
 //Workspace is the Workspace Object
 type Workspace struct {
-	Name string `json:"name,omitempty"`
-	Href string `json:"href,omitempty"`
+	Name           string `json:"name,omitempty"`
+	Isolated       bool   `json:"isolated,omitempty"`
+	DataStores     string `json:"dataStores,omitempty"`
+	CoverageStores string `json:"coverageStores,omitempty"`
+	WmsStores      string `json:"wmsStores,omitempty"`
+	WmtsStores     string `json:"wmtsStores,omitempty"`
 }
 
 //WorkspaceBody is the api body

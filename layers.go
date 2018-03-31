@@ -12,20 +12,20 @@ import (
 // LayerService define  geoserver layers operations
 type LayerService interface {
 	//GetLayers  get all geoserver layers
-	GetLayers() (layers []Resource, statusCode int)
+	GetLayers(workspaceName string) (layers []Resource, statusCode int)
 	// GetshpFiledsName datastore name from shapefile name
 	GetShpdatastore(filename string) string
 
 	// UploadShapeFile upload shapefile to geoserver
 	UploadShapeFile(fileURI string, WorkspaceName string, datastoreName string) ([]byte, int)
 	//GetLayer  get specific Layer
-	GetLayer(layerName string) (layer Layer, statusCode int)
+	GetLayer(workspaceName string, layerName string) (layer Layer, statusCode int)
 
 	//UpdateLayer  update geoserver layer
-	UpdateLayer(layerName string, layer Layer) (modified bool, statusCode int)
+	UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, statusCode int)
 
 	//DeleteLayer delete geoserver layer and its reources
-	DeleteLayer(layerName string, recurse bool) (deleted bool, statusCode int)
+	DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, statusCode int)
 }
 
 //Resource geoserver resource
@@ -94,8 +94,11 @@ func (g *GeoServer) UploadShapeFile(fileURI string, WorkspaceName string, datast
 }
 
 //GetLayers  get all geoserver layers
-func (g *GeoServer) GetLayers() (layers []Resource, statusCode int) {
-	url := fmt.Sprintf("%srest/layers", g.ServerURL)
+func (g *GeoServer) GetLayers(workspaceName string) (layers []Resource, statusCode int) {
+	if workspaceName != "" {
+		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
+	}
+	url := fmt.Sprintf("%srest/%slayers", g.ServerURL, workspaceName)
 	response, responseCode := g.DoGet(url, jsonType, nil)
 	statusCode = responseCode
 	if responseCode != statusOk {
@@ -114,8 +117,11 @@ func (g *GeoServer) GetLayers() (layers []Resource, statusCode int) {
 }
 
 //GetLayer  get geoserver layer
-func (g *GeoServer) GetLayer(layerName string) (layer Layer, statusCode int) {
-	url := fmt.Sprintf("%srest/layers/%s", g.ServerURL, layerName)
+func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer Layer, statusCode int) {
+	if workspaceName != "" {
+		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
+	}
+	url := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
 	response, responseCode := g.DoGet(url, jsonType, nil)
 	statusCode = responseCode
 	if responseCode != statusOk {
@@ -132,8 +138,11 @@ func (g *GeoServer) GetLayer(layerName string) (layer Layer, statusCode int) {
 }
 
 //UpdateLayer  update geoserver layer
-func (g *GeoServer) UpdateLayer(layerName string, layer Layer) (modified bool, statusCode int) {
-	url := fmt.Sprintf("%srest/layers/%s", g.ServerURL, layerName)
+func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, statusCode int) {
+	if workspaceName != "" {
+		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
+	}
+	url := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
 	data := LayerBody{Layer: layer}
 
 	serializedLayer, _ := g.SerializeStruct(data)
@@ -149,8 +158,11 @@ func (g *GeoServer) UpdateLayer(layerName string, layer Layer) (modified bool, s
 }
 
 //DeleteLayer delete geoserver layer and its reources
-func (g *GeoServer) DeleteLayer(layerName string, recurse bool) (deleted bool, statusCode int) {
-	url := fmt.Sprintf("%srest/layers/%s", g.ServerURL, layerName)
+func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, statusCode int) {
+	if workspaceName != "" {
+		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
+	}
+	url := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
 	response, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
 	statusCode = responseCode
 	if responseCode != statusOk {

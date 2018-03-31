@@ -52,7 +52,7 @@ var gsCatalog geoserver.GeoServer
 func main() {
 	gsCatalog := geoserver.GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")
 
-	layers, _ := gsCatalog.GetLayers()
+	layers, _ := gsCatalog.GetLayers("")
 	for _, lyr := range layers {
 		fmt.Printf("\nName:%s\t\nHref:%s\n", lyr.Name, lyr.Href)
 	}
