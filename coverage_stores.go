@@ -34,8 +34,8 @@ type CoverageStore struct {
 	Coverages   string    `json:"coverages,omitempty"`
 }
 
-//CoverageStoreBody geoserver coverage store to send to api
-type CoverageStoreBody struct {
+//CoverageStoreRequestBody geoserver coverage store to send to api
+type CoverageStoreRequestBody struct {
 	CoverageStore CoverageStore `json:"coverageStore,omitempty"`
 }
 
@@ -62,7 +62,7 @@ func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []Re
 //CreateCoverageStore function to create new CoverageStore
 func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore CoverageStore) (newCoverageStore CoverageStore, err error) {
 	targetURL := fmt.Sprintf("%srest/workspaces/%s/coveragestores", g.ServerURL, workspaceName)
-	data := CoverageStoreBody{
+	data := CoverageStoreRequestBody{
 		CoverageStore: coverageStore,
 	}
 	serializedData, _ := g.SerializeStruct(data)
@@ -80,7 +80,7 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 //UpdateCoverageStore  update geoserver CoverageStore
 func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore CoverageStore) (modified bool, err error) {
 	targetURL := fmt.Sprintf("%srest/workspaces/%s/coveragestores/%s", g.ServerURL, workspaceName, coverageStore.Name)
-	data := CoverageStoreBody{CoverageStore: coverageStore}
+	data := CoverageStoreRequestBody{CoverageStore: coverageStore}
 	serializedData, _ := g.SerializeStruct(data)
 	response, responseCode := g.DoPut(targetURL, bytes.NewBuffer(serializedData), jsonType, jsonType)
 	if responseCode != statusOk {

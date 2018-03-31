@@ -32,8 +32,8 @@ type Workspace struct {
 	WmtsStores     string `json:"wmtsStores,omitempty"`
 }
 
-//WorkspaceBody is the api body
-type WorkspaceBody struct {
+//WorkspaceRequestBody is the api body
+type WorkspaceRequestBody struct {
 	Workspace Workspace `json:"workspace,omitempty"`
 }
 
@@ -41,7 +41,7 @@ type WorkspaceBody struct {
 func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, err error) {
 	//TODO: check if workspace exist before creating it
 	var workspace = Workspace{Name: workspaceName}
-	serializedWorkspace, _ := g.SerializeStruct(WorkspaceBody{Workspace: workspace})
+	serializedWorkspace, _ := g.SerializeStruct(WorkspaceRequestBody{Workspace: workspace})
 	var targetURL = fmt.Sprintf("%srest/workspaces", g.ServerURL)
 	data := bytes.NewBuffer(serializedWorkspace)
 	response, responseCode := g.DoPost(targetURL, data, jsonType+"; charset=utf-8", jsonType)

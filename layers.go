@@ -61,8 +61,8 @@ type Layer struct {
 	Attribution Attribution `json:"attribution,omitempty"`
 }
 
-//LayerBody api json
-type LayerBody struct {
+//LayerRequestBody api json
+type LayerRequestBody struct {
 	Layer Layer `json:"layer,omitempty"`
 }
 
@@ -143,7 +143,7 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
 	targetURL := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
-	data := LayerBody{Layer: layer}
+	data := LayerRequestBody{Layer: layer}
 
 	serializedLayer, _ := g.SerializeStruct(data)
 	response, responseCode := g.DoPut(targetURL, bytes.NewBuffer(serializedLayer), jsonType, jsonType)

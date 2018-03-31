@@ -19,6 +19,5 @@ func (g *GeoServer) IsRunning() (running bool, err error) {
 		return
 	}
 	running = true
-	err = nil
 	return
 }

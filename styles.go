@@ -35,8 +35,8 @@ type Style struct {
 	} `json:",omitempty"`
 }
 
-//StyleBody is the api body
-type StyleBody struct {
+//StyleRequestBody is the api body
+type StyleRequestBody struct {
 	Style Style `json:"style,omitempty"`
 }
 
@@ -79,7 +79,7 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style Styl
 		err = statusErrorMapping[responseCode]
 		return
 	}
-	var stylesResponse StyleBody
+	var stylesResponse StyleRequestBody
 	g.DeSerializeJSON(response, &stylesResponse)
 	style = stylesResponse.Style
 	return
@@ -92,7 +92,7 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	}
 	targetURL := fmt.Sprintf("%srest/%sstyles", g.ServerURL, workspaceName)
 	var style = Style{Name: styleName, Filename: styleName + ".sld"}
-	serializedStyle, _ := g.SerializeStruct(StyleBody{Style: style})
+	serializedStyle, _ := g.SerializeStruct(StyleRequestBody{Style: style})
 	xml := bytes.NewBuffer(serializedStyle)
 	response, responseCode := g.DoPost(targetURL, xml, jsonType, jsonType)
 	if responseCode != statusCreated {
