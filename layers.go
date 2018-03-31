@@ -11,20 +11,23 @@ import (
 
 // LayerService define  geoserver layers operations
 type LayerService interface {
-	//GetLayers  get all geoserver layers
+
+	//GetLayers  get all layers from workspace in geoserver else return error
 	GetLayers(workspaceName string) (layers []Resource, err error)
+
 	// GetshpFiledsName datastore name from shapefile name
 	GetShpdatastore(filename string) string
 
 	// UploadShapeFile upload shapefile to geoserver
 	UploadShapeFile(fileURI string, WorkspaceName string, datastoreName string) ([]byte, int)
-	//GetLayer  get specific Layer
+
+	//GetLayer get specific Layer from geoserver else return error
 	GetLayer(workspaceName string, layerName string) (layer Layer, err error)
 
-	//UpdateLayer  update geoserver layer
+	//UpdateLayer partial update geoserver layer else return error
 	UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, err error)
 
-	//DeleteLayer delete geoserver layer and its reources
+	//DeleteLayer delete geoserver layer and its reources else return error
 	DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, err error)
 }
 
@@ -93,7 +96,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, WorkspaceName string, datast
 
 }
 
-//GetLayers  get all geoserver layers
+//GetLayers  get all layers from workspace in geoserver else return error
 func (g *GeoServer) GetLayers(workspaceName string) (layers []Resource, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -116,7 +119,7 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []Resource, err erro
 	return
 }
 
-//GetLayer  get geoserver layer
+//GetLayer get specific Layer from geoserver else return error
 func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer Layer, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -137,7 +140,7 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer Laye
 	return
 }
 
-//UpdateLayer  update geoserver layer
+//UpdateLayer partial update geoserver layer else return error
 func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -157,7 +160,7 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 	return
 }
 
-//DeleteLayer delete geoserver layer and its reources
+//DeleteLayer delete geoserver layer and its reources else return error
 func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)

@@ -9,16 +9,16 @@ import (
 // CoverageStoresService define all geoserver CoverageStores operations
 type CoverageStoresService interface {
 
-	// GetCoverageStores
+	// GetCoverageStores return all coverage store as resources
 	GetCoverageStores(workspaceName string) (coverageStores []Resource, err error)
 
-	// GetCoverageStores
+	// CreateCoverageStore create coverage store in geoserver and return created one else return error
 	CreateCoverageStore(workspaceName string, coverageStore CoverageStore) (newCoverageStore CoverageStore, err error)
 
-	// UpdateCoverageStore
+	// UpdateCoverageStore  parital update coverage store in geoserver else return error
 	UpdateCoverageStore(workspaceName string, coverageStore CoverageStore) (modified bool, err error)
 
-	// UpdateCoverageStore
+	// DeleteCoverageStore delete coverage store from geoserver else return error
 	DeleteCoverageStore(workspaceName string, coverageStore string, recurse bool) (deleted bool, err error)
 }
 
@@ -39,7 +39,7 @@ type CoverageStoreRequestBody struct {
 	CoverageStore CoverageStore `json:"coverageStore,omitempty"`
 }
 
-//GetCoverageStores  get all geoserver CoverageStores
+// GetCoverageStores return all coverage store as resources
 func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []Resource, err error) {
 	targetURL := fmt.Sprintf("%srest/workspaces/%s/coveragestores", g.ServerURL, workspaceName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
@@ -59,7 +59,7 @@ func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []Re
 	return
 }
 
-//CreateCoverageStore function to create new CoverageStore
+// CreateCoverageStore create coverage store in geoserver and return created one else return error
 func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore CoverageStore) (newCoverageStore CoverageStore, err error) {
 	targetURL := fmt.Sprintf("%srest/workspaces/%s/coveragestores", g.ServerURL, workspaceName)
 	data := CoverageStoreRequestBody{
@@ -77,7 +77,7 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 	return
 }
 
-//UpdateCoverageStore  update geoserver CoverageStore
+// UpdateCoverageStore  parital update coverage store in geoserver else return error
 func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore CoverageStore) (modified bool, err error) {
 	targetURL := fmt.Sprintf("%srest/workspaces/%s/coveragestores/%s", g.ServerURL, workspaceName, coverageStore.Name)
 	data := CoverageStoreRequestBody{CoverageStore: coverageStore}
@@ -93,7 +93,7 @@ func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore Cove
 	return
 }
 
-//DeleteCoverageStore delete geoserver CoverageStore
+// DeleteCoverageStore delete coverage store from geoserver else return error
 func (g *GeoServer) DeleteCoverageStore(workspaceName string, coverageStore string, recurse bool) (deleted bool, err error) {
 	targetURL := fmt.Sprintf("%srest/workspaces/%s/coveragestores/%s", g.ServerURL, workspaceName, coverageStore)
 	response, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})

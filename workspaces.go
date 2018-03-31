@@ -9,16 +9,16 @@ import (
 // WorkspaceService define all geoserver workspace operations
 type WorkspaceService interface {
 
-	// WorkspaceExists check if workspace in geoserver or not
+	// WorkspaceExists check if workspace in geoserver or not else return error
 	WorkspaceExists(workspaceName string) (exists bool, err error)
 
-	// GetWorkspaces get geoserver workspaces
+	// GetWorkspaces get geoserver workspaces else return error
 	GetWorkspaces() (workspaces []Resource, err error)
 
-	// CreateWorkspace creates a workspace
+	// CreateWorkspace creates a workspace else return error
 	CreateWorkspace(workspaceName string) (created bool, err error)
 
-	// DeleteWorkspace deletes a workspace
+	//DeleteWorkspace delete geoserver workspace and its reources else return error
 	DeleteWorkspace(workspaceName string, recurse bool) (deleted bool, err error)
 }
 
@@ -37,7 +37,7 @@ type WorkspaceRequestBody struct {
 	Workspace Workspace `json:"workspace,omitempty"`
 }
 
-//CreateWorkspace function to create current geoserver struct workspace
+// CreateWorkspace creates a workspace and return if created or not else return error
 func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, err error) {
 	//TODO: check if workspace exist before creating it
 	var workspace = Workspace{Name: workspaceName}
@@ -55,7 +55,7 @@ func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, err err
 	return
 }
 
-//WorkspaceExists check if workspace exists in geoserver
+// WorkspaceExists check if workspace in geoserver or not else return error
 func (g *GeoServer) WorkspaceExists(workspaceName string) (exists bool, err error) {
 	url := fmt.Sprintf("%s/rest/workspaces/%s", g.ServerURL, workspaceName)
 	response, responseCode := g.DoGet(url, jsonType, nil)
@@ -69,7 +69,7 @@ func (g *GeoServer) WorkspaceExists(workspaceName string) (exists bool, err erro
 	return
 }
 
-//DeleteWorkspace delete geoserver workspace and its reources
+//DeleteWorkspace delete geoserver workspace and its reources else return error
 func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (deleted bool, err error) {
 	url := fmt.Sprintf("%s/rest/workspaces/%s", g.ServerURL, workspaceName)
 	response, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
@@ -83,7 +83,7 @@ func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (deleted
 	return
 }
 
-//GetWorkspaces  get all geoserver workspaces
+// GetWorkspaces get geoserver workspaces else return error
 func (g *GeoServer) GetWorkspaces() (workspaces []Resource, err error) {
 	url := fmt.Sprintf("%srest/workspaces", g.ServerURL)
 	response, responseCode := g.DoGet(url, jsonType, nil)

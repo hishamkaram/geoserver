@@ -8,19 +8,20 @@ import (
 
 // DatastoreService define all geoserver datastore operations
 type DatastoreService interface {
-	// DatastoreExists checks if a datastore exists in a workspace
+
+	// DatastoreExists checks if a datastore exists in a workspace else return error
 	DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, err error)
 
-	// GetDatastores return datastores in a workspace
+	// GetDatastores return datastores in a workspace else return error
 	GetDatastores(workspaceName string) (datastores []Resource, err error)
 
-	// GetDatastoreDetails get specific datastore
+	// GetDatastoreDetails get specific datastore from geoserver else return error
 	GetDatastoreDetails(workspaceName string, datastoreName string) (datastore Datastore, err error)
 
 	//CreateDatastore create a datastore under provided workspace
 	CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error)
 
-	// DeleteDatastore deletes a datastore
+	// DeleteDatastore deletes a datastore from geoserver else return error
 	DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, err error)
 }
 
@@ -58,7 +59,7 @@ type DatastoreConnectionParams struct {
 	Entry []ConnectionParamter `json:",omitempty"`
 }
 
-//DatastoreExists check if datastore in geoserver
+// DatastoreExists checks if a datastore exists in a workspace else return error
 func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, err error) {
 	url := fmt.Sprintf("%s/rest/workspaces/%s/datastores/%s", g.ServerURL, workspaceName, datastoreName)
 	_, responseCode := g.DoGet(url, jsonType, map[string]string{"quietOnNotFound": strconv.FormatBool(quietOnNotFound)})
@@ -71,7 +72,7 @@ func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, 
 	return
 }
 
-//GetDatastores query geoserver datastores for current workspace
+// GetDatastores return datastores in a workspace else return error
 func (g *GeoServer) GetDatastores(workspaceName string) (datastores []Resource, err error) {
 	//TODO: check if workspace exist before creating it
 	var targetURL = fmt.Sprintf("%srest/workspaces/%s/datastores", g.ServerURL, workspaceName)
@@ -91,7 +92,7 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []Resource, 
 	return
 }
 
-//GetDatastoreDetails query geoserver datastore for current workspace
+// GetDatastoreDetails get specific datastore from geoserver else return error
 func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName string) (datastore Datastore, err error) {
 	//TODO: check if workspace exist before creating it
 	var targetURL = fmt.Sprintf("%srest/workspaces/%s/datastores/%s", g.ServerURL, workspaceName, datastoreName)
@@ -148,7 +149,7 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 
 }
 
-//DeleteDatastore delete geoserver datastore and its reources
+// DeleteDatastore deletes a datastore from geoserver else return error
 func (g *GeoServer) DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, err error) {
 	url := fmt.Sprintf("%s/rest/workspaces/%s/datastores/%s", g.ServerURL, workspaceName, datastoreName)
 	response, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})

@@ -31,6 +31,7 @@ func (g *GeoServer) LoadConfig(configFile string) *GeoServer {
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)
 	}
+	g.SetLogger()
 	return g
 }
 

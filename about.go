@@ -4,7 +4,7 @@ import "fmt"
 
 // AboutService define all geoserver About operations
 type AboutService interface {
-	//IsRunning check if geoserver is running return true and statusCode of request
+	//IsRunning check if geoserver is running return true and error if if error occure
 	IsRunning() (running bool, err error)
 }
 
