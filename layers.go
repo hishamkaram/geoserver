@@ -112,7 +112,7 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []Resource, err erro
 	var layerResponse struct {
 		Layers struct {
 			Layer []Resource
-		}
+		} `json:"layers,omitempty"`
 	}
 	g.DeSerializeJSON(response, &layerResponse)
 	layers = layerResponse.Layers.Layer

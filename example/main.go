@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/hishamkaram/geoserver"
 )
 
@@ -10,56 +8,30 @@ var uploadedPath = "./uploaded/"
 
 var gsCatalog geoserver.GeoServer
 
-// //ContextData hold template data
-// type ContextData struct {
-// 	Geoserver geoserver.GeoServer
-// 	Code      int
-// }
-
-// func handleUploaded(file *bytes.Buffer, filename string) string {
-// 	_ = os.Mkdir(uploadedPath, 0700)
-// 	filepath := uploadedPath + filename
-// 	f, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE, 0666)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	defer f.Close()
-// 	io.Copy(f, file)
-// 	return filepath
-// }
-
-// func index(w http.ResponseWriter, r *http.Request) {
-// 	tmplData := ContextData{Geoserver: gsCatalog, Code: 0}
-// 	if r.Method == "POST" {
-// 		file, handler, err := r.FormFile("fileupload")
-// 		defer file.Close()
-// 		if err != nil {
-// 			panic(err)
-// 		}
-// 		buf := bytes.NewBuffer(nil)
-// 		if _, err := io.Copy(buf, file); err != nil {
-// 			panic(err)
-// 		}
-// 		uploadedPath := handleUploaded(buf, handler.Filename)
-// 		fileLocation, _ := filepath.Abs(uploadedPath)
-// 		response, statusCode := gsCatalog.UploadShapeFile(fileLocation, "")
-// 		tmplData.Code = statusCode
-// 		fmt.Println(response, statusCode)
-// 	}
-// 	tmplt, _ := template.ParseFiles("templates/home.html")
-// 	tmplt.Execute(w, tmplData)
-// }
 func main() {
-	gsCatalog := geoserver.GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")
-
-	layers, _ := gsCatalog.GetLayers("")
-	for _, lyr := range layers {
-		fmt.Printf("\nName:%s\t\nHref:%s\n", lyr.Name, lyr.Href)
-	}
+	// gsCatalog := geoserver.GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")
 	//Test getLayer
-	// layer, _ := gsCatalog.GetLayer("topp:tasmania_state_boundaries")
-	// fmt.Printf("%s\t%s\t%s\t%s", layer.Name, strconv.FormatBool(layer.Opaque), layer.Path, layer.Type)
-	//Test DeleteLayer
+	// layers, err := gsCatalog.GetLayers("")
+	// if err != nil {
+	// 	fmt.Printf("\nError:%s\n", err)
+	// }
+	// for _, lyr := range layers {
+	// 	fmt.Printf("\nName:%s  href:%s\n", lyr.Name, lyr.Href)
+	// }
+
+	//Test getLayer
+	// layer, err := gsCatalog.GetLayer("nurc", "Arc_Sample")
+	// if err != nil {
+	// 	fmt.Printf("\nError:%s\n", err)
+	// } else {
+	// 	fmt.Printf("\nName:%s  type:%s defaultStyleName:%s \n", layer.Name, layer.Type, layer.DefaultStyle.Name)
+	// 	fmt.Println("Available styles")
+	// 	for i, style := range layer.Styles.Style {
+	// 		fmt.Println("\t" + strconv.Itoa(i+1) + "- styleName: " + style.Name)
+	// 	}
+	// }
+
+	// Test DeleteLayer
 	// deleted, _ := gsCatalog.DeleteLayer("topp:tasmania_state_boundaries__2222", true)
 	// fmt.Printf("\nDeleted:%s\n", strconv.FormatBool(deleted))
 
@@ -81,24 +53,30 @@ func main() {
 	// exists, _ := gsCatalog.WorkspaceExists("NotFound")
 	// fmt.Println(strconv.FormatBool(exists))
 
-	//Test Create Style
-	// created, _ := gsCatalog.CreateStyle("test_sld")
+	// Test Create Style
+	// created, err := gsCatalog.CreateStyle("geonode", "museum_nyc")
+	// if err != nil {
+	// 	fmt.Printf("\nError:%s\n", err)
+	// }
 	// fmt.Println(strconv.FormatBool(created))
 
 	//Test upload sld
-	// sld, err := ioutil.ReadFile("sample/museum_nyc.sld") // just pass the file name
+	// data, err := ioutil.ReadFile("sample/museum_nyc.sld")
 	// if err != nil {
 	// 	fmt.Print(err)
 	// }
-	// style, _ := gsCatalog.UploadStyle(bytes.NewBuffer(sld), "test_sld")
-	// fmt.Println(style)
+	// fmt.Println(string(data))
+	// success, sldErr := gsCatalog.UploadStyle(bytes.NewBuffer(data), "geonode", "museum_nyc")
+	// if sldErr != nil {
+	// 	fmt.Print(err)
+	// }
+	// fmt.Println(strconv.FormatBool(success))
 
-	//Test Create Workspace
-	// created, _ := gsCatalog.CreateWorkspace("test")
-	// fmt.Println(strconv.FormatBool(created))
-
-	//Test Create Workspace
-	// created, _ := gsCatalog.CreateWorkspace("test")
+	// Test Create Workspace
+	// created, err := gsCatalog.CreateWorkspace("golang")
+	// if err != nil {
+	// 	fmt.Printf("\nError:%s\n", err)
+	// }
 	// fmt.Println(strconv.FormatBool(created))
 
 	//Test Delete Workspace

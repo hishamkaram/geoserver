@@ -27,12 +27,12 @@ type StyleService interface {
 
 //Style holds geoserver style
 type Style struct {
-	Name            string `json:",omitempty"`
-	Format          string `json:",omitempty"`
-	Filename        string `json:",omitempty"`
+	Name            string `json:"name,omitempty"`
+	Format          string `json:"format,omitempty"`
+	Filename        string `json:"filename,omitempty"`
 	LanguageVersion struct {
-		Version string `json:",omitempty"`
-	} `json:",omitempty"`
+		Version string `json:"version,omitempty"`
+	} `json:"languageVersion,omitempty"`
 }
 
 //StyleRequestBody is the api body
@@ -42,7 +42,7 @@ type StyleRequestBody struct {
 
 // Styles holds a list of geoserver styles
 type Styles struct {
-	Style []Style `json:",omitempty"`
+	Style []Style `json:"style,omitempty"`
 }
 
 //GetStyles return list of geoserver styles
@@ -91,10 +91,10 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
 	targetURL := fmt.Sprintf("%srest/%sstyles", g.ServerURL, workspaceName)
-	var style = Style{Name: styleName, Filename: styleName + ".sld"}
+	var style = Style{Name: styleName, Filename: fmt.Sprintf("%s.sld", styleName)}
 	serializedStyle, _ := g.SerializeStruct(StyleRequestBody{Style: style})
-	xml := bytes.NewBuffer(serializedStyle)
-	response, responseCode := g.DoPost(targetURL, xml, jsonType, jsonType)
+	data := bytes.NewBuffer(serializedStyle)
+	response, responseCode := g.DoPost(targetURL, data, jsonType, jsonType)
 	if responseCode != statusCreated {
 		g.logger.Warn(string(response))
 		created = false
