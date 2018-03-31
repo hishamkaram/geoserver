@@ -51,11 +51,24 @@ var gsCatalog geoserver.GeoServer
 // 	tmplt.Execute(w, tmplData)
 // }
 func main() {
-	fileLocation, _ := filepath.Abs("./config.yml")
+	fileLocation, _ := filepath.Abs("config.yml")
 	gsCatalog.HTTPClient = &http.Client{}
 	gsCatalog.LoadConfig(fileLocation)
+	// layers, _ := gsCatalog.GetLayers()
+	// for _, lyr := range layers {
+	// 	fmt.Printf("\nName:%s\t\nHref:%s\n", lyr.Name, lyr.Href)
+	// }
+	//Test getLayer
+	// layer, _ := gsCatalog.GetLayer("topp:tasmania_state_boundaries")
+	// fmt.Printf("%s\t%s\t%s\t%s", layer.Name, strconv.FormatBool(layer.Opaque), layer.Path, layer.Type)
+	//Test DeleteLayer
+	// deleted, _ := gsCatalog.DeleteLayer("topp:tasmania_state_boundaries", true)
+	// fmt.Printf("\nDeleted:%s\n", strconv.FormatBool(deleted))
 
-	// sld :=
+	//Test Updatelayer
+	// modified, _ := gsCatalog.UpdateLayer("tiger:giant_polygon", geoserver.Layer{DefaultStyle: geoserver.Resource{Name: "giant_polygon", Href: "http://localhost:8080/geoserver13/rest/styles/giant_polygon.json"}})
+	// fmt.Printf("\nDeleted:%s\n", strconv.FormatBool(modified))
+
 	//Test if geoserver is running
 	// isRunning, code := gsCatalog.IsRunning()
 	// fmt.Printf("\nGeoserver status : %s \n StatusCode: %s\n", strconv.FormatBool(isRunning), strconv.Itoa(code))

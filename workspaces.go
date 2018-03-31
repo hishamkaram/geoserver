@@ -65,15 +65,15 @@ func (g *GeoServer) WorkspaceExists(workspaceName string) (exists bool, statusCo
 }
 
 //DeleteWorkspace delete geoserver workspace and its reources
-func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (created bool, statusCode int) {
+func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (deleted bool, statusCode int) {
 	url := fmt.Sprintf("%s/rest/workspaces/%s", g.ServerURL, workspaceName)
 	_, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
 	statusCode = responseCode
 	if responseCode != statusOk {
-		created = false
+		deleted = false
 		return
 	}
-	created = true
+	deleted = true
 	return
 }
 

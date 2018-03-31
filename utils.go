@@ -127,3 +127,12 @@ func (g *GeoServer) SerializeStruct(structObj interface{}) ([]byte, error) {
 	}
 	return serializedStruct, nil
 }
+
+//DeSerializeJSON json struct to struct
+func (g *GeoServer) DeSerializeJSON(response []byte, structObj interface{}) (err error) {
+	err = json.Unmarshal(response, &structObj)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return nil
+}
