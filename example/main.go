@@ -24,11 +24,7 @@ func main() {
 	// if err != nil {
 	// 	fmt.Printf("\nError:%s\n", err)
 	// } else {
-	// 	fmt.Printf("\nName:%s  type:%s defaultStyleName:%s \n", layer.Name, layer.Type, layer.DefaultStyle.Name)
-	// 	fmt.Println("Available styles")
-	// 	for i, style := range layer.Styles.Style {
-	// 		fmt.Println("\t" + strconv.Itoa(i+1) + "- styleName: " + style.Name)
-	// 	}
+	// 	fmt.Printf("%+v\n", layer)
 	// }
 
 	// Test DeleteLayer

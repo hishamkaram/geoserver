@@ -89,19 +89,12 @@ How to install:
       if err != nil {
         fmt.Printf("\nError:%s\n", err)
       } else {
-        fmt.Printf("\nName:%s  type:%s defaultStyleName:%s \n", layer.Name, layer.Type, layer.DefaultStyle.Name)
-        fmt.Println("Available styles")
-        for i, style := range layer.Styles.Style {
-          fmt.Println("\t" + strconv.Itoa(i+1) + "- styleName: " + style.Name)
-        }
+        fmt.Printf("%+v\n", layer)
       }
        ```
        output:
        ```
-      INFO[31-03-2018 19:18:45] url:http://localhost:8080/geoserver13/rest/workspaces/nurc/layers/Arc_Sample	response Status=200  
-
-      Name:Arc_Sample  type:RASTER defaultStyleName:rain 
-      Available styles
-        1- styleName: raster
+      INFO[31-03-2018 20:12:07] url:http://localhost:8080/geoserver13/rest/workspaces/nurc/layers/Arc_Sample	response Status=200  
+      {Name:Arc_Sample Path:/ Type:RASTER DefaultStyle:{Class: Name:rain Href:http://localhost:8080/geoserver13/rest/styles/rain.json} Styles:{Class:linked-hash-set Style:[{Class: Name:raster Href:http://localhost:8080/geoserver13/rest/styles/raster.json}]} Resource:{Class:coverage Name:nurc:Arc_Sample Href:http://localhost:8080/geoserver13/rest/workspaces/nurc/coveragestores/arcGridSample/coverages/Arc_Sample.json} Queryable:false Opaque:false Attribution:{Title: Href: LogoURL: LogoType: LogoWidth:0 LogoHeight:0}}
        ```
   - you can find all supported operations on [godocs](https://godoc.org/github.com/hishamkaram/geoserver)
