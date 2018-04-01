@@ -71,7 +71,7 @@ func (g *GeoServer) WorkspaceExists(workspaceName string) (exists bool, err erro
 
 //DeleteWorkspace delete geoserver workspace and its reources else return error
 func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (deleted bool, err error) {
-	url := fmt.Sprintf("%s/rest/workspaces/%s", g.ServerURL, workspaceName)
+	url := fmt.Sprintf("%srest/workspaces/%s", g.ServerURL, workspaceName)
 	response, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
