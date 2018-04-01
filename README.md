@@ -11,7 +11,7 @@ How to install:
 ## usage:
   - create new Catalog (which contains all available operations):
       - `gsCatalog := geoserver.GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")`
-  - use catalog to Methods to Perform a geoserver rest operation:
+  - use catalog Methods to Perform a geoserver rest operation:
       - Create New workspace:
         ```
         created, err := gsCatalog.CreateWorkspace("golang")
