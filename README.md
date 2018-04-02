@@ -1,7 +1,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/hishamkaram/geoserver)](https://goreportcard.com/report/github.com/hishamkaram/geoserver)
 [![Documentation](https://godoc.org/github.com/hishamkaram/geoserver?status.svg)](https://godoc.org/github.com/hishamkaram/geoserver?)
+[![Coverage Status](https://coveralls.io/repos/github/hishamkaram/geoserver/badge.svg?branch=master)](https://coveralls.io/github/hishamkaram/geoserver?branch=master)
 # Geoserver
-geoserver is a Go library for manipulating a GeoServer instance via the GeoServer REST API.
+geoserver Is a Go Package For Manipulating a GeoServer Instance via the GeoServer REST API.
 
 How to install:
 - `got get github.com/hishamkaram/geoserver`
@@ -9,9 +10,9 @@ How to install:
 ## [Documentation](https://godoc.org/github.com/hishamkaram/geoserver)
 
 ## usage:
-  - create new Catalog (which contains all available operations):
+  - Create new Catalog (which contains all available operations):
       - `gsCatalog := geoserver.GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")`
-  - use catalog Methods to Perform a geoserver rest operation:
+  - Use catalog Methods to Perform a Geoserver REST Operation:
       - Create New workspace:
         ```
         created, err := gsCatalog.CreateWorkspace("golang")
@@ -33,7 +34,7 @@ How to install:
         Error:Unauthorized
         false
         ```
-  - get layers through getLayers take workspace as paramter if empty workspace will be ignored and geoserver will return all public layers
+  - Get Layers through GetLayers take workspace as paramter if empty workspace will be ignored and geoserver will return all public layers
       ```
       layers, err := gsCatalog.GetLayers("")
       if err != nil {
@@ -85,7 +86,7 @@ How to install:
 
       Name:sf:streams  href:http://localhost:8080/geoserver13/rest/layers/sf%3Astreams.json
       ```
-  - get specific layer:
+  - Get Specific Layer from Geoserver:
       ```
       layer, err := gsCatalog.GetLayer("nurc", "Arc_Sample")
       if err != nil {
@@ -99,4 +100,4 @@ How to install:
       INFO[31-03-2018 20:12:07] url:http://localhost:8080/geoserver13/rest/workspaces/nurc/layers/Arc_Sample	response Status=200  
       {Name:Arc_Sample Path:/ Type:RASTER DefaultStyle:{Class: Name:rain Href:http://localhost:8080/geoserver13/rest/styles/rain.json} Styles:{Class:linked-hash-set Style:[{Class: Name:raster Href:http://localhost:8080/geoserver13/rest/styles/raster.json}]} Resource:{Class:coverage Name:nurc:Arc_Sample Href:http://localhost:8080/geoserver13/rest/workspaces/nurc/coveragestores/arcGridSample/coverages/Arc_Sample.json} Queryable:false Opaque:false Attribution:{Title: Href: LogoURL: LogoType: LogoWidth:0 LogoHeight:0}}
        ```
-  - you can find all supported operations on [godocs](https://godoc.org/github.com/hishamkaram/geoserver)
+  - You can find all supported operations on [Godocs](https://godoc.org/github.com/hishamkaram/geoserver)

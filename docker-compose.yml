@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  geoserver:
+      image: cartoview/geoserver_docker:tomcat
+      restart: unless-stopped
+      user: root
+  app:
+    image: go-geoserver
+    container_name: go-geoserver-test
+    build: .
+    command: sh -c "./scripts/entry.sh"
+    depends_on:
+      - geoserver

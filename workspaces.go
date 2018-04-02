@@ -13,7 +13,7 @@ type WorkspaceService interface {
 	WorkspaceExists(workspaceName string) (exists bool, err error)
 
 	// GetWorkspaces get geoserver workspaces else return error
-	GetWorkspaces() (workspaces []Resource, err error)
+	GetWorkspaces() (workspaces []*Resource, err error)
 
 	// CreateWorkspace creates a workspace else return error
 	CreateWorkspace(workspaceName string) (created bool, err error)
@@ -34,14 +34,14 @@ type Workspace struct {
 
 //WorkspaceRequestBody is the api body
 type WorkspaceRequestBody struct {
-	Workspace Workspace `json:"workspace,omitempty"`
+	Workspace *Workspace `json:"workspace,omitempty"`
 }
 
 // CreateWorkspace creates a workspace and return if created or not else return error
 func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, err error) {
 	//TODO: check if workspace exist before creating it
 	var workspace = Workspace{Name: workspaceName}
-	serializedWorkspace, _ := g.SerializeStruct(WorkspaceRequestBody{Workspace: workspace})
+	serializedWorkspace, _ := g.SerializeStruct(WorkspaceRequestBody{Workspace: &workspace})
 	var targetURL = fmt.Sprintf("%srest/workspaces", g.ServerURL)
 	data := bytes.NewBuffer(serializedWorkspace)
 	response, responseCode := g.DoPost(targetURL, data, jsonType+"; charset=utf-8", jsonType)
@@ -84,7 +84,7 @@ func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (deleted
 }
 
 // GetWorkspaces get geoserver workspaces else return error
-func (g *GeoServer) GetWorkspaces() (workspaces []Resource, err error) {
+func (g *GeoServer) GetWorkspaces() (workspaces []*Resource, err error) {
 	url := fmt.Sprintf("%srest/workspaces", g.ServerURL)
 	response, responseCode := g.DoGet(url, jsonType, nil)
 	if responseCode != statusOk {
@@ -95,7 +95,7 @@ func (g *GeoServer) GetWorkspaces() (workspaces []Resource, err error) {
 	}
 	var workspaceResponse struct {
 		Workspaces struct {
-			Workspace []Resource
+			Workspace []*Resource
 		}
 	}
 	g.DeSerializeJSON(response, &workspaceResponse)

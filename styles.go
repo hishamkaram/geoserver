@@ -10,7 +10,7 @@ import (
 // StyleService define all geoserver style operations
 type StyleService interface {
 	// GetStyles
-	GetStyles(workspaceName string) (styles []Resource, err error)
+	GetStyles(workspaceName string) (styles []*Resource, err error)
 
 	//CreateStyle create geoserver sld
 	CreateStyle(workspaceName string, styleName string) (created bool, err error)
@@ -22,31 +22,34 @@ type StyleService interface {
 	DeleteStyle(workspaceName string, styleName string, purge bool) (deleted bool, err error)
 
 	//GetStyle return specific of geoserver style
-	GetStyle(workspaceName string, styleName string) (style Style, err error)
+	GetStyle(workspaceName string, styleName string) (style *Style, err error)
+}
+
+//LanguageVersion style version
+type LanguageVersion struct {
+	Version string `json:"version,omitempty"`
 }
 
 //Style holds geoserver style
 type Style struct {
-	Name            string `json:"name,omitempty"`
-	Format          string `json:"format,omitempty"`
-	Filename        string `json:"filename,omitempty"`
-	LanguageVersion struct {
-		Version string `json:"version,omitempty"`
-	} `json:"languageVersion,omitempty"`
+	Name            string           `json:"name,omitempty"`
+	Format          string           `json:"format,omitempty"`
+	Filename        string           `json:"filename,omitempty"`
+	LanguageVersion *LanguageVersion `json:"languageVersion,omitempty"`
 }
 
 //StyleRequestBody is the api body
 type StyleRequestBody struct {
-	Style Style `json:"style,omitempty"`
+	Style *Style `json:"style,omitempty"`
 }
 
 // Styles holds a list of geoserver styles
 type Styles struct {
-	Style []Style `json:"style,omitempty"`
+	Style []Style `json:"styles,omitempty"`
 }
 
 //GetStyles return list of geoserver styles
-func (g *GeoServer) GetStyles(workspaceName string) (styles []Resource, err error) {
+func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
@@ -59,15 +62,17 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []Resource, err erro
 		return
 	}
 	var stylesResponse struct {
-		Style []Resource `json:",omitempty"`
+		Styles struct {
+			Style []*Resource `json:"style,omitempty"`
+		} `json:"styles,omitempty"`
 	}
 	g.DeSerializeJSON(response, &stylesResponse)
-	styles = stylesResponse.Style
+	styles = stylesResponse.Styles.Style
 	return
 }
 
 //GetStyle return specific of geoserver style
-func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style Style, err error) {
+func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Style, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
@@ -75,7 +80,7 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style Styl
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
-		style = Style{}
+		style = &Style{}
 		err = statusErrorMapping[responseCode]
 		return
 	}
@@ -92,7 +97,7 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	}
 	targetURL := fmt.Sprintf("%srest/%sstyles", g.ServerURL, workspaceName)
 	var style = Style{Name: styleName, Filename: fmt.Sprintf("%s.sld", styleName)}
-	serializedStyle, _ := g.SerializeStruct(StyleRequestBody{Style: style})
+	serializedStyle, _ := g.SerializeStruct(StyleRequestBody{Style: &style})
 	data := bytes.NewBuffer(serializedStyle)
 	response, responseCode := g.DoPost(targetURL, data, jsonType, jsonType)
 	if responseCode != statusCreated {

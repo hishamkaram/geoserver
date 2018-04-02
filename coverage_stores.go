@@ -10,7 +10,7 @@ import (
 type CoverageStoresService interface {
 
 	// GetCoverageStores return all coverage store as resources
-	GetCoverageStores(workspaceName string) (coverageStores []Resource, err error)
+	GetCoverageStores(workspaceName string) (coverageStores []*Resource, err error)
 
 	// CreateCoverageStore create coverage store in geoserver and return created one else return error
 	CreateCoverageStore(workspaceName string, coverageStore CoverageStore) (newCoverageStore CoverageStore, err error)
@@ -24,23 +24,23 @@ type CoverageStoresService interface {
 
 //CoverageStore geoserver coverage store
 type CoverageStore struct {
-	Name        string    `json:"name,omitempty"`
-	URL         string    `json:"url,omitempty"`
-	Description string    `json:"description,omitempty"`
-	Type        string    `json:"type,omitempty"`
-	Enabled     string    `json:"enabled,omitempty"`
-	Workspace   Workspace `json:"workspace,omitempty"`
-	Default     bool      `json:"_default,omitempty"`
-	Coverages   string    `json:"coverages,omitempty"`
+	Name        string     `json:"name,omitempty"`
+	URL         string     `json:"url,omitempty"`
+	Description string     `json:"description,omitempty"`
+	Type        string     `json:"type,omitempty"`
+	Enabled     string     `json:"enabled,omitempty"`
+	Workspace   *Workspace `json:"workspace,omitempty"`
+	Default     bool       `json:"_default,omitempty"`
+	Coverages   string     `json:"coverages,omitempty"`
 }
 
 //CoverageStoreRequestBody geoserver coverage store to send to api
 type CoverageStoreRequestBody struct {
-	CoverageStore CoverageStore `json:"coverageStore,omitempty"`
+	CoverageStore *CoverageStore `json:"coverageStore,omitempty"`
 }
 
 // GetCoverageStores return all coverage store as resources
-func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []Resource, err error) {
+func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*Resource, err error) {
 	targetURL := fmt.Sprintf("%srest/workspaces/%s/coveragestores", g.ServerURL, workspaceName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
@@ -51,7 +51,7 @@ func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []Re
 	}
 	var coverageStoresResponse struct {
 		CoverageStores struct {
-			CoverageStore []Resource
+			CoverageStore []*Resource
 		}
 	}
 	g.DeSerializeJSON(response, &coverageStoresResponse)
@@ -63,7 +63,7 @@ func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []Re
 func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore CoverageStore) (newCoverageStore CoverageStore, err error) {
 	targetURL := fmt.Sprintf("%srest/workspaces/%s/coveragestores", g.ServerURL, workspaceName)
 	data := CoverageStoreRequestBody{
-		CoverageStore: coverageStore,
+		CoverageStore: &coverageStore,
 	}
 	serializedData, _ := g.SerializeStruct(data)
 	response, responseCode := g.DoPost(targetURL, bytes.NewBuffer(serializedData), jsonType+"; charset=utf-8", jsonType)
@@ -80,7 +80,7 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 // UpdateCoverageStore  parital update coverage store in geoserver else return error
 func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore CoverageStore) (modified bool, err error) {
 	targetURL := fmt.Sprintf("%srest/workspaces/%s/coveragestores/%s", g.ServerURL, workspaceName, coverageStore.Name)
-	data := CoverageStoreRequestBody{CoverageStore: coverageStore}
+	data := CoverageStoreRequestBody{CoverageStore: &coverageStore}
 	serializedData, _ := g.SerializeStruct(data)
 	response, responseCode := g.DoPut(targetURL, bytes.NewBuffer(serializedData), jsonType, jsonType)
 	if responseCode != statusOk {

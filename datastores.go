@@ -13,10 +13,10 @@ type DatastoreService interface {
 	DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, err error)
 
 	// GetDatastores return datastores in a workspace else return error
-	GetDatastores(workspaceName string) (datastores []Resource, err error)
+	GetDatastores(workspaceName string) (datastores []*Resource, err error)
 
 	// GetDatastoreDetails get specific datastore from geoserver else return error
-	GetDatastoreDetails(workspaceName string, datastoreName string) (datastore Datastore, err error)
+	GetDatastoreDetails(workspaceName string, datastoreName string) (datastore *Datastore, err error)
 
 	//CreateDatastore create a datastore under provided workspace
 	CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error)
@@ -27,14 +27,14 @@ type DatastoreService interface {
 
 // Datastore holds geoserver store
 type Datastore struct {
-	Name                 string                    `json:",omitempty"`
-	Href                 string                    `json:",omitempty"`
-	Type                 string                    `json:",omitempty"`
-	Enabled              bool                      `json:",omitempty"`
-	Workspace            Workspace                 `json:",omitempty"`
-	Default              bool                      `json:"_default,omitempty"`
-	FeatureTypes         string                    `json:"featureTypes,omitempty"`
-	ConnectionParameters DatastoreConnectionParams `json:"connectionParameters,omitempty"`
+	Name                 string                     `json:"name,omitempty"`
+	Href                 string                     `json:"href,omitempty"`
+	Type                 string                     `json:"type,omitempty"`
+	Enabled              bool                       `json:"enabled,omitempty"`
+	Workspace            *Workspace                 `json:"workspace,omitempty"`
+	Default              bool                       `json:"_default,omitempty"`
+	FeatureTypes         string                     `json:"featureTypes,omitempty"`
+	ConnectionParameters *DatastoreConnectionParams `json:"connectionParameters,omitempty"`
 }
 
 // DatastoreConnection holds paramters to create new datastore
@@ -56,7 +56,7 @@ type ConnectionParamter struct {
 
 // DatastoreConnectionParams in datastore json
 type DatastoreConnectionParams struct {
-	Entry []ConnectionParamter `json:",omitempty"`
+	Entry []*ConnectionParamter `json:",omitempty"`
 }
 
 // DatastoreExists checks if a datastore exists in a workspace else return error
@@ -73,7 +73,7 @@ func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, 
 }
 
 // GetDatastores return datastores in a workspace else return error
-func (g *GeoServer) GetDatastores(workspaceName string) (datastores []Resource, err error) {
+func (g *GeoServer) GetDatastores(workspaceName string) (datastores []*Resource, err error) {
 	//TODO: check if workspace exist before creating it
 	var targetURL = fmt.Sprintf("%srest/workspaces/%s/datastores", g.ServerURL, workspaceName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
@@ -84,7 +84,7 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []Resource, 
 	}
 	var query struct {
 		DataStores struct {
-			DataStore []Resource
+			DataStore []*Resource
 		}
 	}
 	g.DeSerializeJSON(response, &query)
@@ -93,18 +93,18 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []Resource, 
 }
 
 // GetDatastoreDetails get specific datastore from geoserver else return error
-func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName string) (datastore Datastore, err error) {
+func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName string) (datastore *Datastore, err error) {
 	//TODO: check if workspace exist before creating it
 	var targetURL = fmt.Sprintf("%srest/workspaces/%s/datastores/%s", g.ServerURL, workspaceName, datastoreName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
-		datastore = Datastore{}
+		datastore = &Datastore{}
 		err = statusErrorMapping[responseCode]
 		return
 
 	}
 	type DatastoreDetails struct {
-		Datastore Datastore `json:"dataStore"`
+		Datastore *Datastore `json:"dataStore"`
 	}
 	var query DatastoreDetails
 	g.DeSerializeJSON(response, &query)

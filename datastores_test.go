@@ -7,48 +7,48 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type GeoserverCatalogSuite struct {
+type GeoserverDatastoreSuite struct {
 	suite.Suite
 	gsCatalog *GeoServer
 }
 
-func (suite *GeoserverCatalogSuite) SetupSuite() {
-	suite.gsCatalog = GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")
+func (suite *GeoserverDatastoreSuite) SetupSuite() {
+	suite.gsCatalog = GetCatalog("http://geoserver:8080/geoserver/", "admin", "geoserver")
 	created, err := suite.gsCatalog.CreateWorkspace("datastores_test")
 	assert.True(suite.T(), created)
 	assert.Nil(suite.T(), err)
 }
-func (suite *GeoserverCatalogSuite) TestCreateDatastore() {
+func (suite *GeoserverDatastoreSuite) TestCreateDatastore() {
 	created, err := suite.gsCatalog.CreateDatastore(DatastoreConnection{
 		Name:   "datastores_test",
 		Port:   5432,
 		Type:   "postgis",
 		DBName: "cartoview_datastore",
-		DBPass: "clogic",
-		DBUser: "hishamkaram",
+		DBPass: "xxxx",
+		DBUser: "postgres",
 	}, "datastores_test")
 	assert.True(suite.T(), created)
 	assert.Nil(suite.T(), err)
 }
 
-func (suite *GeoserverCatalogSuite) TestDatastoreExists() {
+func (suite *GeoserverDatastoreSuite) TestDatastoreExists() {
 	exists, err := suite.gsCatalog.DatastoreExists("datastores_test", "datastores_test", true)
 	assert.True(suite.T(), exists)
 	assert.Nil(suite.T(), err)
 }
 
-func (suite *GeoserverCatalogSuite) TestDeleteDatastore() {
+func (suite *GeoserverDatastoreSuite) TestDeleteDatastore() {
 	deleted, err := suite.gsCatalog.DeleteDatastore("datastores_test", "datastores_test", true)
 	assert.True(suite.T(), deleted)
 	assert.Nil(suite.T(), err)
 }
 
-func (suite *GeoserverCatalogSuite) TearDownSuite() {
-	suite.gsCatalog = GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")
+func (suite *GeoserverDatastoreSuite) TearDownSuite() {
+	suite.gsCatalog = GetCatalog("http://geoserver:8080/geoserver/", "admin", "geoserver")
 	deleted, err := suite.gsCatalog.DeleteWorkspace("datastores_test", true)
 	assert.True(suite.T(), deleted)
 	assert.Nil(suite.T(), err)
 }
-func TestGeoserverCatalogSuite(t *testing.T) {
-	suite.Run(t, new(GeoserverCatalogSuite))
+func TestGeoserverDatastoreSuite(t *testing.T) {
+	suite.Run(t, new(GeoserverDatastoreSuite))
 }
