@@ -91,7 +91,10 @@ func (g *GeoServer) UploadShapeFile(fileURI string, WorkspaceName string, datast
 		g.logger.Fatal(err)
 	}
 
-	g.CreateWorkspace(WorkspaceName)
+	exists, _ := g.WorkspaceExists(WorkspaceName)
+	if !exists {
+		g.CreateWorkspace(WorkspaceName)
+	}
 	response, responseCode := g.DoPut(targetURL, bytes.NewBuffer(shapeFileBinary), zipType, "")
 	if responseCode != statusCreated {
 		g.logger.Warn(string(response))
