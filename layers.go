@@ -19,7 +19,7 @@ type LayerService interface {
 	GetShpdatastore(filename string) string
 
 	// UploadShapeFile upload shapefile to geoserver
-	UploadShapeFile(fileURI string, WorkspaceName string, datastoreName string) ([]byte, int)
+	UploadShapeFile(fileURI string, WorkspaceName string, datastoreName string) (uploaded bool, err error)
 
 	//GetLayer get specific Layer from geoserver else return error
 	GetLayer(workspaceName string, layerName string) (layer Layer, err error)
@@ -77,14 +77,14 @@ func (g *GeoServer) GetshpFiledsName(filename string) string {
 }
 
 // UploadShapeFile upload shapefile to geoserver
-func (g *GeoServer) UploadShapeFile(fileURI string, WorkspaceName string, datastoreName string) ([]byte, int) {
+func (g *GeoServer) UploadShapeFile(fileURI string, WorkspaceName string, datastoreName string) (uploaded bool, err error) {
 	filename := filepath.Base(fileURI)
 	if datastoreName == "" {
 		datastoreName = g.GetshpFiledsName(filename)
 	}
 	targetURL := fmt.Sprintf("%srest/workspaces/%s/datastores/%s/file.shp",
 		g.ServerURL,
-		g.WorkspaceName,
+		WorkspaceName,
 		datastoreName)
 	shapeFileBinary, err := ioutil.ReadFile(fileURI)
 	if err != nil {
@@ -92,7 +92,15 @@ func (g *GeoServer) UploadShapeFile(fileURI string, WorkspaceName string, datast
 	}
 
 	g.CreateWorkspace(WorkspaceName)
-	return g.DoPut(targetURL, bytes.NewBuffer(shapeFileBinary), zipType, "")
+	response, responseCode := g.DoPut(targetURL, bytes.NewBuffer(shapeFileBinary), zipType, "")
+	if responseCode != statusCreated {
+		g.logger.Warn(string(response))
+		uploaded = false
+		err = statusErrorMapping[responseCode]
+		return
+	}
+	uploaded = true
+	return
 
 }
 

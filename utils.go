@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"path/filepath"
 	"reflect"
 )
 
@@ -26,7 +27,7 @@ func (g *GeoServer) DoGet(url string, accept string, query map[string]string) ([
 	}
 	defer response.Body.Close()
 	body, _ := ioutil.ReadAll(response.Body)
-	g.logger.Infof("url:%s\tresponse Status=%s", url, response.Status)
+	g.logger.Infof("url:%s    response Status=%s", url, response.Status)
 	return body, response.StatusCode
 }
 
@@ -42,7 +43,7 @@ func (g *GeoServer) DoPost(url string, data io.Reader, dataType string, accept s
 	}
 	defer response.Body.Close()
 	body, _ := ioutil.ReadAll(response.Body)
-	g.logger.Infof("url:%s\tresponse Status=%s", url, response.Status)
+	g.logger.Infof("url:%s    response Status=%s", url, response.Status)
 	return body, response.StatusCode
 }
 
@@ -76,7 +77,7 @@ func (g *GeoServer) DoPut(url string, data io.Reader, dataType string, accept st
 	}
 	defer response.Body.Close()
 	body, _ := ioutil.ReadAll(response.Body)
-	g.logger.Infof("url:%s\tresponse Status=%s", url, response.Status)
+	g.logger.Infof("url:%s    response Status=%s", url, response.Status)
 	return body, response.StatusCode
 
 }
@@ -100,7 +101,7 @@ func (g *GeoServer) DoDelete(url string, accept string, query map[string]string)
 	}
 	defer response.Body.Close()
 	body, _ := ioutil.ReadAll(response.Body)
-	g.logger.Infof("url:%s\tresponse Status=%s", url, response.Status)
+	g.logger.Infof("url:%s    response Status=%s", url, response.Status)
 	return body, response.StatusCode
 
 }
@@ -122,4 +123,11 @@ func (g *GeoServer) DeSerializeJSON(response []byte, structObj interface{}) (err
 		g.logger.Fatal(err)
 	}
 	return nil
+}
+func (g *GeoServer) getGoGeoserverPackageDir() string {
+	dir, err := filepath.Abs("./")
+	if err != nil {
+		panic(err)
+	}
+	return dir
 }
