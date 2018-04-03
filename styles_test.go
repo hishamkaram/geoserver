@@ -16,7 +16,7 @@ type GeoserverStyleSuite struct {
 }
 
 func (suite *GeoserverStyleSuite) SetupSuite() {
-	suite.gsCatalog = GetCatalog("http://geoserver:8080/geoserver/", "admin", "geoserver")
+	suite.gsCatalog = GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
 	created, err := suite.gsCatalog.CreateWorkspace("styles_test")
 	assert.True(suite.T(), created)
 	assert.Nil(suite.T(), err)
@@ -43,7 +43,7 @@ func (suite *GeoserverStyleSuite) TestStyles() {
 }
 
 func (suite *GeoserverStyleSuite) TearDownSuite() {
-	suite.gsCatalog = GetCatalog("http://geoserver:8080/geoserver/", "admin", "geoserver")
+	suite.gsCatalog = GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
 	deleted, err := suite.gsCatalog.DeleteWorkspace("styles_test", true)
 	assert.True(suite.T(), deleted)
 	assert.Nil(suite.T(), err)
