@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -37,4 +38,10 @@ func TestDeleteLayer(t *testing.T) {
 	deleted, err := gsCatalog.DeleteLayer("sf", "bugsites", true)
 	assert.True(t, deleted)
 	assert.Nil(t, err)
+}
+func TestGeoserverImplemetLayerService(t *testing.T) {
+	gsCatalog := reflect.TypeOf(&GeoServer{})
+	LayerServiceType := reflect.TypeOf((*LayerService)(nil)).Elem()
+	check := gsCatalog.Implements(LayerServiceType)
+	assert.True(t, check)
 }

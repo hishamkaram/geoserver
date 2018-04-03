@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -50,4 +51,10 @@ func (suite *GeoserverStyleSuite) TearDownSuite() {
 }
 func TestGeoserverStyleSuite(t *testing.T) {
 	suite.Run(t, new(GeoserverStyleSuite))
+}
+func TestGeoserverImplemetStyleService(t *testing.T) {
+	gsCatalog := reflect.TypeOf(&GeoServer{})
+	StyleServiceType := reflect.TypeOf((*StyleService)(nil)).Elem()
+	check := gsCatalog.Implements(StyleServiceType)
+	assert.True(t, check)
 }

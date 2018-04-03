@@ -1,6 +1,7 @@
 package geoserver
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -62,4 +63,10 @@ func (suite *GeoserverDatastoreSuite) TearDownSuite() {
 }
 func TestGeoserverDatastoreSuite(t *testing.T) {
 	suite.Run(t, new(GeoserverDatastoreSuite))
+}
+func TestGeoserverImplemetDatastoreService(t *testing.T) {
+	gsCatalog := reflect.TypeOf(&GeoServer{})
+	DatastoreServiceType := reflect.TypeOf((*DatastoreService)(nil)).Elem()
+	check := gsCatalog.Implements(DatastoreServiceType)
+	assert.True(t, check)
 }

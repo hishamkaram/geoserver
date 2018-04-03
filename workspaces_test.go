@@ -1,6 +1,7 @@
 package geoserver
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,4 +32,10 @@ func TestDeleteWorkspace(t *testing.T) {
 	deleted, err := gsCatalog.DeleteWorkspace("golang_workspace_test", true)
 	assert.True(t, deleted)
 	assert.Nil(t, err)
+}
+func TestGeoserverImplemetWorkspaceService(t *testing.T) {
+	gsCatalog := reflect.TypeOf(&GeoServer{})
+	WorkspaceServiceType := reflect.TypeOf((*WorkspaceService)(nil)).Elem()
+	check := gsCatalog.Implements(WorkspaceServiceType)
+	assert.True(t, check)
 }

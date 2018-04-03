@@ -1,6 +1,7 @@
 package geoserver
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,4 +12,10 @@ func TestIsRunning(t *testing.T) {
 	isRunning, err := gsCatalog.IsRunning()
 	assert.True(t, isRunning)
 	assert.Nil(t, err)
+}
+func TestGeoserverImplemetAbout(t *testing.T) {
+	gsCatalog := reflect.TypeOf(&GeoServer{})
+	AboutServiceType := reflect.TypeOf((*AboutService)(nil)).Elem()
+	check := gsCatalog.Implements(AboutServiceType)
+	assert.True(t, check)
 }

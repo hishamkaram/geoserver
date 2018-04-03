@@ -1,6 +1,7 @@
 package geoserver
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,4 +19,11 @@ func TestHDeleteCoverageStore(t *testing.T) {
 	deleted, err := gsCatalog.DeleteCoverageStore("nurc", "worldImageSample", true)
 	assert.True(t, deleted)
 	assert.Nil(t, err)
+}
+
+func TestGeoserverImplemetCoverageService(t *testing.T) {
+	gsCatalog := reflect.TypeOf(&GeoServer{})
+	CoverageStoresServiceType := reflect.TypeOf((*CoverageStoresService)(nil)).Elem()
+	check := gsCatalog.Implements(CoverageStoresServiceType)
+	assert.True(t, check)
 }
