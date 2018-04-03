@@ -16,8 +16,8 @@ before_install:
   - docker-compose build
   - docker-compose up -d
   - docker ps
-  - pwd
-  - ls -la
   - chmod +x ./scripts/entry.sh
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
 script:
   -  bash -c "./scripts/entry.sh"
