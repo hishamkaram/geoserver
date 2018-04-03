@@ -4,18 +4,19 @@ services:
   geoserver:
     image: cartoview/geoserver_docker:tomcat
     restart: unless-stopped
+    hostname: geoserver
     build:
       context: ./
       dockerfile: docker/GeoserverDockerfile
     user: root
     ports:
-      - "8081:8080"
-  app:
-    build:
-      context: ./
-      dockerfile: docker/Dockerfile
-    command: sh -c "./scripts/entry.sh"
-    environment:
-      - COVERALLS_TOKEN
-    depends_on:
-      - geoserver
+      - "8080:8080"
+  # app:
+  #   build:
+  #     context: ./
+  #     dockerfile: docker/Dockerfile
+  #   command: sh -c "./scripts/entry.sh"
+  #   environment:
+  #     - COVERALLS_TOKEN
+  #   depends_on:
+  #     - geoserver
