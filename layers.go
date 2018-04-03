@@ -13,7 +13,7 @@ import (
 type LayerService interface {
 
 	//GetLayers  get all layers from workspace in geoserver else return error
-	GetLayers(workspaceName string) (layers []Resource, err error)
+	GetLayers(workspaceName string) (layers []*Resource, err error)
 
 	// GetshpFiledsName datastore name from shapefile name
 	GetShpdatastore(filename string) string
@@ -22,10 +22,10 @@ type LayerService interface {
 	UploadShapeFile(fileURI string, WorkspaceName string, datastoreName string) (uploaded bool, err error)
 
 	//GetLayer get specific Layer from geoserver else return error
-	GetLayer(workspaceName string, layerName string) (layer Layer, err error)
+	GetLayer(workspaceName string, layerName string) (layer *Layer, err error)
 
 	//UpdateLayer partial update geoserver layer else return error
-	UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, err error)
+	UpdateLayer(workspaceName string, layerName string, layer *Layer) (modified bool, err error)
 
 	//DeleteLayer delete geoserver layer and its reources else return error
 	DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, err error)
@@ -50,18 +50,18 @@ type Attribution struct {
 
 //Layer geoserver layers
 type Layer struct {
-	Name         string   `json:"name,omitempty"`
-	Path         string   `json:"path,omitempty"`
-	Type         string   `json:"type,omitempty"`
-	DefaultStyle Resource `json:"defaultStyle,omitempty"`
-	Styles       struct {
+	Name         string    `json:"name,omitempty"`
+	Path         string    `json:"path,omitempty"`
+	Type         string    `json:"type,omitempty"`
+	DefaultStyle *Resource `json:"defaultStyle,omitempty"`
+	Styles       *struct {
 		Class string     `json:"@class,omitempty"`
 		Style []Resource `json:"style,omitempty"`
-	}
-	Resource    Resource    `json:"resource,omitempty"`
-	Queryable   bool        `json:"queryable,omitempty"`
-	Opaque      bool        `json:"opaque,omitempty"`
-	Attribution Attribution `json:"attribution,omitempty"`
+	} `json:"styles,omitempty"`
+	Resource    Resource     `json:"resource,omitempty"`
+	Queryable   bool         `json:"queryable,omitempty"`
+	Opaque      bool         `json:"opaque,omitempty"`
+	Attribution *Attribution `json:"attribution,omitempty"`
 }
 
 //LayerRequestBody api json
@@ -108,7 +108,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, WorkspaceName string, datast
 }
 
 //GetLayers  get all layers from workspace in geoserver else return error
-func (g *GeoServer) GetLayers(workspaceName string) (layers []Resource, err error) {
+func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
@@ -122,7 +122,7 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []Resource, err erro
 	}
 	var layerResponse struct {
 		Layers struct {
-			Layer []Resource
+			Layer []*Resource
 		} `json:"layers,omitempty"`
 	}
 	g.DeSerializeJSON(response, &layerResponse)
@@ -131,7 +131,7 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []Resource, err erro
 }
 
 //GetLayer get specific Layer from geoserver else return error
-func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer Layer, err error) {
+func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Layer, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
@@ -139,12 +139,12 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer Laye
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
-		layer = Layer{}
+		layer = &Layer{}
 		err = statusErrorMapping[responseCode]
 		return
 	}
 	var layerResponse struct {
-		Layer Layer
+		Layer *Layer `json:"layer,omitempty"`
 	}
 	g.DeSerializeJSON(response, &layerResponse)
 	layer = layerResponse.Layer

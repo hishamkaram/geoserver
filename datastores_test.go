@@ -42,6 +42,18 @@ func (suite *GeoserverDatastoreSuite) TestDeleteDatastore() {
 	assert.True(suite.T(), deleted)
 	assert.Nil(suite.T(), err)
 }
+func (suite *GeoserverDatastoreSuite) TestGetDatastores() {
+	datastores, err := suite.gsCatalog.GetDatastores("topp")
+	assert.NotEmpty(suite.T(), datastores)
+	assert.NotNil(suite.T(), datastores)
+	assert.Nil(suite.T(), err)
+}
+func (suite *GeoserverDatastoreSuite) TestGetDatastoreDetails() {
+	datastore, err := suite.gsCatalog.GetDatastoreDetails("sf", "sf")
+	assert.NotEmpty(suite.T(), datastore)
+	assert.NotNil(suite.T(), datastore)
+	assert.Nil(suite.T(), err)
+}
 
 func (suite *GeoserverDatastoreSuite) TearDownSuite() {
 	deleted, err := suite.gsCatalog.DeleteWorkspace("datastores_test", true)
