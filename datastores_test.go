@@ -44,7 +44,6 @@ func (suite *GeoserverDatastoreSuite) TestDeleteDatastore() {
 }
 
 func (suite *GeoserverDatastoreSuite) TearDownSuite() {
-	suite.gsCatalog = GetCatalog("http://geoserver:8080/geoserver/", "admin", "geoserver")
 	deleted, err := suite.gsCatalog.DeleteWorkspace("datastores_test", true)
 	assert.True(suite.T(), deleted)
 	assert.Nil(suite.T(), err)

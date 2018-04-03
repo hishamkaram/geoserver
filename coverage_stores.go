@@ -66,6 +66,7 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 		CoverageStore: &coverageStore,
 	}
 	serializedData, _ := g.SerializeStruct(data)
+	g.logger.Warn(string(serializedData))
 	response, responseCode := g.DoPost(targetURL, bytes.NewBuffer(serializedData), jsonType+"; charset=utf-8", jsonType)
 	if responseCode != statusCreated {
 		g.logger.Warn(string(response))
