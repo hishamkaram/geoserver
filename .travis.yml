@@ -18,6 +18,6 @@ before_install:
   - docker ps
   - pwd
   - ls -la
-  - chmod +x ./docker/entry.sh
+  - chmod +x ./scripts/entry.sh
 script:
-  -  bash -c "./docker/entry.sh"
+  -  bash -c "./scripts/entry.sh"
