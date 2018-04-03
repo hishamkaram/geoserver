@@ -16,7 +16,7 @@ type LayerService interface {
 	GetLayers(workspaceName string) (layers []*Resource, err error)
 
 	// GetshpFiledsName datastore name from shapefile name
-	GetShpdatastore(filename string) string
+	GetshpFiledsName(filename string) string
 
 	// UploadShapeFile upload shapefile to geoserver
 	UploadShapeFile(fileURI string, WorkspaceName string, datastoreName string) (uploaded bool, err error)
@@ -25,7 +25,7 @@ type LayerService interface {
 	GetLayer(workspaceName string, layerName string) (layer *Layer, err error)
 
 	//UpdateLayer partial update geoserver layer else return error
-	UpdateLayer(workspaceName string, layerName string, layer *Layer) (modified bool, err error)
+	UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, err error)
 
 	//DeleteLayer delete geoserver layer and its reources else return error
 	DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, err error)

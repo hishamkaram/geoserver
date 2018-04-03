@@ -6,10 +6,10 @@ import "net/http"
 type Catalog interface {
 	WorkspaceService
 	DatastoreService
-	FeatureTypeService
 	StyleService
 	AboutService
 	LayerService
+	CoverageStoresService
 }
 
 //GetCatalog return geoserver catalog instance
