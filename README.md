@@ -64,28 +64,7 @@ How to install:
       Name:nurc:Pk50095  href:http://localhost:8080/geoserver13/rest/layers/nurc%3APk50095.json
 
       Name:nurc:mosaic  href:http://localhost:8080/geoserver13/rest/layers/nurc%3Amosaic.json
-
-      Name:topp:states  href:http://localhost:8080/geoserver13/rest/layers/topp%3Astates.json
-
-      Name:topp:tasmania_cities  href:http://localhost:8080/geoserver13/rest/layers/topp%3Atasmania_cities.json
-
-      Name:topp:tasmania_roads  href:http://localhost:8080/geoserver13/rest/layers/topp%3Atasmania_roads.json
-
-      Name:topp:tasmania_state_boundaries  href:http://localhost:8080/geoserver13/rest/layers/topp%3Atasmania_state_boundaries.json
-
-      Name:topp:tasmania_water_bodies  href:http://localhost:8080/geoserver13/rest/layers/topp%3Atasmania_water_bodies.json
-
-      Name:sf:archsites  href:http://localhost:8080/geoserver13/rest/layers/sf%3Aarchsites.json
-
-      Name:sf:bugsites  href:http://localhost:8080/geoserver13/rest/layers/sf%3Abugsites.json
-
-      Name:sf:restricted  href:http://localhost:8080/geoserver13/rest/layers/sf%3Arestricted.json
-
-      Name:sf:roads  href:http://localhost:8080/geoserver13/rest/layers/sf%3Aroads.json
-
-      Name:sf:sfdem  href:http://localhost:8080/geoserver13/rest/layers/sf%3Asfdem.json
-
-      Name:sf:streams  href:http://localhost:8080/geoserver13/rest/layers/sf%3Astreams.json
+      ......
       ```
   - Get Specific Layer from Geoserver:
       ```
@@ -101,4 +80,5 @@ How to install:
       INFO[31-03-2018 20:12:07] url:http://localhost:8080/geoserver13/rest/workspaces/nurc/layers/Arc_Sample	response Status=200  
       {Name:Arc_Sample Path:/ Type:RASTER DefaultStyle:{Class: Name:rain Href:http://localhost:8080/geoserver13/rest/styles/rain.json} Styles:{Class:linked-hash-set Style:[{Class: Name:raster Href:http://localhost:8080/geoserver13/rest/styles/raster.json}]} Resource:{Class:coverage Name:nurc:Arc_Sample Href:http://localhost:8080/geoserver13/rest/workspaces/nurc/coveragestores/arcGridSample/coverages/Arc_Sample.json} Queryable:false Opaque:false Attribution:{Title: Href: LogoURL: LogoType: LogoWidth:0 LogoHeight:0}}
        ```
+  - You can find more examples by check testing files
   - You can find all supported operations on [Godocs](https://godoc.org/github.com/hishamkaram/geoserver)
