@@ -37,7 +37,7 @@ type Datastore struct {
 	ConnectionParameters *DatastoreConnectionParams `json:"connectionParameters,omitempty"`
 }
 
-// DatastoreConnection holds paramters to create new datastore
+// DatastoreConnection holds parameter to create new datastore
 type DatastoreConnection struct {
 	Name   string
 	Host   string
@@ -48,15 +48,15 @@ type DatastoreConnection struct {
 	Type   string
 }
 
-// ConnectionParamter is  item  in entry paramter in datastore connection paramters
-type ConnectionParamter struct {
+// ConnectionParameter is  item  in entry paramter in datastore connection parameter
+type ConnectionParameter struct {
 	Name  string `json:"@key"`
 	Value string `json:"$"`
 }
 
 // DatastoreConnectionParams in datastore json
 type DatastoreConnectionParams struct {
-	Entry []*ConnectionParamter `json:",omitempty"`
+	Entry []*ConnectionParameter `json:",omitempty"`
 }
 
 // DatastoreExists checks if a datastore exists in a workspace else return error
