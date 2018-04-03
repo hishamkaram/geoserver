@@ -1,6 +1,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/hishamkaram/geoserver)](https://goreportcard.com/report/github.com/hishamkaram/geoserver)
 [![Documentation](https://godoc.org/github.com/hishamkaram/geoserver?status.svg)](https://godoc.org/github.com/hishamkaram/geoserver?)
-[![Coverage Status](https://coveralls.io/repos/github/hishamkaram/geoserver/badge.svg?branch=master)](https://coveralls.io/github/hishamkaram/geoserver?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/hishamkaram/geoserver/badge.svg?branch=master&service=github)](https://coveralls.io/github/hishamkaram/geoserver?branch=master)
 # Geoserver
 geoserver Is a Go Package For Manipulating a GeoServer Instance via the GeoServer REST API.
 
