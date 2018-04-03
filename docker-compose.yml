@@ -11,12 +11,3 @@ services:
     user: root
     ports:
       - "8080:8080"
-  # app:
-  #   build:
-  #     context: ./
-  #     dockerfile: docker/Dockerfile
-  #   command: sh -c "./scripts/entry.sh"
-  #   environment:
-  #     - COVERALLS_TOKEN
-  #   depends_on:
-  #     - geoserver
