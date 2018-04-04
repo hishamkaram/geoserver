@@ -108,6 +108,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, WorkspaceName string, datast
 }
 
 //GetLayers  get all layers from workspace in geoserver else return error
+// if workspace is "" the it will return all public layers in geoserver
 func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -130,7 +131,8 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err err
 	return
 }
 
-//GetLayer get specific Layer from geoserver else return error
+//GetLayer get specific Layer in a workspace from geoserver else return error
+// if workspace is "" the it will return geoserver public layer with ${layerName}
 func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Layer, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -152,6 +154,7 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Lay
 }
 
 //UpdateLayer partial update geoserver layer else return error
+// if workspace is "" the it will update  public layer with name ${layerName} in geoserver
 func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -172,6 +175,7 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 }
 
 //DeleteLayer delete geoserver layer and its reources else return error
+// if workspace is "" will delete public layer with name ${layerName} if exists
 func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)

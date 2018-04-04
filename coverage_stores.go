@@ -40,6 +40,7 @@ type CoverageStoreRequestBody struct {
 }
 
 // GetCoverageStores return all coverage store as resources
+// err is an error if error occurred else err is nil
 func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*Resource, err error) {
 	targetURL := fmt.Sprintf("%srest/workspaces/%s/coveragestores", g.ServerURL, workspaceName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)

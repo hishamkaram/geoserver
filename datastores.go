@@ -25,7 +25,7 @@ type DatastoreService interface {
 	DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, err error)
 }
 
-// Datastore holds geoserver store
+// Datastore holds geoserver store information
 type Datastore struct {
 	Name                 string                     `json:"name,omitempty"`
 	Href                 string                     `json:"href,omitempty"`
@@ -37,7 +37,7 @@ type Datastore struct {
 	ConnectionParameters *DatastoreConnectionParams `json:"connectionParameters,omitempty"`
 }
 
-// DatastoreConnection holds parameter to create new datastore
+// DatastoreConnection holds parameters to create new datastore in geoserver
 type DatastoreConnection struct {
 	Name   string
 	Host   string

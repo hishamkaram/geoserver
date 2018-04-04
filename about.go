@@ -8,7 +8,10 @@ type AboutService interface {
 	IsRunning() (running bool, err error)
 }
 
-// IsRunning check if geoserver is running
+//IsRunning check if geoserver is running
+//return true if geoserver running
+//and false if not runnging,
+//err is an error if error occurredÎ
 func (g *GeoServer) IsRunning() (running bool, err error) {
 	url := fmt.Sprintf("%srest/about/version", g.ServerURL)
 	response, responseCode := g.DoGet(url, jsonType, nil)

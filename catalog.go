@@ -13,6 +13,10 @@ type Catalog interface {
 }
 
 //GetCatalog return geoserver catalog instance
+//this fuction take geoserverURL('http://localhost:8080/geoserver/') ,
+//geoserver username,
+//geoserver password
+// return geoserver structObj
 func GetCatalog(geoserverURL string, username string, password string) (catalog *GeoServer) {
 	geoserver := GeoServer{
 		ServerURL:  geoserverURL,
