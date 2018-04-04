@@ -8,8 +8,8 @@ type AboutService interface {
 	IsRunning() (running bool, err error)
 }
 
-//IsRunning check if geoserver is running
-//return true if geoserver running
+//IsRunning check if geoserver is running \n
+//return true if geoserver running,
 //and false if not runnging,
 //err is an error if error occurredÎ
 func (g *GeoServer) IsRunning() (running bool, err error) {

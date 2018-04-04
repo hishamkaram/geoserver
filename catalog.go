@@ -12,7 +12,7 @@ type Catalog interface {
 	CoverageStoresService
 }
 
-//GetCatalog return geoserver catalog instance
+//GetCatalog return geoserver catalog instance,
 //this fuction take geoserverURL('http://localhost:8080/geoserver/') ,
 //geoserver username,
 //geoserver password
