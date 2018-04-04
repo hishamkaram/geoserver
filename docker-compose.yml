@@ -7,7 +7,7 @@ services:
     hostname: geoserver
     build:
       context: ./
-      dockerfile: docker/GeoserverDockerfile
+      dockerfile: docker/Dockerfile
     user: root
     ports:
       - "8080:8080"
