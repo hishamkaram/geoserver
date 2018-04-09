@@ -10,6 +10,7 @@ type Catalog interface {
 	AboutService
 	LayerService
 	CoverageStoresService
+	FeatureTypeService
 }
 
 //GetCatalog return geoserver catalog instance,
