@@ -1,7 +1,5 @@
 package geoserver
 
-import "fmt"
-
 // AboutService define all geoserver About operations
 type AboutService interface {
 	//IsRunning check if geoserver is running return true and error if if error occure
@@ -13,8 +11,8 @@ type AboutService interface {
 //and false if not runnging,
 //err is an error if error occurredÎ
 func (g *GeoServer) IsRunning() (running bool, err error) {
-	url := fmt.Sprintf("%srest/about/version", g.ServerURL)
-	response, responseCode := g.DoGet(url, jsonType, nil)
+	targetURL := g.ParseURL("rest", "about", "version")
+	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		err = statusErrorMapping[responseCode]
 		g.logger.Warn(string(response))
