@@ -23,3 +23,10 @@ func TestDeSerializeJSON(t *testing.T) {
 	assert.NotEmpty(t, resource)
 	assert.Nil(t, err)
 }
+func TestParseURLL(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	targetURL := gsCatalog.ParseURL("rest", "workspaces")
+	assert.NotNil(t, targetURL)
+	assert.NotEmpty(t, targetURL)
+	assert.Equal(t, targetURL, "http://localhost:8080/geoserver/rest/workspaces")
+}

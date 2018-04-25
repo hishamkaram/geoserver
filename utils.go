@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"log"
+	"net/url"
+	"path"
 	"path/filepath"
 	"reflect"
 )
@@ -130,4 +133,16 @@ func (g *GeoServer) getGoGeoserverPackageDir() string {
 		panic(err)
 	}
 	return dir
+}
+
+//ParseURL this function join urlParts with geoserver url
+func (g *GeoServer) ParseURL(urlParts ...string) string {
+	geoserverURL, err := url.Parse(g.ServerURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	urlArr := append([]string{geoserverURL.Path}, urlParts...)
+	geoserverURL.Path = path.Join(urlArr...)
+	return geoserverURL.String()
+
 }

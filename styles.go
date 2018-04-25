@@ -78,7 +78,7 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Sty
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	targetURL := fmt.Sprintf("%srest/%sstyles/%s", g.ServerURL, workspaceName, styleName)
+	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
@@ -98,7 +98,7 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	targetURL := fmt.Sprintf("%srest/%sstyles", g.ServerURL, workspaceName)
+	targetURL := g.ParseURL("rest", workspaceName, "styles")
 	var style = Style{Name: styleName, Filename: fmt.Sprintf("%s.sld", styleName)}
 	serializedStyle, _ := g.SerializeStruct(StyleRequestBody{Style: &style})
 	data := bytes.NewBuffer(serializedStyle)
@@ -119,7 +119,7 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	targetURL := fmt.Sprintf("%srest/%sstyles/%s", g.ServerURL, workspaceName, styleName)
+	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
 	response, responseCode := g.DoPut(targetURL, data, sldType, jsonType)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
@@ -137,8 +137,8 @@ func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bo
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	url := fmt.Sprintf("%s/rest/%sstyles/%s", g.ServerURL, workspaceName, styleName)
-	response, responseCode := g.DoDelete(url, jsonType, map[string]string{"purge": strconv.FormatBool(purge)})
+	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
+	response, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"purge": strconv.FormatBool(purge)})
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		deleted = false

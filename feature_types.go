@@ -31,7 +31,10 @@ func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) 
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	targetURL := fmt.Sprintf("%srest/%sdatastores/%s/featuretypes", g.ServerURL, workspaceName, datastoreName)
+	if datastoreName != "" {
+		datastoreName = fmt.Sprintf("datastores/%s/featuretypes", datastoreName)
+	}
+	targetURL := g.ParseURL("rest", workspaceName, datastoreName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		featureTypes = nil

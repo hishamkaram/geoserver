@@ -19,7 +19,7 @@ type LayerService interface {
 	GetshpFiledsName(filename string) string
 
 	// UploadShapeFile upload shapefile to geoserver
-	UploadShapeFile(fileURI string, WorkspaceName string, datastoreName string) (uploaded bool, err error)
+	UploadShapeFile(fileURI string, workspaceName string, datastoreName string) (uploaded bool, err error)
 
 	//GetLayer get specific Layer from geoserver else return error
 	GetLayer(workspaceName string, layerName string) (layer *Layer, err error)
@@ -77,23 +77,20 @@ func (g *GeoServer) GetshpFiledsName(filename string) string {
 }
 
 // UploadShapeFile upload shapefile to geoserver
-func (g *GeoServer) UploadShapeFile(fileURI string, WorkspaceName string, datastoreName string) (uploaded bool, err error) {
+func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datastoreName string) (uploaded bool, err error) {
 	filename := filepath.Base(fileURI)
 	if datastoreName == "" {
 		datastoreName = g.GetshpFiledsName(filename)
 	}
-	targetURL := fmt.Sprintf("%srest/workspaces/%s/datastores/%s/file.shp",
-		g.ServerURL,
-		WorkspaceName,
-		datastoreName)
+	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName, "file.shp")
 	shapeFileBinary, err := ioutil.ReadFile(fileURI)
 	if err != nil {
 		g.logger.Fatal(err)
 	}
 
-	exists, _ := g.WorkspaceExists(WorkspaceName)
+	exists, _ := g.WorkspaceExists(workspaceName)
 	if !exists {
-		g.CreateWorkspace(WorkspaceName)
+		g.CreateWorkspace(workspaceName)
 	}
 	response, responseCode := g.DoPut(targetURL, bytes.NewBuffer(shapeFileBinary), zipType, "")
 	if responseCode != statusCreated {
@@ -113,7 +110,7 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err err
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	targetURL := fmt.Sprintf("%srest/%slayers", g.ServerURL, workspaceName)
+	targetURL := g.ParseURL("rest", workspaceName, "layers")
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
@@ -137,7 +134,7 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Lay
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	targetURL := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
+	targetURL := g.ParseURL("rest", workspaceName, "layers", layerName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
@@ -159,7 +156,7 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	targetURL := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
+	targetURL := g.ParseURL("rest", workspaceName, "layers", layerName)
 	data := LayerRequestBody{Layer: layer}
 
 	serializedLayer, _ := g.SerializeStruct(data)
@@ -180,7 +177,7 @@ func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse 
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	targetURL := fmt.Sprintf("%srest/%slayers/%s", g.ServerURL, workspaceName, layerName)
+	targetURL := g.ParseURL("rest", workspaceName, "layers", layerName)
 	response, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
