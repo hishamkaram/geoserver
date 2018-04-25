@@ -12,10 +12,9 @@ type AboutService interface {
 //err is an error if error occurredÎ
 func (g *GeoServer) IsRunning() (running bool, err error) {
 	targetURL := g.ParseURL("rest", "about", "version")
-	response, responseCode := g.DoGet(targetURL, jsonType, nil)
+	_, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		err = statusErrorMapping[responseCode]
-		g.logger.Warn(string(response))
 		running = false
 		return
 	}

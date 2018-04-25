@@ -14,6 +14,20 @@ func TestGetFeatrueTypes(t *testing.T) {
 	assert.NotEmpty(t, featureTypes)
 	assert.Nil(t, err)
 }
+func TestGetFeatrueType(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	featureType, err := gsCatalog.GetFeatureType("sf", "sf", "archsites")
+	assert.NotNil(t, featureType)
+	assert.NotEmpty(t, featureType)
+	assert.Nil(t, err)
+}
+func TestDeleteFeatureType(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	featureTypes, err := gsCatalog.DeleteFeatureType("sf", "sf", "archsites")
+	assert.NotNil(t, featureTypes)
+	assert.NotEmpty(t, featureTypes)
+	assert.Nil(t, err)
+}
 
 func TestGeoserverImplemetFeatureTypeService(t *testing.T) {
 	gsCatalog := reflect.TypeOf(&GeoServer{})
