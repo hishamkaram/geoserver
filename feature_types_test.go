@@ -16,7 +16,7 @@ func TestGetFeatrueTypes(t *testing.T) {
 }
 func TestGetFeatrueType(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
-	featureType, err := gsCatalog.GetFeatureType("sf", "sf", "archsites")
+	featureType, err := gsCatalog.GetFeatureType("sf", "sf", "bugsites")
 	assert.NotNil(t, featureType)
 	assert.NotEmpty(t, featureType)
 	assert.Nil(t, err)
