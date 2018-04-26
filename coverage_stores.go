@@ -12,7 +12,7 @@ type CoverageStoresService interface {
 	GetCoverageStores(workspaceName string) (coverageStores []*Resource, err error)
 
 	// CreateCoverageStore create coverage store in geoserver and return created one else return error
-	CreateCoverageStore(workspaceName string, coverageStore CoverageStore) (newCoverageStore CoverageStore, err error)
+	CreateCoverageStore(workspaceName string, coverageStore CoverageStore) (created bool, err error)
 
 	// UpdateCoverageStore  parital update coverage store in geoserver else return error
 	UpdateCoverageStore(workspaceName string, coverageStore CoverageStore) (modified bool, err error)
@@ -23,14 +23,14 @@ type CoverageStoresService interface {
 
 //CoverageStore geoserver coverage store
 type CoverageStore struct {
-	Name        string     `json:"name,omitempty"`
-	URL         string     `json:"url,omitempty"`
-	Description string     `json:"description,omitempty"`
-	Type        string     `json:"type,omitempty"`
-	Enabled     string     `json:"enabled,omitempty"`
-	Workspace   *Workspace `json:"workspace,omitempty"`
-	Default     bool       `json:"_default,omitempty"`
-	Coverages   string     `json:"coverages,omitempty"`
+	Name        string    `json:"name,omitempty"`
+	URL         string    `json:"url,omitempty"`
+	Description string    `json:"description,omitempty"`
+	Type        string    `json:"type,omitempty"`
+	Enabled     bool      `json:"enabled,omitempty"`
+	Workspace   *Resource `json:"workspace,omitempty"`
+	Default     bool      `json:"_default,omitempty"`
+	Coverages   string    `json:"coverages,omitempty"`
 }
 
 //CoverageStoreRequestBody geoserver coverage store to send to api
@@ -60,7 +60,7 @@ func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*R
 }
 
 // CreateCoverageStore create coverage store in geoserver and return created one else return error
-func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore CoverageStore) (newCoverageStore CoverageStore, err error) {
+func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore CoverageStore) (created bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores")
 	data := CoverageStoreRequestBody{
 		CoverageStore: &coverageStore,
@@ -70,11 +70,11 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 	response, responseCode := g.DoPost(targetURL, bytes.NewBuffer(serializedData), jsonType+"; charset=utf-8", jsonType)
 	if responseCode != statusCreated {
 		g.logger.Warn(string(response))
-		newCoverageStore = CoverageStore{}
+		created = false
 		err = statusErrorMapping[responseCode]
 		return
 	}
-	g.DeSerializeJSON(response, newCoverageStore)
+	created = true
 	return
 }
 

@@ -13,6 +13,23 @@ func TestGetCoverageStores(t *testing.T) {
 	assert.NotNil(t, coverageStores)
 	assert.Nil(t, err)
 }
+func TestCreateCoverageStores(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	coverageStore := CoverageStore{
+		Name:        "sfdem_test",
+		Description: "sfdem_test Description",
+		Type:        "GeoTIFF",
+		URL:         "file:data/sf/sfdem.tif",
+		Workspace: &Resource{
+			Name: "sf",
+			Href: "http://localhost:8080/geoserver/rest/workspaces/sf.json",
+		},
+		Enabled: true,
+	}
+	created, err := gsCatalog.CreateCoverageStore("sf", coverageStore)
+	assert.True(t, created)
+	assert.Nil(t, err)
+}
 
 func TestHDeleteCoverageStore(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
