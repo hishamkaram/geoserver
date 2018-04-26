@@ -12,6 +12,10 @@ func TestGetCoverageStores(t *testing.T) {
 	coverageStores, err := gsCatalog.GetCoverageStores("nurc")
 	assert.NotNil(t, coverageStores)
 	assert.Nil(t, err)
+	coverageStores, err = gsCatalog.GetCoverageStores("dummy")
+	assert.Nil(t, coverageStores)
+	assert.NotNil(t, err)
+
 }
 func TestCreateCoverageStores(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
@@ -29,6 +33,9 @@ func TestCreateCoverageStores(t *testing.T) {
 	created, err := gsCatalog.CreateCoverageStore("sf", coverageStore)
 	assert.True(t, created)
 	assert.Nil(t, err)
+	created, err = gsCatalog.CreateCoverageStore("dummy", CoverageStore{})
+	assert.False(t, created)
+	assert.NotNil(t, err)
 }
 
 func TestHDeleteCoverageStore(t *testing.T) {
@@ -36,6 +43,9 @@ func TestHDeleteCoverageStore(t *testing.T) {
 	deleted, err := gsCatalog.DeleteCoverageStore("nurc", "worldImageSample", true)
 	assert.True(t, deleted)
 	assert.Nil(t, err)
+	deleted, err = gsCatalog.DeleteCoverageStore("nurc_dummy", "worldImageSample_dummy", true)
+	assert.False(t, deleted)
+	assert.NotNil(t, err)
 }
 
 func TestGeoserverImplemetCoverageService(t *testing.T) {
