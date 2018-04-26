@@ -7,9 +7,7 @@ import (
 // FeatureTypeService define all geoserver featuretype operations
 type FeatureTypeService interface {
 	GetFeatureTypes(workspaceName string, datastoreName string) (featureTypes []*Resource, err error)
-
-	// TODO:implement
-	// CreateFeatureType
+	GetFeatureType(workspaceName string, datastoreName string, featureTypeName string) (featureType *FeatureType, err error)
 	DeleteFeatureType(workspaceName string, datastoreName string, featureTypeName string) (deleted bool, err error)
 }
 

@@ -70,3 +70,9 @@ func TestGeoserverImplemetDatastoreService(t *testing.T) {
 	check := gsCatalog.Implements(DatastoreServiceType)
 	assert.True(t, check)
 }
+func TestGeoserverImplementDatastoreService(t *testing.T) {
+	gsCatalog := reflect.TypeOf(&GeoServer{})
+	CatalogType := reflect.TypeOf((*DatastoreService)(nil)).Elem()
+	check := gsCatalog.Implements(CatalogType)
+	assert.True(t, check)
+}
