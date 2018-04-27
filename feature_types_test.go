@@ -1,6 +1,7 @@
 package geoserver
 
 import (
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -28,12 +29,16 @@ func TestGetFeatrueType(t *testing.T) {
 	assert.NotNil(t, err)
 }
 func TestDeleteFeatureType(t *testing.T) {
-	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
-	deleted, err := gsCatalog.DeleteFeatureType("sf", "sf", "archsites")
-	assert.Equal(t, deleted, true)
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")
+	zippedShapefile := filepath.Join(gsCatalog.getGoGeoserverPackageDir(), "test_sample", "museum_nyc.zip")
+	uploaded, err := gsCatalog.UploadShapeFile(zippedShapefile, "shapefileWorkspace", "")
+	assert.True(t, uploaded)
 	assert.Nil(t, err)
-	deleted, err = gsCatalog.DeleteFeatureType("sf_dummy", "s_dummyf", "archsites")
-	assert.Equal(t, deleted, false)
+	deleted, err := gsCatalog.DeleteFeatureType("shapefileWorkspace", "", "museum_nyc", true)
+	assert.True(t, deleted)
+	assert.Nil(t, err)
+	deleted, err = gsCatalog.DeleteFeatureType("sf_dummy", "s_dummyf", "archsites", true)
+	assert.False(t, deleted)
 	assert.NotNil(t, err)
 }
 

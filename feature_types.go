@@ -2,13 +2,14 @@ package geoserver
 
 import (
 	"fmt"
+	"strconv"
 )
 
 // FeatureTypeService define all geoserver featuretype operations
 type FeatureTypeService interface {
 	GetFeatureTypes(workspaceName string, datastoreName string) (featureTypes []*Resource, err error)
 	GetFeatureType(workspaceName string, datastoreName string, featureTypeName string) (featureType *FeatureType, err error)
-	DeleteFeatureType(workspaceName string, datastoreName string, featureTypeName string) (deleted bool, err error)
+	DeleteFeatureType(workspaceName string, datastoreName string, featureTypeName string, recurse bool) (deleted bool, err error)
 }
 
 //Projection is nativeCRS/Srs
@@ -135,15 +136,15 @@ func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) 
 // DeleteFeatureType Delete FeatureType from geoserver given that workspaceName, datastoreName, featureTypeName
 // if featuretype deleted successfully will return true and nil for err
 // if error occurred will return false and error for err
-func (g *GeoServer) DeleteFeatureType(workspaceName string, datastoreName string, featureTypeName string) (deleted bool, err error) {
+func (g *GeoServer) DeleteFeatureType(workspaceName string, datastoreName string, featureTypeName string, recurse bool) (deleted bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
 	if datastoreName != "" {
-		datastoreName = fmt.Sprintf("datastores/%s/featuretypes", datastoreName)
+		datastoreName = fmt.Sprintf("datastores/%s/", datastoreName)
 	}
-	targetURL := g.ParseURL("rest", workspaceName, datastoreName, featureTypeName)
-	_, responseCode := g.DoDelete(targetURL, jsonType, nil)
+	targetURL := g.ParseURL("rest", workspaceName, datastoreName, "featuretypes", featureTypeName)
+	_, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
 	if responseCode != statusOk {
 		deleted = false
 		err = statusErrorMapping[responseCode]
