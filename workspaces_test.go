@@ -36,7 +36,6 @@ func TestGetWorkspaces(t *testing.T) {
 	gsCatalog = GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")
 	workspaces, err = gsCatalog.GetWorkspaces()
 	assert.NotNil(t, err)
-	assert.True(t, IsEmpty(workspaces))
 	assert.Nil(t, workspaces)
 }
 func TestDeleteWorkspace(t *testing.T) {
