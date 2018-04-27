@@ -3,7 +3,6 @@ package geoserver
 import (
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -21,18 +20,21 @@ type GeoServer struct {
 }
 
 //LoadConfig load geoserver config from yaml file
-func (g *GeoServer) LoadConfig(configFile string) *GeoServer {
+func (g *GeoServer) LoadConfig(configFile string) (geoserver *GeoServer, err error) {
 
 	yamlFile, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		log.Printf("yamlFile.Get err   #%v ", err)
+		g.logger.Errorf("yamlFile.Get err   %v ", err)
+		return
 	}
 	err = yaml.Unmarshal(yamlFile, g)
 	if err != nil {
-		log.Fatalf("Unmarshal: %v", err)
+		g.logger.Errorf("Unmarshal: %v", err)
+		return
 	}
 	g.SetLogger()
-	return g
+	geoserver = g
+	return
 }
 
 //SetLogger sets instance logger
@@ -48,11 +50,7 @@ func (g *GeoServer) GetGeoserverRequest(
 	accept string,
 	data io.Reader,
 	contentType string) (request *http.Request, err error) {
-	request, err = http.NewRequest(method, targetURL, data)
-	if err != nil {
-		g.logger.Fatal("Error Creating Geoserver Request\t", err)
-		return
-	}
+	request, _ = http.NewRequest(method, targetURL, data)
 	if data != nil {
 		request.Header.Set(contentTypeHeader, contentType)
 	}
@@ -61,5 +59,5 @@ func (g *GeoServer) GetGeoserverRequest(
 	}
 
 	request.SetBasicAuth(g.Username, g.Password)
-	return request, err
+	return
 }

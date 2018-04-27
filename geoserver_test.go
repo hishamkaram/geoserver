@@ -10,9 +10,19 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 	var gsCatalog GeoServer
-	file, _ := filepath.Abs("test_sample/config.yml")
-	gsCatalog.LoadConfig(file)
-	assert.NotNil(t, gsCatalog)
+	file, _ := filepath.Abs("../geoserver/test_sample/config.yml")
+	geoserver, err := gsCatalog.LoadConfig(file)
+	assert.NotNil(t, geoserver)
+	assert.Nil(t, err)
+	//test 	if can't find yaml
+	file, _ = filepath.Abs("")
+	geoserver, err = gsCatalog.LoadConfig(file)
+	assert.Nil(t, geoserver)
+	assert.NotNil(t, err)
+	file, _ = filepath.Abs("../geoserver/test_sample/config.err.yml")
+	geoserver, err = gsCatalog.LoadConfig(file)
+	assert.Nil(t, geoserver)
+	assert.NotNil(t, err)
 }
 func TestSetLogger(t *testing.T) {
 	var gsCatalog GeoServer
