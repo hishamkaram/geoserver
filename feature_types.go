@@ -112,7 +112,7 @@ type FeatureTypesResponseBody struct {
 	FeatureTypes *FeatureTypes `json:"featureTypes,omitempty"`
 }
 
-// GetFeatureTypes return all featureTypes in workspace and datastore if error occured err will be return and nil for featrueTypes
+// GetFeatureTypes return all featureTypes in workspace and datastore if error occurred err will be return and nil for featrueTypes
 func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) (featureTypes []*Resource, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
