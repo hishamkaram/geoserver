@@ -57,7 +57,7 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err err
 	targetURL := fmt.Sprintf("%srest/%sstyles", g.ServerURL, workspaceName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		styles = nil
 		err = statusErrorMapping[responseCode]
 		return
@@ -81,7 +81,7 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Sty
 	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		style = &Style{}
 		err = statusErrorMapping[responseCode]
 		return
@@ -104,7 +104,7 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	data := bytes.NewBuffer(serializedStyle)
 	response, responseCode := g.DoPost(targetURL, data, jsonType, jsonType)
 	if responseCode != statusCreated {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		created = false
 		err = statusErrorMapping[responseCode]
 		return
@@ -122,7 +122,7 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
 	response, responseCode := g.DoPut(targetURL, data, sldType, jsonType)
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		success = false
 		err = statusErrorMapping[responseCode]
 		return
@@ -140,7 +140,7 @@ func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bo
 	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
 	response, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"purge": strconv.FormatBool(purge)})
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		deleted = false
 		err = statusErrorMapping[responseCode]
 		return

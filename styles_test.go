@@ -58,3 +58,23 @@ func TestGeoserverImplemetStyleService(t *testing.T) {
 	check := gsCatalog.Implements(StyleServiceType)
 	assert.True(t, check)
 }
+func TestStylesError(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver_sds/", "admin", "geoserver")
+	sldPath, _ := filepath.Abs("test_sample/airports.sld")
+	sld, _ := ioutil.ReadFile(sldPath)
+	created, uploadErr := gsCatalog.CreateStyle("styles_test", "test_test")
+	assert.False(t, created)
+	assert.NotNil(t, uploadErr)
+	uploaded, err := gsCatalog.UploadStyle(bytes.NewBuffer(sld), "styles_test", "test_test")
+	assert.False(t, uploaded)
+	assert.NotNil(t, err)
+	styles, getErr := gsCatalog.GetStyles("styles_test")
+	assert.Nil(t, styles)
+	assert.NotNil(t, getErr)
+	style, styleErr := gsCatalog.GetStyle("styles_test", "test_test")
+	assert.Equal(t, style, &Style{})
+	assert.NotNil(t, styleErr)
+	deleted, deleteErr := gsCatalog.DeleteStyle("styles_test", "test_test", true)
+	assert.False(t, deleted)
+	assert.NotNil(t, deleteErr)
+}
