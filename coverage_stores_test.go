@@ -47,6 +47,21 @@ func TestHDeleteCoverageStore(t *testing.T) {
 	assert.False(t, deleted)
 	assert.NotNil(t, err)
 }
+func TestUpdateCoverageStore(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	modified, err := gsCatalog.UpdateCoverageStore("sf", CoverageStore{
+		Name:        "sfdem",
+		Description: "Updated",
+	})
+	assert.True(t, modified)
+	assert.Nil(t, err)
+	modified, err = gsCatalog.UpdateCoverageStore("sf_dummy", CoverageStore{
+		Name:        "sfdem",
+		Description: "Updated",
+	})
+	assert.False(t, modified)
+	assert.NotNil(t, err)
+}
 
 func TestGeoserverImplemetCoverageService(t *testing.T) {
 	gsCatalog := reflect.TypeOf(&GeoServer{})

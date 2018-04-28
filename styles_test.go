@@ -59,7 +59,7 @@ func TestGeoserverImplemetStyleService(t *testing.T) {
 	assert.True(t, check)
 }
 func TestStylesError(t *testing.T) {
-	gsCatalog := GetCatalog("http://localhost:8080/geoserver_sds/", "admin", "geoserver")
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver_dummy/", "admin", "geoserver")
 	sldPath, _ := filepath.Abs("test_sample/airports.sld")
 	sld, _ := ioutil.ReadFile(sldPath)
 	created, uploadErr := gsCatalog.CreateStyle("styles_test", "test_test")
