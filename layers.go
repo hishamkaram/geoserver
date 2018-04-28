@@ -85,7 +85,8 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName, "file.shp")
 	shapeFileBinary, err := ioutil.ReadFile(fileURI)
 	if err != nil {
-		g.logger.Fatal(err)
+		g.logger.Error(err)
+		return
 	}
 
 	exists, _ := g.WorkspaceExists(workspaceName)

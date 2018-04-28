@@ -27,14 +27,14 @@ type DatastoreService interface {
 
 // Datastore holds geoserver store information
 type Datastore struct {
-	Name                 string                     `json:"name,omitempty"`
-	Href                 string                     `json:"href,omitempty"`
-	Type                 string                     `json:"type,omitempty"`
-	Enabled              bool                       `json:"enabled,omitempty"`
-	Workspace            *Workspace                 `json:"workspace,omitempty"`
-	Default              bool                       `json:"_default,omitempty"`
-	FeatureTypes         string                     `json:"featureTypes,omitempty"`
-	ConnectionParameters *DatastoreConnectionParams `json:"connectionParameters,omitempty"`
+	Name                 string     `json:"name,omitempty"`
+	Href                 string     `json:"href,omitempty"`
+	Type                 string     `json:"type,omitempty"`
+	Enabled              bool       `json:"enabled,omitempty"`
+	Workspace            *Workspace `json:"workspace,omitempty"`
+	Default              bool       `json:"_default,omitempty"`
+	FeatureTypes         string     `json:"featureTypes,omitempty"`
+	ConnectionParameters *Entry     `json:"connectionParameters,omitempty"`
 }
 
 // DatastoreConnection holds parameters to create new datastore in geoserver
@@ -48,15 +48,9 @@ type DatastoreConnection struct {
 	Type   string
 }
 
-// ConnectionParameter is  item  in entry paramter in datastore connection parameter
-type ConnectionParameter struct {
-	Name  string `json:"@key"`
-	Value string `json:"$"`
-}
-
 // DatastoreConnectionParams in datastore json
 type DatastoreConnectionParams struct {
-	Entry []*ConnectionParameter `json:",omitempty"`
+	Entry []*Entry `json:",omitempty"`
 }
 
 // DatastoreExists checks if a datastore exists in a workspace else return error

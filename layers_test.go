@@ -26,6 +26,16 @@ func TestGetLayer(t *testing.T) {
 	assert.NotNil(t, layer)
 	assert.Nil(t, err)
 }
+func TestUpdateLayer(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	modified, err := gsCatalog.UpdateLayer("topp", "tasmania_cities", Layer{
+		Attribution: &Attribution{
+			Title: "Test Title",
+		},
+	})
+	assert.True(t, modified)
+	assert.Nil(t, err)
+}
 func TestUploadShapeFile(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
 	zippedShapefile := filepath.Join(gsCatalog.getGoGeoserverPackageDir(), "test_sample", "hurricane_tracks.zip")
