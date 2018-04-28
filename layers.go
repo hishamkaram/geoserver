@@ -95,7 +95,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 	}
 	response, responseCode := g.DoPut(targetURL, bytes.NewBuffer(shapeFileBinary), zipType, "")
 	if responseCode != statusCreated {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		uploaded = false
 		err = statusErrorMapping[responseCode]
 		return
@@ -114,14 +114,14 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err err
 	targetURL := g.ParseURL("rest", workspaceName, "layers")
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		layers = nil
 		err = statusErrorMapping[responseCode]
 		return
 	}
 	var layerResponse struct {
 		Layers struct {
-			Layer []*Resource
+			Layer []*Resource `json:"layer,omitempty"`
 		} `json:"layers,omitempty"`
 	}
 	g.DeSerializeJSON(response, &layerResponse)
@@ -138,7 +138,7 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Lay
 	targetURL := g.ParseURL("rest", workspaceName, "layers", layerName)
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		layer = &Layer{}
 		err = statusErrorMapping[responseCode]
 		return
@@ -163,7 +163,7 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 	serializedLayer, _ := g.SerializeStruct(data)
 	response, responseCode := g.DoPut(targetURL, bytes.NewBuffer(serializedLayer), jsonType, jsonType)
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		modified = false
 		err = statusErrorMapping[responseCode]
 		return
@@ -181,7 +181,7 @@ func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse 
 	targetURL := g.ParseURL("rest", workspaceName, "layers", layerName)
 	response, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		deleted = false
 		err = statusErrorMapping[responseCode]
 		return
