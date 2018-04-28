@@ -5,7 +5,7 @@
 [![Documentation](https://godoc.org/github.com/hishamkaram/geoserver?status.svg)](https://godoc.org/github.com/hishamkaram/geoserver?)
 [![GitHub forks](https://img.shields.io/github/forks/hishamkaram/geoserver.svg)](https://github.com/hishamkaram/geoserver/network)
 [![GitHub stars](https://img.shields.io/github/stars/hishamkaram/geoserver.svg)](https://github.com/hishamkaram/geoserver/stargazers)
-[![Coverage Status](https://coveralls.io/repos/github/hishamkaram/geoserver/badge.svg?branch=master)](https://coveralls.io/github/hishamkaram/geoserver?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/hishamkaram/geoserver/badge.svg?branch=master&service=github)](https://coveralls.io/github/hishamkaram/geoserver?branch=master&service=github)
 [![Twitter](https://img.shields.io/twitter/url/https/github.com/hishamkaram/geoserver/edit/master/README.md.svg?style=social)](https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2Fhishamkaram%2Fgeoserver%2Fedit%2Fmaster%2FREADME.md)
 
 
