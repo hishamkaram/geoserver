@@ -31,7 +31,6 @@ func TestSetLogger(t *testing.T) {
 }
 func TestGetGeoserverRequest(t *testing.T) {
 	gsCatalog := GetCatalog("", "", "")
-	request, err := gsCatalog.GetGeoserverRequest("", getMethod, jsonType, bytes.NewBuffer(make([]byte, 0, 0)), jsonType)
-	assert.Nil(t, err)
+	request := gsCatalog.GetGeoserverRequest("", getMethod, jsonType, bytes.NewBuffer(make([]byte, 0, 0)), jsonType)
 	assert.NotNil(t, request)
 }

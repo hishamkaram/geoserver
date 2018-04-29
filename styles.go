@@ -55,7 +55,13 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err err
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
 	targetURL := fmt.Sprintf("%srest/%sstyles", g.ServerURL, workspaceName)
-	response, responseCode := g.DoGet(targetURL, jsonType, nil)
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		styles = nil
@@ -79,7 +85,13 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Sty
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
-	response, responseCode := g.DoGet(targetURL, jsonType, nil)
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		style = &Style{}
@@ -102,7 +114,15 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	var style = Style{Name: styleName, Filename: fmt.Sprintf("%s.sld", styleName)}
 	serializedStyle, _ := g.SerializeStruct(StyleRequestBody{Style: &style})
 	data := bytes.NewBuffer(serializedStyle)
-	response, responseCode := g.DoPost(targetURL, data, jsonType, jsonType)
+	httpRequest := HTTPRequest{
+		Method:   postMethod,
+		Accept:   jsonType,
+		Data:     data,
+		DataType: jsonType,
+		URL:      targetURL,
+		Query:    nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusCreated {
 		g.logger.Error(string(response))
 		created = false
@@ -120,7 +140,15 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
-	response, responseCode := g.DoPut(targetURL, data, sldType, jsonType)
+	httpRequest := HTTPRequest{
+		Method:   putMethod,
+		Accept:   jsonType,
+		Data:     data,
+		DataType: sldType,
+		URL:      targetURL,
+		Query:    nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		success = false
@@ -138,7 +166,13 @@ func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bo
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
-	response, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"purge": strconv.FormatBool(purge)})
+	httpRequest := HTTPRequest{
+		Method: deleteMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  map[string]string{"purge": strconv.FormatBool(purge)},
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		deleted = false

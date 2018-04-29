@@ -56,7 +56,13 @@ type DatastoreConnectionParams struct {
 // DatastoreExists checks if a datastore exists in a workspace else return error
 func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName)
-	response, responseCode := g.DoGet(targetURL, jsonType, map[string]string{"quietOnNotFound": strconv.FormatBool(quietOnNotFound)})
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  map[string]string{"quietOnNotFound": strconv.FormatBool(quietOnNotFound)},
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		exists = false
 		err = g.GetError(responseCode, response)
@@ -70,7 +76,13 @@ func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, 
 func (g *GeoServer) GetDatastores(workspaceName string) (datastores []*Resource, err error) {
 	//TODO: check if workspace exist before creating it
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores")
-	response, responseCode := g.DoGet(targetURL, jsonType, nil)
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		datastores = nil
 		err = g.GetError(responseCode, response)
@@ -90,7 +102,13 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []*Resource,
 func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName string) (datastore *Datastore, err error) {
 	//TODO: check if workspace exist before creating it
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName)
-	response, responseCode := g.DoGet(targetURL, jsonType, nil)
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		datastore = &Datastore{}
 		err = g.GetError(responseCode, response)
@@ -131,7 +149,15 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 		datastoreConnection.Type)
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores")
 	data := bytes.NewReader([]byte(xml))
-	response, responseCode := g.DoPost(targetURL, data, xmlType, jsonType)
+	httpRequest := HTTPRequest{
+		Method:   postMethod,
+		Accept:   jsonType,
+		Data:     data,
+		DataType: xmlType,
+		URL:      targetURL,
+		Query:    nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusCreated {
 		g.logger.Warn(string(response))
 		created = false
@@ -146,7 +172,13 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 // DeleteDatastore deletes a datastore from geoserver else return error
 func (g *GeoServer) DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName)
-	response, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
+	httpRequest := HTTPRequest{
+		Method: deleteMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		deleted = false

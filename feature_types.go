@@ -121,7 +121,13 @@ func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) 
 		datastoreName = fmt.Sprintf("datastores/%s/featuretypes", datastoreName)
 	}
 	targetURL := g.ParseURL("rest", workspaceName, datastoreName)
-	response, responseCode := g.DoGet(targetURL, jsonType, nil)
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		featureTypes = nil
 		err = g.GetError(responseCode, response)
@@ -144,7 +150,13 @@ func (g *GeoServer) DeleteFeatureType(workspaceName string, datastoreName string
 		datastoreName = fmt.Sprintf("datastores/%s/", datastoreName)
 	}
 	targetURL := g.ParseURL("rest", workspaceName, datastoreName, "featuretypes", featureTypeName)
-	response, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
+	httpRequest := HTTPRequest{
+		Method: deleteMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		deleted = false
 		err = g.GetError(responseCode, response)
@@ -164,7 +176,13 @@ func (g *GeoServer) GetFeatureType(workspaceName string, datastoreName string, f
 		datastoreName = fmt.Sprintf("datastores/%s/featuretypes", datastoreName)
 	}
 	targetURL := g.ParseURL("rest", workspaceName, datastoreName, featureTypeName)
-	response, responseCode := g.DoGet(targetURL, jsonType, nil)
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		featureType = nil
 		err = g.GetError(responseCode, response)

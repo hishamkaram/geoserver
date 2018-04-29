@@ -43,7 +43,15 @@ func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, err err
 	serializedWorkspace, _ := g.SerializeStruct(WorkspaceRequestBody{Workspace: &workspace})
 	targetURL := g.ParseURL("rest", "workspaces")
 	data := bytes.NewBuffer(serializedWorkspace)
-	response, responseCode := g.DoPost(targetURL, data, jsonType+"; charset=utf-8", jsonType)
+	httpRequest := HTTPRequest{
+		Method:   postMethod,
+		Accept:   jsonType,
+		Data:     data,
+		DataType: jsonType + "; charset=utf-8",
+		URL:      targetURL,
+		Query:    nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusCreated {
 		g.logger.Warn(string(response))
 		created = false
@@ -57,7 +65,13 @@ func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, err err
 // WorkspaceExists check if workspace in geoserver or not else return error
 func (g *GeoServer) WorkspaceExists(workspaceName string) (exists bool, err error) {
 	url := g.ParseURL("rest", "workspaces", workspaceName)
-	response, responseCode := g.DoGet(url, jsonType, nil)
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    url,
+		Query:  nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		exists = false
@@ -71,7 +85,13 @@ func (g *GeoServer) WorkspaceExists(workspaceName string) (exists bool, err erro
 //DeleteWorkspace delete geoserver workspace and its reources else return error
 func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (deleted bool, err error) {
 	url := g.ParseURL("rest", "workspaces", workspaceName)
-	response, responseCode := g.DoDelete(url, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
+	httpRequest := HTTPRequest{
+		Method: deleteMethod,
+		Accept: jsonType,
+		URL:    url,
+		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		deleted = false
@@ -85,7 +105,13 @@ func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (deleted
 // GetWorkspaces get geoserver workspaces else return error
 func (g *GeoServer) GetWorkspaces() (workspaces []*Resource, err error) {
 	url := g.ParseURL("rest", "workspaces")
-	response, responseCode := g.DoGet(url, jsonType, nil)
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    url,
+		Query:  nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		workspaces = nil

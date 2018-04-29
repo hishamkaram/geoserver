@@ -7,40 +7,37 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"path"
 	"path/filepath"
 	"reflect"
 )
 
-//GetError this return the proper error message
-func (g *GeoServer) GetError(statusCode int, text []byte) (err error) {
-	geoserverErr, ok := statusErrorMapping[statusCode]
-	if !ok {
-		geoserverErr = errors.New("Unexpected Error")
-	}
-	errDetails := string(text)
-	fullMSG := fmt.Sprintf("abstract:%s\ndetails:%s\n", geoserverErr, errDetails)
-	return errors.New(fullMSG)
+//HTTPRequest is an http request object
+type HTTPRequest struct {
+	URL      string
+	Accept   string
+	Query    map[string]string
+	Data     io.Reader
+	DataType string
+	Method   string
 }
 
-//DoGet helper function to create get request
-func (g *GeoServer) DoGet(url string, accept string, query map[string]string) (responseText []byte, statusCode int) {
-	defer func() {
-		if r := recover(); r != nil {
-			errMsg := fmt.Sprintf("%s", r)
-			err := []byte(errMsg)
-			responseText = err
-			statusCode = 0
-		}
-	}()
-	req, err := g.GetGeoserverRequest(url, getMethod, accept, nil, "")
-	if err != nil {
-		panic(err)
+//DoRequest :asdasd
+func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusCode int) {
+	var req *http.Request
+	switch request.Method {
+	case getMethod, deleteMethod:
+		req := g.GetGeoserverRequest(request.URL, request.Method, request.Accept, nil, "")
+	case postMethod, putMethod:
+		req := g.GetGeoserverRequest(request.URL, request.Method, request.Accept, request.Data, request.DataType)
+	default:
+		panic("unrecognized http request Method")
 	}
-	if len(query) != 0 {
+	if len(request.Query) != 0 {
 		q := req.URL.Query()
-		for k, v := range query {
+		for k, v := range request.Query {
 			q.Add(k, v)
 		}
 		req.URL.RawQuery = q.Encode()
@@ -51,32 +48,19 @@ func (g *GeoServer) DoGet(url string, accept string, query map[string]string) (r
 	}
 	defer response.Body.Close()
 	body, _ := ioutil.ReadAll(response.Body)
-	g.logger.Infof("url:%s    response Status=%s", url, response.Status)
+	g.logger.Infof("url:%s\nresponse Status=%s\n", req.URL, response.Status)
 	return body, response.StatusCode
 }
 
-//DoPost helper function to create post request
-func (g *GeoServer) DoPost(url string, data io.Reader, dataType string, accept string) (responseText []byte, statusCode int) {
-	defer func() {
-		if r := recover(); r != nil {
-			errMsg := fmt.Sprintf("%s", r)
-			err := []byte(errMsg)
-			responseText = err
-			statusCode = 0
-		}
-	}()
-	req, err := g.GetGeoserverRequest(url, postMethod, accept, data, dataType)
-	if err != nil {
-		panic(err)
+//GetError this return the proper error message
+func (g *GeoServer) GetError(statusCode int, text []byte) (err error) {
+	geoserverErr, ok := statusErrorMapping[statusCode]
+	if !ok {
+		geoserverErr = errors.New("Unexpected Error")
 	}
-	response, responseErr := g.httpClient.Do(req)
-	if responseErr != nil {
-		panic(responseErr)
-	}
-	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
-	g.logger.Infof("url:%s    response Status=%s", url, response.Status)
-	return body, response.StatusCode
+	errDetails := string(text)
+	fullMSG := fmt.Sprintf("abstract:%s\ndetails:%s\n", geoserverErr, errDetails)
+	return errors.New(fullMSG)
 }
 
 // IsEmpty helper function to check if obj/struct is nil/empty
@@ -95,63 +79,6 @@ func IsEmpty(object interface{}) bool {
 		}
 	}
 	return false
-}
-
-//DoPut helper function to create put request
-func (g *GeoServer) DoPut(url string, data io.Reader, dataType string, accept string) (responseText []byte, statusCode int) {
-	defer func() {
-		if r := recover(); r != nil {
-			errMsg := fmt.Sprintf("%s", r)
-			err := []byte(errMsg)
-			responseText = err
-			statusCode = 0
-		}
-	}()
-	req, err := g.GetGeoserverRequest(url, putMethod, accept, data, dataType)
-	if err != nil {
-		panic(err)
-	}
-	response, responseErr := g.httpClient.Do(req)
-	if responseErr != nil {
-		panic(responseErr)
-	}
-	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
-	g.logger.Infof("url:%s    response Status=%s", url, response.Status)
-	return body, response.StatusCode
-
-}
-
-//DoDelete helper function to create put request
-func (g *GeoServer) DoDelete(url string, accept string, query map[string]string) (responseText []byte, statusCode int) {
-	defer func() {
-		if r := recover(); r != nil {
-			errMsg := fmt.Sprintf("%s", r)
-			err := []byte(errMsg)
-			responseText = err
-			statusCode = 0
-		}
-	}()
-	req, err := g.GetGeoserverRequest(url, deleteMethod, accept, nil, "")
-	if err != nil {
-		panic(err)
-	}
-	if len(query) != 0 {
-		q := req.URL.Query()
-		for k, v := range query {
-			q.Add(k, v)
-		}
-		req.URL.RawQuery = q.Encode()
-	}
-	response, responseErr := g.httpClient.Do(req)
-	if responseErr != nil {
-		panic(responseErr)
-	}
-	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
-	g.logger.Infof("url:%s    response Status=%s", url, response.Status)
-	return body, response.StatusCode
-
 }
 
 //SerializeStruct convert struct to json

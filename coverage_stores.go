@@ -42,7 +42,13 @@ type CoverageStoreRequestBody struct {
 // err is an error if error occurred else err is nil
 func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*Resource, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores")
-	response, responseCode := g.DoGet(targetURL, jsonType, nil)
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		coverageStores = nil
@@ -66,8 +72,14 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 		CoverageStore: &coverageStore,
 	}
 	serializedData, _ := g.SerializeStruct(data)
-	g.logger.Warn(string(serializedData))
-	response, responseCode := g.DoPost(targetURL, bytes.NewBuffer(serializedData), jsonType+"; charset=utf-8", jsonType)
+	httpRequest := HTTPRequest{
+		Method:   postMethod,
+		Data:     bytes.NewBuffer(serializedData),
+		DataType: jsonType + "; charset=utf-8",
+		Accept:   jsonType,
+		URL:      targetURL,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusCreated {
 		g.logger.Error(string(response))
 		created = false
@@ -83,7 +95,14 @@ func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore Cove
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", coverageStore.Name)
 	data := CoverageStoreRequestBody{CoverageStore: &coverageStore}
 	serializedData, _ := g.SerializeStruct(data)
-	response, responseCode := g.DoPut(targetURL, bytes.NewBuffer(serializedData), jsonType, jsonType)
+	httpRequest := HTTPRequest{
+		Method:   putMethod,
+		Data:     bytes.NewBuffer(serializedData),
+		DataType: jsonType,
+		Accept:   jsonType,
+		URL:      targetURL,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		modified = false
@@ -97,7 +116,13 @@ func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore Cove
 // DeleteCoverageStore delete coverage store from geoserver else return error
 func (g *GeoServer) DeleteCoverageStore(workspaceName string, coverageStore string, recurse bool) (deleted bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", coverageStore)
-	response, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
+	httpRequest := HTTPRequest{
+		Method: deleteMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
+	}
+	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		deleted = false
