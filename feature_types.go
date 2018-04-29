@@ -124,7 +124,7 @@ func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) 
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		featureTypes = nil
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	featureTypesResponse := &FeatureTypesResponseBody{FeatureTypes: &FeatureTypes{FeatureType: make([]*Resource, 0, 0)}}
@@ -144,10 +144,10 @@ func (g *GeoServer) DeleteFeatureType(workspaceName string, datastoreName string
 		datastoreName = fmt.Sprintf("datastores/%s/", datastoreName)
 	}
 	targetURL := g.ParseURL("rest", workspaceName, datastoreName, "featuretypes", featureTypeName)
-	_, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
+	response, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
 	if responseCode != statusOk {
 		deleted = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	deleted = true
@@ -167,7 +167,7 @@ func (g *GeoServer) GetFeatureType(workspaceName string, datastoreName string, f
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		featureType = nil
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	var featureTypeResponse struct {

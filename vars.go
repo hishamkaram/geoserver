@@ -1,11 +1,14 @@
 package geoserver
 
-import "errors"
+import (
+	"errors"
+)
 
 const (
 	statusOk            = 200
 	statusCreated       = 201
 	statusNotAllowed    = 405
+	statusForbidden     = 403
 	statusInternalError = 500
 	statusNotFound      = 404
 	statusUnauthorized  = 401
@@ -27,4 +30,5 @@ var statusErrorMapping = map[int]error{
 	statusNotFound:      errors.New("Not Found"),
 	statusUnauthorized:  errors.New("Unauthorized"),
 	statusInternalError: errors.New("Internal Server Error"),
+	statusForbidden:     errors.New("Forbidden"),
 }

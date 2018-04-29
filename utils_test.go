@@ -1,17 +1,40 @@
 package geoserver
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGetError(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	err := gsCatalog.GetError(0, []byte("Custom Error"))
+	assert.NotNil(t, err)
+	err = gsCatalog.GetError(403, []byte("Custom Error"))
+	assert.NotNil(t, err)
+}
 func TestSerializeStruct(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
 	resource := Resource{Class: "Test", Href: "http://localhost:8080/geoserver/", Name: "Test1"}
 	json, err := gsCatalog.SerializeStruct(&resource)
 	assert.NotEmpty(t, json)
 	assert.Nil(t, err)
+}
+func TestMethods(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	response, statusCode := gsCatalog.DoGet("ht;sdsd://///", jsonType, nil)
+	assert.Equal(t, statusCode, 0)
+	assert.NotNil(t, response)
+	response, statusCode = gsCatalog.DoPost("ht;sdsd://///", bytes.NewReader([]byte("sdad")), jsonType, jsonType)
+	assert.Equal(t, statusCode, 0)
+	assert.NotNil(t, response)
+	response, statusCode = gsCatalog.DoPut("ht;sdsd://///", bytes.NewReader([]byte("sdad")), jsonType, jsonType)
+	assert.Equal(t, statusCode, 0)
+	assert.NotNil(t, response)
+	response, statusCode = gsCatalog.DoDelete("ht;sdsd://///", jsonType, nil)
+	assert.Equal(t, statusCode, 0)
+	assert.NotNil(t, response)
 }
 func TestIsEmpty(t *testing.T) {
 	emptyStruct := GeoServer{}

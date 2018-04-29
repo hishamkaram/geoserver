@@ -97,7 +97,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 	if responseCode != statusCreated {
 		g.logger.Error(string(response))
 		uploaded = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	uploaded = true
@@ -116,7 +116,7 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err err
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		layers = nil
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	var layerResponse struct {
@@ -140,7 +140,7 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Lay
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		layer = &Layer{}
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	var layerResponse struct {
@@ -165,7 +165,7 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		modified = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	modified = true
@@ -183,7 +183,7 @@ func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse 
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		deleted = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	deleted = true

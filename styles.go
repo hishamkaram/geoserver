@@ -59,7 +59,7 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err err
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		styles = nil
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	var stylesResponse struct {
@@ -83,7 +83,7 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Sty
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		style = &Style{}
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	var stylesResponse StyleRequestBody
@@ -106,7 +106,7 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	if responseCode != statusCreated {
 		g.logger.Error(string(response))
 		created = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	created = true
@@ -124,7 +124,7 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		success = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	success = true
@@ -142,7 +142,7 @@ func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bo
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		deleted = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	deleted = true

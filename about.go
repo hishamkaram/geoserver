@@ -14,8 +14,8 @@ func (g *GeoServer) IsRunning() (running bool, err error) {
 	targetURL := g.ParseURL("rest", "about", "version")
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
-		err = statusErrorMapping[responseCode]
+		g.logger.Error(string(response))
+		err = g.GetError(responseCode, response)
 		running = false
 		return
 	}

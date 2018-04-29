@@ -50,7 +50,7 @@ func (g *GeoServer) GetGeoserverRequest(
 	accept string,
 	data io.Reader,
 	contentType string) (request *http.Request, err error) {
-	request, _ = http.NewRequest(method, targetURL, data)
+	request, err = http.NewRequest(method, targetURL, data)
 	if data != nil {
 		request.Header.Set(contentTypeHeader, contentType)
 	}

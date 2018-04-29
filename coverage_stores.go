@@ -44,9 +44,9 @@ func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*R
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores")
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		coverageStores = nil
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	var coverageStoresResponse struct {
@@ -69,9 +69,9 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 	g.logger.Warn(string(serializedData))
 	response, responseCode := g.DoPost(targetURL, bytes.NewBuffer(serializedData), jsonType+"; charset=utf-8", jsonType)
 	if responseCode != statusCreated {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		created = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	created = true
@@ -85,9 +85,9 @@ func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore Cove
 	serializedData, _ := g.SerializeStruct(data)
 	response, responseCode := g.DoPut(targetURL, bytes.NewBuffer(serializedData), jsonType, jsonType)
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		modified = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	modified = true
@@ -99,9 +99,9 @@ func (g *GeoServer) DeleteCoverageStore(workspaceName string, coverageStore stri
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", coverageStore)
 	response, responseCode := g.DoDelete(targetURL, jsonType, map[string]string{"recurse": strconv.FormatBool(recurse)})
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		g.logger.Error(string(response))
 		deleted = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	deleted = true

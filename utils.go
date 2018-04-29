@@ -2,6 +2,8 @@ package geoserver
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -11,8 +13,27 @@ import (
 	"reflect"
 )
 
+//GetError this return the proper error message
+func (g *GeoServer) GetError(statusCode int, text []byte) (err error) {
+	geoserverErr, ok := statusErrorMapping[statusCode]
+	if !ok {
+		geoserverErr = errors.New("Unexpected Error")
+	}
+	errDetails := string(text)
+	fullMSG := fmt.Sprintf("abstract:%s\ndetails:%s\n", geoserverErr, errDetails)
+	return errors.New(fullMSG)
+}
+
 //DoGet helper function to create get request
-func (g *GeoServer) DoGet(url string, accept string, query map[string]string) ([]byte, int) {
+func (g *GeoServer) DoGet(url string, accept string, query map[string]string) (responseText []byte, statusCode int) {
+	defer func() {
+		if r := recover(); r != nil {
+			errMsg := fmt.Sprintf("%s", r)
+			err := []byte(errMsg)
+			responseText = err
+			statusCode = 0
+		}
+	}()
 	req, err := g.GetGeoserverRequest(url, getMethod, accept, nil, "")
 	if err != nil {
 		panic(err)
@@ -35,7 +56,15 @@ func (g *GeoServer) DoGet(url string, accept string, query map[string]string) ([
 }
 
 //DoPost helper function to create post request
-func (g *GeoServer) DoPost(url string, data io.Reader, dataType string, accept string) ([]byte, int) {
+func (g *GeoServer) DoPost(url string, data io.Reader, dataType string, accept string) (responseText []byte, statusCode int) {
+	defer func() {
+		if r := recover(); r != nil {
+			errMsg := fmt.Sprintf("%s", r)
+			err := []byte(errMsg)
+			responseText = err
+			statusCode = 0
+		}
+	}()
 	req, err := g.GetGeoserverRequest(url, postMethod, accept, data, dataType)
 	if err != nil {
 		panic(err)
@@ -69,7 +98,15 @@ func IsEmpty(object interface{}) bool {
 }
 
 //DoPut helper function to create put request
-func (g *GeoServer) DoPut(url string, data io.Reader, dataType string, accept string) ([]byte, int) {
+func (g *GeoServer) DoPut(url string, data io.Reader, dataType string, accept string) (responseText []byte, statusCode int) {
+	defer func() {
+		if r := recover(); r != nil {
+			errMsg := fmt.Sprintf("%s", r)
+			err := []byte(errMsg)
+			responseText = err
+			statusCode = 0
+		}
+	}()
 	req, err := g.GetGeoserverRequest(url, putMethod, accept, data, dataType)
 	if err != nil {
 		panic(err)
@@ -86,7 +123,15 @@ func (g *GeoServer) DoPut(url string, data io.Reader, dataType string, accept st
 }
 
 //DoDelete helper function to create put request
-func (g *GeoServer) DoDelete(url string, accept string, query map[string]string) ([]byte, int) {
+func (g *GeoServer) DoDelete(url string, accept string, query map[string]string) (responseText []byte, statusCode int) {
+	defer func() {
+		if r := recover(); r != nil {
+			errMsg := fmt.Sprintf("%s", r)
+			err := []byte(errMsg)
+			responseText = err
+			statusCode = 0
+		}
+	}()
 	req, err := g.GetGeoserverRequest(url, deleteMethod, accept, nil, "")
 	if err != nil {
 		panic(err)

@@ -56,10 +56,10 @@ type DatastoreConnectionParams struct {
 // DatastoreExists checks if a datastore exists in a workspace else return error
 func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName)
-	_, responseCode := g.DoGet(targetURL, jsonType, map[string]string{"quietOnNotFound": strconv.FormatBool(quietOnNotFound)})
+	response, responseCode := g.DoGet(targetURL, jsonType, map[string]string{"quietOnNotFound": strconv.FormatBool(quietOnNotFound)})
 	if responseCode != statusOk {
 		exists = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	exists = true
@@ -73,7 +73,7 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []*Resource,
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		datastores = nil
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	var query struct {
@@ -93,7 +93,7 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 	response, responseCode := g.DoGet(targetURL, jsonType, nil)
 	if responseCode != statusOk {
 		datastore = &Datastore{}
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 
 	}
@@ -135,7 +135,7 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 	if responseCode != statusCreated {
 		g.logger.Warn(string(response))
 		created = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	created = true
@@ -150,7 +150,7 @@ func (g *GeoServer) DeleteDatastore(workspaceName string, datastoreName string, 
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		deleted = false
-		err = statusErrorMapping[responseCode]
+		err = g.GetError(responseCode, response)
 		return
 	}
 	deleted = true
