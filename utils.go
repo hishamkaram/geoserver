@@ -29,9 +29,9 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 	var req *http.Request
 	switch request.Method {
 	case getMethod, deleteMethod:
-		req := g.GetGeoserverRequest(request.URL, request.Method, request.Accept, nil, "")
+		req = g.GetGeoserverRequest(request.URL, request.Method, request.Accept, nil, "")
 	case postMethod, putMethod:
-		req := g.GetGeoserverRequest(request.URL, request.Method, request.Accept, request.Data, request.DataType)
+		req = g.GetGeoserverRequest(request.URL, request.Method, request.Accept, request.Data, request.DataType)
 	default:
 		panic("unrecognized http request Method")
 	}
