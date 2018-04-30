@@ -12,7 +12,6 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
-	"runtime"
 )
 
 //HTTPRequest is an http request object
@@ -29,9 +28,6 @@ type HTTPRequest struct {
 func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusCode int) {
 	defer func() {
 		if r := recover(); r != nil {
-			if _, ok := r.(runtime.Error); ok {
-				panic(r)
-			}
 			responseText = []byte(fmt.Sprintf("%s", r))
 			statusCode = 0
 		}
