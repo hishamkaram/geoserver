@@ -20,6 +20,19 @@ func TestSerializeStruct(t *testing.T) {
 	assert.NotEmpty(t, json)
 	assert.Nil(t, err)
 }
+func TestDoRequest(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	responseText, statusCode := gsCatalog.DoRequest(HTTPRequest{Method: "dummy_method",
+		Accept: jsonType,
+		URL:    "http://localhost:8080/geoserver/"})
+	assert.Equal(t, statusCode, 0)
+	assert.NotNil(t, responseText)
+	responseText, statusCode = gsCatalog.DoRequest(HTTPRequest{Method: getMethod,
+		Accept: jsonType,
+		URL:    "http://localhost:8080/geoserver/wfs"})
+	assert.Equal(t, statusCode, 200)
+	assert.NotNil(t, responseText)
+}
 
 func TestIsEmpty(t *testing.T) {
 	emptyStruct := GeoServer{}
