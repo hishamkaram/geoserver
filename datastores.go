@@ -2,7 +2,6 @@ package geoserver
 
 import (
 	"bytes"
-	"fmt"
 	"strconv"
 )
 
@@ -27,14 +26,19 @@ type DatastoreService interface {
 
 // Datastore holds geoserver store information
 type Datastore struct {
-	Name                 string     `json:"name,omitempty"`
-	Href                 string     `json:"href,omitempty"`
-	Type                 string     `json:"type,omitempty"`
-	Enabled              bool       `json:"enabled,omitempty"`
-	Workspace            *Workspace `json:"workspace,omitempty"`
-	Default              bool       `json:"_default,omitempty"`
-	FeatureTypes         string     `json:"featureTypes,omitempty"`
-	ConnectionParameters *Entry     `json:"connectionParameters,omitempty"`
+	Name                 string                    `json:"name,omitempty"`
+	Href                 string                    `json:"href,omitempty"`
+	Type                 string                    `json:"type,omitempty"`
+	Enabled              bool                      `json:"enabled,omitempty"`
+	Workspace            *Workspace                `json:"workspace,omitempty"`
+	Default              bool                      `json:"_default,omitempty"`
+	FeatureTypes         string                    `json:"featureTypes,omitempty"`
+	ConnectionParameters DatastoreConnectionParams `json:"connectionParameters,omitempty"`
+}
+
+//DatastoreDetails this struct to send and accept json data from/to geoserver
+type DatastoreDetails struct {
+	Datastore *Datastore `json:"dataStore"`
 }
 
 // DatastoreConnection holds parameters to create new datastore in geoserver
@@ -50,7 +54,43 @@ type DatastoreConnection struct {
 
 // DatastoreConnectionParams in datastore json
 type DatastoreConnectionParams struct {
-	Entry []*Entry `json:",omitempty"`
+	Entry []*Entry `json:"entry,omitempty"`
+}
+
+//GetDatastoreObj return datastore Object to send to geoserver rest
+func (connection *DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
+	datastore = Datastore{
+		Name: connection.Name,
+		ConnectionParameters: DatastoreConnectionParams{
+			Entry: []*Entry{
+				&Entry{
+					Key:   "host",
+					Value: connection.Host,
+				},
+				&Entry{
+					Key:   "port",
+					Value: strconv.Itoa(connection.Port),
+				},
+				&Entry{
+					Key:   "database",
+					Value: connection.DBName,
+				},
+				&Entry{
+					Key:   "user",
+					Value: connection.DBUser,
+				},
+				&Entry{
+					Key:   "passwd",
+					Value: connection.DBPass,
+				},
+				&Entry{
+					Key:   "dbtype",
+					Value: connection.Type,
+				},
+			},
+		},
+	}
+	return
 }
 
 // DatastoreExists checks if a datastore exists in a workspace else return error
@@ -115,9 +155,6 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 		return
 
 	}
-	type DatastoreDetails struct {
-		Datastore *Datastore `json:"dataStore"`
-	}
 	var query DatastoreDetails
 	g.DeSerializeJSON(response, &query)
 	datastore = query.Datastore
@@ -127,33 +164,17 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 
 //CreateDatastore create a datastore under provided workspace
 func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error) {
-	//TODO: check if data exist before creating it
-	rawXML := `<dataStore>
-				<name>%s</name>
-				<connectionParameters>
-				<host>%s</host>
-				<port>%s</port>
-				<database>%s</database>
-				<user>%s</user>
-				<passwd>%s</passwd>
-				<dbtype>%s</dbtype>
-				</connectionParameters>
-			</dataStore>`
-	xml := fmt.Sprintf(rawXML,
-		datastoreConnection.Name,
-		datastoreConnection.Host,
-		strconv.Itoa(datastoreConnection.Port),
-		datastoreConnection.DBName,
-		datastoreConnection.DBUser,
-		datastoreConnection.DBPass,
-		datastoreConnection.Type)
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores")
-	data := bytes.NewReader([]byte(xml))
+	store := datastoreConnection.GetDatastoreObj()
+	datastore := DatastoreDetails{
+		Datastore: &store,
+	}
+	data, _ := g.SerializeStruct(datastore)
 	httpRequest := HTTPRequest{
 		Method:   postMethod,
 		Accept:   jsonType,
-		Data:     data,
-		DataType: xmlType,
+		Data:     bytes.NewBuffer(data),
+		DataType: jsonType,
 		URL:      targetURL,
 		Query:    nil,
 	}

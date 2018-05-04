@@ -14,20 +14,33 @@ type GeoserverDatastoreSuite struct {
 }
 
 func (suite *GeoserverDatastoreSuite) SetupSuite() {
-	suite.gsCatalog = GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	suite.gsCatalog = GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")
 	created, err := suite.gsCatalog.CreateWorkspace("datastores_test")
 	assert.True(suite.T(), created)
 	assert.Nil(suite.T(), err)
 }
+func TestGetDatastoreObj(t *testing.T) {
+	conn := DatastoreConnection{
+		Name:   "datastores_test",
+		Port:   5432,
+		Host:   "localhost",
+		Type:   "postgis",
+		DBName: "cartoview_datastore",
+		DBPass: "xxxx",
+		DBUser: "postgres",
+	}
+	assert.NotNil(t, conn.GetDatastoreObj())
+}
 func (suite *GeoserverDatastoreSuite) TestCreateDatastore() {
-	created, err := suite.gsCatalog.CreateDatastore(DatastoreConnection{
+	conn := DatastoreConnection{
 		Name:   "datastores_test",
 		Port:   5432,
 		Type:   "postgis",
 		DBName: "cartoview_datastore",
 		DBPass: "xxxx",
 		DBUser: "postgres",
-	}, "datastores_test")
+	}
+	created, err := suite.gsCatalog.CreateDatastore(conn, "datastores_test")
 	assert.True(suite.T(), created)
 	assert.Nil(suite.T(), err)
 }
