@@ -14,7 +14,7 @@ type GeoserverDatastoreSuite struct {
 }
 
 func (suite *GeoserverDatastoreSuite) SetupSuite() {
-	suite.gsCatalog = GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")
+	suite.gsCatalog = GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
 	created, err := suite.gsCatalog.CreateWorkspace("datastores_test")
 	assert.True(suite.T(), created)
 	assert.Nil(suite.T(), err)
