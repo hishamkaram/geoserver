@@ -39,6 +39,8 @@ func TestGetFeatrueType(t *testing.T) {
 	featureType, err = gsCatalog.GetFeatureType("sf_dummy", "sf_dummy", "bugsites")
 	assert.Nil(t, featureType)
 	assert.NotNil(t, err)
+	mapNativeCrs := make(map[string]string)
+	assert.Equal(t, IsEmpty(NativeCRSAsEntry(mapNativeCrs)), true)
 }
 func TestDeleteFeatureType(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
