@@ -12,12 +12,6 @@ type FeatureTypeService interface {
 	DeleteFeatureType(workspaceName string, datastoreName string, featureTypeName string, recurse bool) (deleted bool, err error)
 }
 
-//Projection is nativeCRS/Srs
-type Projection struct {
-	Class string `json:"@class,omitempty"`
-	Value string `json:"$,omitempty"`
-}
-
 // Entry is geoserver Entry
 type Entry struct {
 	Key   string `json:"@key,omitempty"`
@@ -35,7 +29,7 @@ type BoundingBox struct {
 // NativeBoundingBox is geoserver NativeBoundingBox for FeatureType
 type NativeBoundingBox struct {
 	*BoundingBox
-	Crs *Projection `json:"crs,omitempty"`
+	Crs *interface{} `json:"crs,omitempty"`
 }
 
 // LatLonBoundingBox is geoserver LatLonBoundingBox for FeatureType
@@ -49,6 +43,23 @@ type MetadataLink struct {
 	Type         string `json:"type,omitempty"`
 	MetadataType string `json:"metadataType,omitempty"`
 	Content      string `json:"content,omitempty"`
+}
+
+//NativeCRSAsEntry get CRS to Entry
+func NativeCRSAsEntry(in interface{}) []Entry {
+	nativeCRS := make([]Entry, 0)
+	switch v := in.(type) {
+	case map[string]interface{}:
+		for k, value := range v {
+			nativeCRS = append(nativeCRS, Entry{Key: k, Value: value.(string)})
+		}
+
+	case string:
+		nativeCRS = append(nativeCRS, Entry{Key: "crs", Value: in.(string)})
+	default:
+		nativeCRS = append(nativeCRS, Entry{})
+	}
+	return nativeCRS
 }
 
 // Attribute is geoserver FeatureType Attribute
@@ -77,7 +88,7 @@ type FeatureType struct {
 	DataLinks struct {
 		MetadataLink []*MetadataLink `json:"metadataLink,omitempty"`
 	} `json:"dataLinks,omitempty"`
-	NativeCRS         *Projection        `json:"nativeCRS,omitempty"`
+	NativeCRS         *interface{}       `json:"nativeCRS,omitempty"`
 	Srs               string             `json:"srs,omitempty"`
 	Enabled           bool               `json:"enabled,omitempty"`
 	NativeBoundingBox *NativeBoundingBox `json:"nativeBoundingBox,omitempty"`
@@ -91,7 +102,7 @@ type FeatureType struct {
 	MaxFeatures int32     `json:"maxFeatures,omitempty"`
 	NumDecimals float32   `json:"numDecimals,omitempty"`
 	ResponseSRS struct {
-		String string `json:"string,omitempty"`
+		String []int `json:"string,omitempty"`
 	} `json:"responseSRS,omitempty"`
 	CircularArcPresent     bool `json:"circularArcPresent,omitempty"`
 	OverridingServiceSRS   bool `json:"overridingServiceSRS,omitempty"`

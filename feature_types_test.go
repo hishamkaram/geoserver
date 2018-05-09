@@ -24,6 +24,18 @@ func TestGetFeatrueType(t *testing.T) {
 	assert.NotNil(t, featureType)
 	assert.NotEmpty(t, featureType)
 	assert.Nil(t, err)
+	nativeCRS := *featureType.NativeBoundingBox.Crs
+	nativeCRSType := reflect.TypeOf(NativeCRSAsEntry(nativeCRS)).Kind()
+	assert.NotNil(t, nativeCRSType, reflect.Slice)
+	assert.Equal(t, IsEmpty(NativeCRSAsEntry(nativeCRS)[0]), false)
+	featureType, err = gsCatalog.GetFeatureType("tiger", "nyc", "poi")
+	assert.NotNil(t, featureType)
+	assert.NotEmpty(t, featureType)
+	assert.Nil(t, err)
+	nativeCRS = *featureType.NativeBoundingBox.Crs
+	nativeCRSType = reflect.TypeOf(NativeCRSAsEntry(nativeCRS)[0]).Kind()
+	assert.Equal(t, nativeCRSType, reflect.Struct)
+	assert.Equal(t, IsEmpty(NativeCRSAsEntry(nativeCRS)[0]), false)
 	featureType, err = gsCatalog.GetFeatureType("sf_dummy", "sf_dummy", "bugsites")
 	assert.Nil(t, featureType)
 	assert.NotNil(t, err)
