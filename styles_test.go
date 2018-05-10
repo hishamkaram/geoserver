@@ -24,7 +24,7 @@ func (suite *GeoserverStyleSuite) SetupSuite() {
 }
 
 func (suite *GeoserverStyleSuite) TestStyles() {
-	sldPath, _ := filepath.Abs("test_sample/airports.sld")
+	sldPath, _ := filepath.Abs("testdata/airports.sld")
 	sld, _ := ioutil.ReadFile(sldPath)
 	created, uploadErr := suite.gsCatalog.CreateStyle("styles_test", "test_test")
 	assert.True(suite.T(), created)
@@ -60,7 +60,7 @@ func TestGeoserverImplemetStyleService(t *testing.T) {
 }
 func TestStylesError(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver_dummy/", "admin", "geoserver")
-	sldPath, _ := filepath.Abs("test_sample/airports.sld")
+	sldPath, _ := filepath.Abs("testdata/airports.sld")
 	sld, _ := ioutil.ReadFile(sldPath)
 	created, uploadErr := gsCatalog.CreateStyle("styles_test", "test_test")
 	assert.False(t, created)

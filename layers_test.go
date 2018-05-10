@@ -52,12 +52,12 @@ func TestUpdateLayer(t *testing.T) {
 }
 func TestUploadShapeFile(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
-	zippedShapefile := filepath.Join(gsCatalog.getGoGeoserverPackageDir(), "test_sample", "hurricane_tracks.zip")
+	zippedShapefile := filepath.Join(gsCatalog.getGoGeoserverPackageDir(), "testdata", "hurricane_tracks.zip")
 	uploaded, err := gsCatalog.UploadShapeFile(zippedShapefile, "shapefileWorkspace", "")
 	assert.True(t, uploaded)
 	assert.Nil(t, err)
 	gsCatalog = GetCatalog("http://localhost:8080/geoserver_dummy/", "admin", "geoserver")
-	zippedShapefile = filepath.Join(gsCatalog.getGoGeoserverPackageDir(), "test_sample", "hurricane_tracks.zip")
+	zippedShapefile = filepath.Join(gsCatalog.getGoGeoserverPackageDir(), "testdata", "hurricane_tracks.zip")
 	uploaded, err = gsCatalog.UploadShapeFile(zippedShapefile, "shapefileWorkspace", "")
 	assert.False(t, uploaded)
 	assert.NotNil(t, err)
