@@ -43,13 +43,13 @@ type ResponseSRS struct {
 
 // NativeBoundingBox is geoserver NativeBoundingBox for FeatureType
 type NativeBoundingBox struct {
-	*BoundingBox
+	BoundingBox
 	Crs *interface{} `json:"crs,omitempty"`
 }
 
 // LatLonBoundingBox is geoserver LatLonBoundingBox for FeatureType
 type LatLonBoundingBox struct {
-	*BoundingBox
+	BoundingBox
 	Crs string `json:"crs,omitempty"`
 }
 
