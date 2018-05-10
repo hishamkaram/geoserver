@@ -26,6 +26,21 @@ type BoundingBox struct {
 	Maxy float64 `json:"maxy,omitempty"`
 }
 
+//Metadata is the geoserver Metadata
+type Metadata struct {
+	Entry []*Entry `json:"entry,omitempty"`
+}
+
+//Keywords is the geoserver Keywords
+type Keywords struct {
+	String []string `json:"string,omitempty"`
+}
+
+//ResponseSRS is the geoserver ResponseSRS
+type ResponseSRS struct {
+	String []int `json:"string,omitempty"`
+}
+
 // NativeBoundingBox is geoserver NativeBoundingBox for FeatureType
 type NativeBoundingBox struct {
 	*BoundingBox
@@ -43,6 +58,21 @@ type MetadataLink struct {
 	Type         string `json:"type,omitempty"`
 	MetadataType string `json:"metadataType,omitempty"`
 	Content      string `json:"content,omitempty"`
+}
+
+//MetadataLinks is the geoserver metadata links
+type MetadataLinks struct {
+	MetadataLink []*MetadataLink `json:"metadataLink,omitempty"`
+}
+
+//DataLinks is the geoserver FeatureType Datalinks
+type DataLinks struct {
+	DataLink []*MetadataLink `json:"org.geoserver.catalog.impl.DataLinkInfoImpl,omitempty"`
+}
+
+//Attributes is the geoserver feature type attributes
+type Attributes struct {
+	Attribute []*Attribute `json:"attribute,omitempty"`
 }
 
 //NativeCRSAsEntry get CRS to Entry
@@ -74,43 +104,31 @@ type Attribute struct {
 
 // FeatureType is geoserver FeatureType
 type FeatureType struct {
-	Name       string    `json:"name,omitempty"`
-	NativeName string    `json:"nativeName,omitempty"`
-	Namespace  *Resource `json:"namespace,omitempty"`
-	Title      string    `json:"title,omitempty"`
-	Abstract   string    `json:"abstract,omitempty"`
-	Keywords   *struct {
-		String []string `json:"string,omitempty"`
-	} `json:"keywords,omitempty"`
-	Metadatalinks struct {
-		MetadataLink []*MetadataLink `json:"metadataLink,omitempty"`
-	} `json:"metadatalinks,omitempty"`
-	DataLinks struct {
-		MetadataLink []*MetadataLink `json:"metadataLink,omitempty"`
-	} `json:"dataLinks,omitempty"`
-	NativeCRS         *interface{}       `json:"nativeCRS,omitempty"`
-	Srs               string             `json:"srs,omitempty"`
-	Enabled           bool               `json:"enabled,omitempty"`
-	NativeBoundingBox *NativeBoundingBox `json:"nativeBoundingBox,omitempty"`
-	LatLonBoundingBox *LatLonBoundingBox `json:"latLonBoundingBox,omitempty"`
-	ProjectionPolicy  string             `json:"projectionPolicy,omitempty"`
-	Metadata          struct {
-		Entry []*Entry `json:"entry,omitempty"`
-	} `json:"metadata,omitempty"`
-	Store       *Resource `json:"store,omitempty"`
-	CqlFilter   string    `json:"cqlFilter,omitempty"`
-	MaxFeatures int32     `json:"maxFeatures,omitempty"`
-	NumDecimals float32   `json:"numDecimals,omitempty"`
-	ResponseSRS struct {
-		String []int `json:"string,omitempty"`
-	} `json:"responseSRS,omitempty"`
-	CircularArcPresent     bool `json:"circularArcPresent,omitempty"`
-	OverridingServiceSRS   bool `json:"overridingServiceSRS,omitempty"`
-	SkipNumberMatched      bool `json:"skipNumberMatched,omitempty"`
-	LinearizationTolerance bool `json:"linearizationTolerance,omitempty"`
-	Attributes             struct {
-		Attribute []*Attribute `json:"attribute,omitempty"`
-	} `json:"attributes,omitempty"`
+	Name                   string             `json:"name,omitempty"`
+	NativeName             string             `json:"nativeName,omitempty"`
+	Namespace              *Resource          `json:"namespace,omitempty"`
+	Title                  string             `json:"title,omitempty"`
+	Abstract               string             `json:"abstract,omitempty"`
+	Keywords               *Keywords          `json:"keywords,omitempty"`
+	Metadatalinks          *MetadataLinks     `json:"metadatalinks,omitempty"`
+	DataLinks              *DataLinks         `json:"dataLinks,omitempty"`
+	NativeCRS              *interface{}       `json:"nativeCRS,omitempty"`
+	Srs                    string             `json:"srs,omitempty"`
+	Enabled                bool               `json:"enabled,omitempty"`
+	NativeBoundingBox      *NativeBoundingBox `json:"nativeBoundingBox,omitempty"`
+	LatLonBoundingBox      *LatLonBoundingBox `json:"latLonBoundingBox,omitempty"`
+	ProjectionPolicy       string             `json:"projectionPolicy,omitempty"`
+	Metadata               *Metadata          `json:"metadata,omitempty"`
+	Store                  *Resource          `json:"store,omitempty"`
+	CqlFilter              string             `json:"cqlFilter,omitempty"`
+	MaxFeatures            int32              `json:"maxFeatures,omitempty"`
+	NumDecimals            float32            `json:"numDecimals,omitempty"`
+	ResponseSRS            *ResponseSRS       `json:"responseSRS,omitempty"`
+	CircularArcPresent     bool               `json:"circularArcPresent,omitempty"`
+	OverridingServiceSRS   bool               `json:"overridingServiceSRS,omitempty"`
+	SkipNumberMatched      bool               `json:"skipNumberMatched,omitempty"`
+	LinearizationTolerance bool               `json:"linearizationTolerance,omitempty"`
+	Attributes             *Attributes        `json:"attributes,omitempty"`
 }
 
 // FeatureTypes holds a list of geoserver styles
@@ -121,6 +139,11 @@ type FeatureTypes struct {
 //FeatureTypesResponseBody is the api body
 type FeatureTypesResponseBody struct {
 	FeatureTypes *FeatureTypes `json:"featureTypes,omitempty"`
+}
+
+//FeatureTypesRequestBody is the api body
+type FeatureTypesRequestBody struct {
+	FeatureType *FeatureType `json:"featureTypes,omitempty"`
 }
 
 // GetFeatureTypes return all featureTypes in workspace and datastore if error occurred err will be return and nil for featrueTypes
