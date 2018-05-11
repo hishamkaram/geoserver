@@ -12,10 +12,10 @@ type WorkspaceService interface {
 	WorkspaceExists(workspaceName string) (exists bool, err error)
 
 	// GetWorkspaces get geoserver workspaces else return error
-	GetWorkspaces(workspaceName string) (workspaces []*Resource, err error)
+	GetWorkspaces() (workspaces []*Resource, err error)
 
 	// GetWorkspace get geoserver workspaces else return error
-	GetWorkspace() (workspace Workspace, err error)
+	GetWorkspace(workspaceName string) (workspace Workspace, err error)
 
 	// CreateWorkspace creates a workspace else return error
 	CreateWorkspace(workspaceName string) (created bool, err error)
@@ -123,7 +123,7 @@ func (g *GeoServer) GetWorkspaces() (workspaces []*Resource, err error) {
 	return
 }
 
-// GetWorkspace get geoserver workspaces else return error
+// GetWorkspace get geoserver workspace else return error
 func (g *GeoServer) GetWorkspace(workspaceName string) (workspace Workspace, err error) {
 	url := g.ParseURL("rest", "workspaces", workspaceName)
 	httpRequest := HTTPRequest{
