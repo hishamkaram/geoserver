@@ -12,7 +12,10 @@ type WorkspaceService interface {
 	WorkspaceExists(workspaceName string) (exists bool, err error)
 
 	// GetWorkspaces get geoserver workspaces else return error
-	GetWorkspaces() (workspaces []*Resource, err error)
+	GetWorkspaces(workspaceName string) (workspaces []*Resource, err error)
+
+	// GetWorkspace get geoserver workspaces else return error
+	GetWorkspace() (workspace Workspace, err error)
 
 	// CreateWorkspace creates a workspace else return error
 	CreateWorkspace(workspaceName string) (created bool, err error)
@@ -64,18 +67,10 @@ func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, err err
 
 // WorkspaceExists check if workspace in geoserver or not else return error
 func (g *GeoServer) WorkspaceExists(workspaceName string) (exists bool, err error) {
-	url := g.ParseURL("rest", "workspaces", workspaceName)
-	httpRequest := HTTPRequest{
-		Method: getMethod,
-		Accept: jsonType,
-		URL:    url,
-		Query:  nil,
-	}
-	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+	_, workspaceErr := g.GetWorkspace(workspaceName)
+	if workspaceErr != nil {
 		exists = false
-		err = g.GetError(responseCode, response)
+		err = workspaceErr
 		return
 	}
 	exists = true
@@ -125,5 +120,28 @@ func (g *GeoServer) GetWorkspaces() (workspaces []*Resource, err error) {
 	}
 	g.DeSerializeJSON(response, &workspaceResponse)
 	workspaces = workspaceResponse.Workspaces.Workspace
+	return
+}
+
+// GetWorkspace get geoserver workspaces else return error
+func (g *GeoServer) GetWorkspace(workspaceName string) (workspace Workspace, err error) {
+	url := g.ParseURL("rest", "workspaces", workspaceName)
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    url,
+		Query:  nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
+	if responseCode != statusOk {
+		g.logger.Error(string(response))
+		err = g.GetError(responseCode, response)
+		return
+	}
+	workspaceResponse := WorkspaceRequestBody{
+		Workspace: &Workspace{},
+	}
+	g.DeSerializeJSON(response, &workspaceResponse)
+	workspace = *workspaceResponse.Workspace
 	return
 }

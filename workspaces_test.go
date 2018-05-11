@@ -27,6 +27,15 @@ func TestWorkspaceExists(t *testing.T) {
 	assert.False(t, exists)
 	assert.NotNil(t, err)
 }
+func TestGetWorkspace(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	workspace, err := gsCatalog.GetWorkspace("cite")
+	assert.NotNil(t, workspace)
+	assert.Nil(t, err)
+	workspace, err = gsCatalog.GetWorkspace("golang_workspace_test_dummy")
+	assert.Nil(t, workspace)
+	assert.NotNil(t, err)
+}
 func TestGetWorkspaces(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
 	workspaces, err := gsCatalog.GetWorkspaces()
