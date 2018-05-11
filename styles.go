@@ -9,20 +9,17 @@ import (
 
 // StyleService define all geoserver style operations
 type StyleService interface {
-	// GetStyles
 	GetStyles(workspaceName string) (styles []*Resource, err error)
 
-	//CreateStyle create geoserver sld
 	CreateStyle(workspaceName string, styleName string) (created bool, err error)
 
-	//UploadStyle upload geoserver sld
 	UploadStyle(data io.Reader, workspaceName string, styleName string) (success bool, err error)
 
-	//DeleteStyle delete geoserver style
 	DeleteStyle(workspaceName string, styleName string, purge bool) (deleted bool, err error)
 
-	//GetStyle return specific of geoserver style
 	GetStyle(workspaceName string, styleName string) (style *Style, err error)
+
+	StyleExists(workspaceName string, styleName string) (exists bool, err error)
 }
 
 //LanguageVersion style version
@@ -101,6 +98,18 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Sty
 	var stylesResponse StyleRequestBody
 	g.DeSerializeJSON(response, &stylesResponse)
 	style = stylesResponse.Style
+	return
+}
+
+//StyleExists return true if style exists in geoserver
+func (g *GeoServer) StyleExists(workspaceName string, styleName string) (exists bool, err error) {
+	_, styleErr := g.GetStyle(workspaceName, styleName)
+	if styleErr != nil {
+		exists = false
+		err = styleErr
+		return
+	}
+	exists = true
 	return
 }
 
