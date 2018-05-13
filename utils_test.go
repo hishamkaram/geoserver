@@ -66,3 +66,14 @@ func TestParseURLL(t *testing.T) {
 	assert.NotEmpty(t, targetURL)
 	assert.Equal(t, targetURL, "http://localhost:8080/geoserver/rest/workspaces")
 }
+func BenchmarkParseURL(b *testing.B) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	for i := 0; i < b.N; i++ {
+		gsCatalog.ParseURL("rest", "workspaces")
+	}
+}
+func BenchmarkIsEmpty(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		IsEmpty(struct{}{})
+	}
+}
