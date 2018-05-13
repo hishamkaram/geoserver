@@ -12,7 +12,7 @@ func TestCreateWorkspace(t *testing.T) {
 	created, err := gsCatalog.CreateWorkspace("golang_workspace_test")
 	assert.True(t, created)
 	assert.Nil(t, err)
-	gsCatalog = GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")
+	gsCatalog = GetCatalog("http://localhost:8080/geoserver_dummy/", "admin", "geoserver")
 	created, err = gsCatalog.CreateWorkspace("golang_workspace_test_dummy")
 	assert.False(t, created)
 	assert.NotNil(t, err)
