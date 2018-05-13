@@ -33,7 +33,7 @@ func TestGetWorkspace(t *testing.T) {
 	assert.NotNil(t, workspace)
 	assert.Nil(t, err)
 	workspace, err = gsCatalog.GetWorkspace("golang_workspace_test_dummy")
-	assert.Nil(t, workspace)
+	assert.True(t, IsEmpty(workspace))
 	assert.NotNil(t, err)
 }
 func TestGetWorkspaces(t *testing.T) {
