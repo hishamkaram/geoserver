@@ -73,7 +73,7 @@ func TestStylesError(t *testing.T) {
 	assert.NotNil(t, getErr)
 	styleExists, styleErr := gsCatalog.StyleExists("styles_test", "test_test")
 	assert.False(t, styleExists)
-	assert.Nil(t, styleErr)
+	assert.NotNil(t, styleErr)
 	style, styleErr := gsCatalog.GetStyle("styles_test", "test_test")
 	assert.Equal(t, style, &Style{})
 	assert.NotNil(t, styleErr)
