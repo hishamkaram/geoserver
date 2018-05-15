@@ -43,6 +43,9 @@ func (suite *GeoserverDatastoreSuite) TestCreateDatastore() {
 	created, err := suite.gsCatalog.CreateDatastore(conn, "datastores_test")
 	assert.True(suite.T(), created)
 	assert.Nil(suite.T(), err)
+	created, err = suite.gsCatalog.CreateDatastore(conn, "datastores_test")
+	assert.False(suite.T(), created)
+	assert.NotNil(suite.T(), err)
 }
 
 func (suite *GeoserverDatastoreSuite) TestDatastoreExists() {
