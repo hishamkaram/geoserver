@@ -19,6 +19,10 @@ func TestSerializeStruct(t *testing.T) {
 	json, err := gsCatalog.SerializeStruct(&resource)
 	assert.NotEmpty(t, json)
 	assert.Nil(t, err)
+	resource2 := make(chan int)
+	json, err = gsCatalog.SerializeStruct(&resource2)
+	assert.Empty(t, json)
+	assert.NotNil(t, err)
 }
 func TestDoRequest(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
@@ -52,6 +56,12 @@ func TestDeSerializeJSON(t *testing.T) {
 	assert.NotNil(t, resource)
 	assert.NotEmpty(t, resource)
 	assert.Nil(t, err)
+	json = []byte(`<xml/>`)
+	resource = Resource{}
+	err = gsCatalog.DeSerializeJSON(json, &resource)
+	assert.Empty(t, resource)
+	assert.NotNil(t, err)
+
 }
 func TestGetGoGeoserverPackageDir(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
@@ -65,6 +75,9 @@ func TestParseURLL(t *testing.T) {
 	assert.NotNil(t, targetURL)
 	assert.NotEmpty(t, targetURL)
 	assert.Equal(t, targetURL, "http://localhost:8080/geoserver/rest/workspaces")
+	gsCatalog = GetCatalog("://htto://localhost:8080/geoserver/", "admin", "geoserver")
+	targetURL = gsCatalog.ParseURL("rest", "workspaces")
+	assert.Empty(t, targetURL)
 }
 func BenchmarkParseURL(b *testing.B) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")

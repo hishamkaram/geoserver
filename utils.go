@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -91,7 +90,7 @@ func IsEmpty(object interface{}) bool {
 func (g *GeoServer) SerializeStruct(structObj interface{}) ([]byte, error) {
 	serializedStruct, err := json.Marshal(&structObj)
 	if err != nil {
-		g.logger.Fatal(err)
+		g.logger.Error(err)
 		return nil, err
 	}
 	return serializedStruct, nil
@@ -101,7 +100,8 @@ func (g *GeoServer) SerializeStruct(structObj interface{}) ([]byte, error) {
 func (g *GeoServer) DeSerializeJSON(response []byte, structObj interface{}) (err error) {
 	err = json.Unmarshal(response, &structObj)
 	if err != nil {
-		g.logger.Fatal(err)
+		g.logger.Error(err)
+		return err
 	}
 	return nil
 }
@@ -114,13 +114,20 @@ func (g *GeoServer) getGoGeoserverPackageDir() string {
 }
 
 //ParseURL this function join urlParts with geoserver url
-func (g *GeoServer) ParseURL(urlParts ...string) string {
+func (g *GeoServer) ParseURL(urlParts ...string) (parsedURL string) {
+	defer func() {
+		if r := recover(); r != nil {
+			parsedURL = ""
+		}
+	}()
 	geoserverURL, err := url.Parse(g.ServerURL)
 	if err != nil {
-		log.Fatal(err)
+		g.logger.Error(err)
+		panic(err)
 	}
 	urlArr := append([]string{geoserverURL.Path}, urlParts...)
 	geoserverURL.Path = path.Join(urlArr...)
-	return geoserverURL.String()
+	parsedURL = geoserverURL.String()
+	return
 
 }
