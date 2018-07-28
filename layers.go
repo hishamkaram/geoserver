@@ -29,6 +29,8 @@ type LayerService interface {
 
 	//DeleteLayer delete geoserver layer and its reources else return error
 	DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, err error)
+
+	PublishPostgisLayer(workspaceName string, datastoreName string, publishName string, tableName string) (published bool, err error)
 }
 
 //Resource geoserver resource
@@ -67,6 +69,11 @@ type Layer struct {
 //LayerRequestBody api json
 type LayerRequestBody struct {
 	Layer Layer `json:"layer,omitempty"`
+}
+
+//PublishPostgisLayerRequest is the api body
+type PublishPostgisLayerRequest struct {
+	FeatureType *FeatureType `json:"featureType,omitempty"`
 }
 
 // GetshpFiledsName datastore name from shapefile name
@@ -197,6 +204,36 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 		return
 	}
 	modified = true
+	return
+}
+
+//PublishPostgisLayer publish postgis table to geoserver
+func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName string, publishName string, tableName string) (published bool, err error) {
+	if workspaceName != "" {
+		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
+	}
+	targetURL := g.ParseURL("rest", workspaceName, "datastores", datastoreName, "/featuretypes")
+	data := PublishPostgisLayerRequest{FeatureType: &FeatureType{Name: publishName,
+		NativeName: tableName}}
+
+	serializedLayer, _ := g.SerializeStruct(data)
+	g.logger.Errorf("%s", serializedLayer)
+	httpRequest := HTTPRequest{
+		Method:   postMethod,
+		Accept:   jsonType,
+		Data:     bytes.NewBuffer(serializedLayer),
+		DataType: jsonType,
+		URL:      targetURL,
+		Query:    nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
+	if responseCode != statusCreated {
+		g.logger.Error(response)
+		published = false
+		err = g.GetError(responseCode, response)
+		return
+	}
+	published = true
 	return
 }
 

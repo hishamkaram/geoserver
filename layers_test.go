@@ -50,6 +50,24 @@ func TestUpdateLayer(t *testing.T) {
 	assert.False(t, modified)
 	assert.NotNil(t, err)
 }
+func TestPublishPostgisLayer(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	conn := DatastoreConnection{
+		Name:   "postgis_datastore",
+		Port:   5432,
+		Type:   "postgis",
+		DBName: "cartoview_datastore",
+		DBPass: "golang",
+		DBUser: "golang",
+	}
+	created, err := gsCatalog.CreateDatastore(conn, "postgis_datastore")
+	assert.True(t, created)
+	assert.Nil(t, err)
+	published, dbErr := gsCatalog.PublishPostgisLayer("topp", "postgis_datastore", "lbldyt", "lbldyt")
+	assert.True(t, published)
+	assert.Nil(t, dbErr)
+
+}
 func TestUploadShapeFile(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
 	zippedShapefile := filepath.Join(gsCatalog.getGoGeoserverPackageDir(), "testdata", "hurricane_tracks.zip")

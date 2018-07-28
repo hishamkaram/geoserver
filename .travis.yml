@@ -17,6 +17,8 @@ before_install:
   - docker-compose up -d
   - docker ps
   - chmod +x ./scripts/entry.sh
+  - chmod +x ./scripts/wait.sh
+  - chmod +x ./scripts/restore_layer.sh
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/mattn/goveralls
 script:
