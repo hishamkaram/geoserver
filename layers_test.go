@@ -54,13 +54,14 @@ func TestPublishPostgisLayer(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
 	conn := DatastoreConnection{
 		Name:   "postgis_datastore",
-		Port:   5436,
+		Port:   5432,
 		Type:   "postgis",
+		Host:   "postgis",
 		DBName: "gis",
 		DBPass: "golang",
 		DBUser: "golang",
 	}
-	created, err := gsCatalog.CreateDatastore(conn, "postgis_datastore")
+	created, err := gsCatalog.CreateDatastore(conn, "topp")
 	assert.True(t, created)
 	assert.Nil(t, err)
 	published, dbErr := gsCatalog.PublishPostgisLayer("topp", "postgis_datastore", "lbldyt", "lbldyt")

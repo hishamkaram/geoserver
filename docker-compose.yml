@@ -11,6 +11,7 @@ services:
     user: root
     ports:
       - "8080:8080"
+  postgis:
     image: kartoza/postgis:10.0-2.4
     volumes:
       - 'postgis-data:/var/lib/postgresql'
