@@ -56,7 +56,7 @@ func TestPublishPostgisLayer(t *testing.T) {
 		Name:   "postgis_datastore",
 		Port:   5436,
 		Type:   "postgis",
-		DBName: "cartoview_datastore",
+		DBName: "gis",
 		DBPass: "golang",
 		DBUser: "golang",
 	}

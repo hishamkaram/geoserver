@@ -11,14 +11,16 @@ services:
     user: root
     ports:
       - "8080:8080"
-  postgis:
-    image: cartoview/cartoview-postgis:latest
-    restart: unless-stopped
-    env_file:
-      - ./postgis.env
-    ports:
-      - "5436:5432"
+    image: kartoza/postgis:10.0-2.4
     volumes:
-      - "pg-data:/var/lib/postgresql"
+      - 'postgis-data:/var/lib/postgresql'
+    environment:
+      - POSTGRES_DB=gis
+      - POSTGRES_USER=golang
+      - POSTGRES_PASS=golang
+      - ALLOW_IP_RANGE=0.0.0.0/0
+    ports:
+      - 5436:5432
+    restart: unless-stopped
 volumes:
-  pg-data:
+  postgis-data:
