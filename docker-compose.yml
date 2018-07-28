@@ -20,3 +20,5 @@ services:
       - "5432:5432"
     volumes:
       - "pg-data:/var/lib/postgresql"
+volumes:
+  pg-data:
