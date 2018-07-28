@@ -67,6 +67,9 @@ func TestPublishPostgisLayer(t *testing.T) {
 	published, dbErr := gsCatalog.PublishPostgisLayer("topp", "postgis_datastore", "lbldyt", "lbldyt")
 	assert.True(t, published)
 	assert.Nil(t, dbErr)
+	published, dbErr = gsCatalog.PublishPostgisLayer("topp", "dummy_store_test", "lbldyt", "lbldyt")
+	assert.False(t, published)
+	assert.NotNil(t, dbErr)
 
 }
 func TestUploadShapeFile(t *testing.T) {
