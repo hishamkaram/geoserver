@@ -17,7 +17,7 @@ services:
     env_file:
       - ./postgis.env
     ports:
-      - "5432:5432"
+      - "5436:5432"
     volumes:
       - "pg-data:/var/lib/postgresql"
 volumes:

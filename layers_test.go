@@ -54,7 +54,7 @@ func TestPublishPostgisLayer(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
 	conn := DatastoreConnection{
 		Name:   "postgis_datastore",
-		Port:   5432,
+		Port:   5436,
 		Type:   "postgis",
 		DBName: "cartoview_datastore",
 		DBPass: "golang",

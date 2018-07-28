@@ -1,3 +1,3 @@
 #!/bin/bash
 PGPASSWORD=golang
-./wait.sh -h localhost -p 5432 -t 600 -- pg_restore -d cartoview_datastore ../testdata/lbldyt
+./wait.sh -h localhost -p 5436 -t 600 -- pg_restore -p 5436 -d cartoview_datastore ../testdata/lbldyt
