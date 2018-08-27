@@ -13,7 +13,7 @@ type StyleService interface {
 
 	CreateStyle(workspaceName string, styleName string) (created bool, err error)
 
-	UploadStyle(data io.Reader, workspaceName string, styleName string) (success bool, err error)
+	UploadStyle(data io.Reader, workspaceName string, styleName string, overwrite bool) (success bool, err error)
 
 	DeleteStyle(workspaceName string, styleName string, purge bool) (deleted bool, err error)
 
@@ -144,11 +144,17 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 
 //UploadStyle upload geoserver sld,
 //if workspace is "" will upload geoserver public style sld , return err if error occurred
-func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName string) (success bool, err error) {
+func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName string, overwrite bool) (success bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
+	exists, _ := g.StyleExists(workspaceName, styleName)
+	if !overwrite && exists {
+		success = false
+		err = g.GetError(statusForbidden, []byte("Style Already Exists"))
+		return
+	}
 	httpRequest := HTTPRequest{
 		Method:   putMethod,
 		Accept:   jsonType,
