@@ -12,6 +12,10 @@ func TestRestConfigrationCache(t *testing.T) {
 	success, err := gsCatalog.RestConfigrationCache()
 	assert.True(t, success)
 	assert.Nil(t, err)
+	gsCatalog = GetCatalog("http://localhost:8080/geoserver/dummy_rest", "admin", "geoserver")
+	successF, errF := gsCatalog.RestConfigrationCache()
+	assert.False(t, successF)
+	assert.NotNil(t, errF)
 }
 
 func TestReloadConfigration(t *testing.T) {
@@ -19,6 +23,10 @@ func TestReloadConfigration(t *testing.T) {
 	success, err := gsCatalog.ReloadConfigration()
 	assert.True(t, success)
 	assert.Nil(t, err)
+	gsCatalog = GetCatalog("http://localhost:8080/geoserver/dummy_rest", "admin", "geoserver")
+	successF, errF := gsCatalog.ReloadConfigration()
+	assert.False(t, successF)
+	assert.NotNil(t, errF)
 }
 func TestConfigurationServiceImplemet(t *testing.T) {
 	gsCatalog := reflect.TypeOf(&GeoServer{})
