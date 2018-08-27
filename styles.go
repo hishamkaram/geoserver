@@ -157,11 +157,13 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 		err = g.GetError(statusForbidden, []byte("Style Already Exists"))
 		return
 	}
-	created, uploadErr := g.CreateStyle(workspaceName, styleName)
-	if !created {
-		success = false
-		err = uploadErr
-		return
+	if !exists {
+		created, uploadErr := g.CreateStyle(workspaceName, styleName)
+		if !created {
+			success = false
+			err = uploadErr
+			return
+		}
 	}
 	httpRequest := HTTPRequest{
 		Method:   putMethod,
