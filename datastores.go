@@ -63,27 +63,27 @@ func (connection *DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
 		Name: connection.Name,
 		ConnectionParameters: DatastoreConnectionParams{
 			Entry: []*Entry{
-				&Entry{
+				{
 					Key:   "host",
 					Value: connection.Host,
 				},
-				&Entry{
+				{
 					Key:   "port",
 					Value: strconv.Itoa(connection.Port),
 				},
-				&Entry{
+				{
 					Key:   "database",
 					Value: connection.DBName,
 				},
-				&Entry{
+				{
 					Key:   "user",
 					Value: connection.DBUser,
 				},
-				&Entry{
+				{
 					Key:   "passwd",
 					Value: connection.DBPass,
 				},
-				&Entry{
+				{
 					Key:   "dbtype",
 					Value: connection.Type,
 				},
