@@ -1,4 +1,18 @@
+dist: trusty
 sudo: required
+addons:
+  postgresql: "10"
+  apt:
+    packages:
+    - postgresql-10
+    - postgresql-client-10
+
+before_script:
+    # Use default port
+    - sudo sed -i 's/port = 5433/port = 5432/' /etc/postgresql/10/main/postgresql.conf
+    # Use 9.6 auth config:
+    - sudo cp /etc/postgresql/{9.6,10}/main/pg_hba.conf
+    - sudo service postgresql restart
 language: go
 go:
   - "1.9"
@@ -14,18 +28,10 @@ before_install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
   - sudo apt-get install realpath -y
-  - sudo apt-get purge 'postgresql-*' -y
-  - sudo apt-get autoremove 'postgresql-*' -y
-  - echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" | sudo tee -a /etc/apt/sources.list
-  - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-  - sudo apt-get update -qq
-  - sudo apt-get install postgresql-client-10 -y
   - docker-compose build
   - docker-compose up -d
   - docker ps
-  - chmod +x ./scripts/entry.sh
-  - chmod +x ./scripts/wait.sh
-  - chmod +x ./scripts/restore_layer.sh
+  - chmod +x ./scripts/*.sh
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/mattn/goveralls
 script:
