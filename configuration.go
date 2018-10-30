@@ -2,7 +2,7 @@ package geoserver
 
 import "bytes"
 
-// ConfigurationService define  geoserver Configuration operations
+// ConfigurationService define geoserver Configuration operations
 type ConfigurationService interface {
 	RestConfigrationCache() (success bool, err error)
 	ReloadConfigration() (success bool, err error)
