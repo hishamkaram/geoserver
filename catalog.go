@@ -9,6 +9,7 @@ type Catalog interface {
 	StyleService
 	AboutService
 	LayerService
+	LayerGroupService
 	CoverageStoresService
 	FeatureTypeService
 }
