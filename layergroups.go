@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+//PublishedGroupLayers geoserver published layers
 type PublishedGroupLayers []*GroupPublishableItem
 
 //GroupPublishableItem geoserver Group
@@ -27,8 +28,8 @@ func (u *PublishedGroupLayers) UnmarshalJSON(data []byte) error {
 	case map[string]interface{}:
 		var layers PublishedGroupLayers
 		*u = append(layers, &GroupPublishableItem{Name: raw["name"].(string), Href: raw["href"].(string), Type: raw["@type"].(string)})
-	case []map[string]interface{}:
-		var publishedGroupLayers PublishedGroupLayers
+	case []interface{}:
+		var publishedGroupLayers []*GroupPublishableItem
 		err := json.Unmarshal(data, &publishedGroupLayers)
 		if err != nil {
 			return err
@@ -67,7 +68,7 @@ type layerGroupDetailsResponse struct {
 type LayerGroupService interface {
 	GetLayerGroups(workspaceName string) (layerGroups []*Resource, err error)
 	GetLayerGroup(workspaceName string, layerGroupName string) (layer *LayerGroup, err error)
-	CreateLayerGroup(workspaceName string, layerGroup *LayerGroup) (created bool, err error)
+	// CreateLayerGroup(workspaceName string, layerGroup *LayerGroup) (created bool, err error)
 }
 
 //GetLayerGroups  get all layergroups from workspace in geoserver else return error,
