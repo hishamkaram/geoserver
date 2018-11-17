@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+type PublishedGroupLayers []*GroupPublishableItem
+
 //GroupPublishableItem geoserver Group
 type GroupPublishableItem struct {
 	Type string `json:"@type,omitempty" xml:"type"`
@@ -14,24 +16,24 @@ type GroupPublishableItem struct {
 
 //Publishables Geoserver Published Layers
 type Publishables struct {
-	Published []*GroupPublishableItem `json:"published" xml:"published"`
+	Published PublishedGroupLayers `json:"published" xml:"published"`
 }
 
 //UnmarshalJSON custom deserialization
-func (u *Publishables) UnmarshalJSON(data []byte) error {
+func (u *PublishedGroupLayers) UnmarshalJSON(data []byte) error {
 	var raw interface{}
 	json.Unmarshal(data, &raw)
 	switch raw := raw.(type) {
-	case interface{}:
-		published := raw.(map[string]interface{})["published"].(map[string]interface{})
-		*u = Publishables{Published: []*GroupPublishableItem{{Name: published["name"].(string), Href: published["href"].(string)}}}
 	case map[string]interface{}:
-		var publishables Publishables
-		err := json.Unmarshal(data, &publishables)
+		var layers PublishedGroupLayers
+		*u = append(layers, &GroupPublishableItem{Name: raw["name"].(string), Href: raw["href"].(string), Type: raw["@type"].(string)})
+	case []map[string]interface{}:
+		var publishedGroupLayers PublishedGroupLayers
+		err := json.Unmarshal(data, &publishedGroupLayers)
 		if err != nil {
 			return err
 		}
-		*u = publishables
+		*u = publishedGroupLayers
 	}
 	return nil
 }
