@@ -23,17 +23,17 @@ type Publishables struct {
 //UnmarshalJSON custom deserialization
 func (u *PublishedGroupLayers) UnmarshalJSON(data []byte) error {
 	var raw interface{}
-	json.Unmarshal(data, &raw)
+	err := json.Unmarshal(data, &raw)
+	if err != nil {
+		return err
+	}
 	switch raw := raw.(type) {
 	case map[string]interface{}:
 		var layers PublishedGroupLayers
 		*u = append(layers, &GroupPublishableItem{Name: raw["name"].(string), Href: raw["href"].(string), Type: raw["@type"].(string)})
 	case []interface{}:
 		var publishedGroupLayers []*GroupPublishableItem
-		err := json.Unmarshal(data, &publishedGroupLayers)
-		if err != nil {
-			return err
-		}
+		json.Unmarshal(data, &publishedGroupLayers)
 		*u = publishedGroupLayers
 	}
 	return nil
