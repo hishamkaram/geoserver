@@ -1,7 +1,7 @@
 FROM tomcat:9.0.4-jre8
 LABEL "MAINTAINER"="Cartologic Development Team"
 ENV JAVA_HOME /usr/lib/jvm/default-java
-ENV GEOSERVER_VERSION 2.13.0
+ARG GEOSERVER_VERSION=2.13.0
 RUN ln -s /usr/lib/jvm/java-8-openjdk-amd64 /usr/lib/jvm/default-java
 RUN apt-get autoremove --purge -y openjdk-8-jre-headless && \
     echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true \
