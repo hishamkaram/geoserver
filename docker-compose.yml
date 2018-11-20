@@ -2,7 +2,6 @@ version: '3'
 
 services:
   geoserver:
-    image: cartoview/geoserver_docker:tomcat
     restart: unless-stopped
     hostname: geoserver
     build:
