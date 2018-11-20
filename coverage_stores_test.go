@@ -12,9 +12,19 @@ func TestGetCoverageStores(t *testing.T) {
 	coverageStores, err := gsCatalog.GetCoverageStores("nurc")
 	assert.NotNil(t, coverageStores)
 	assert.Nil(t, err)
-	coverageStores, err = gsCatalog.GetCoverageStores("dummy")
-	assert.Nil(t, coverageStores)
-	assert.NotNil(t, err)
+	coverageStoresFail, errFail := gsCatalog.GetCoverageStores("dummy")
+	assert.Nil(t, coverageStoresFail)
+	assert.NotNil(t, errFail)
+
+}
+func TestGetCoverageStore(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	coverageStore, err := gsCatalog.GetCoverageStore("nurc", "arcGridSample")
+	assert.NotNil(t, coverageStore)
+	assert.Nil(t, err)
+	coverageStoreFail, errFail := gsCatalog.GetCoverageStore("nurc", "dummy")
+	assert.Nil(t, coverageStoreFail)
+	assert.NotNil(t, errFail)
 
 }
 func TestCreateCoverageStores(t *testing.T) {
@@ -33,9 +43,9 @@ func TestCreateCoverageStores(t *testing.T) {
 	created, err := gsCatalog.CreateCoverageStore("sf", coverageStore)
 	assert.True(t, created)
 	assert.Nil(t, err)
-	created, err = gsCatalog.CreateCoverageStore("dummy", CoverageStore{})
-	assert.False(t, created)
-	assert.NotNil(t, err)
+	createdFail, errFail := gsCatalog.CreateCoverageStore("dummy", CoverageStore{})
+	assert.False(t, createdFail)
+	assert.NotNil(t, errFail)
 }
 
 func TestHDeleteCoverageStore(t *testing.T) {
@@ -43,9 +53,9 @@ func TestHDeleteCoverageStore(t *testing.T) {
 	deleted, err := gsCatalog.DeleteCoverageStore("nurc", "worldImageSample", true)
 	assert.True(t, deleted)
 	assert.Nil(t, err)
-	deleted, err = gsCatalog.DeleteCoverageStore("nurc_dummy", "worldImageSample_dummy", true)
-	assert.False(t, deleted)
-	assert.NotNil(t, err)
+	deletedFail, errFail := gsCatalog.DeleteCoverageStore("nurc_dummy", "worldImageSample_dummy", true)
+	assert.False(t, deletedFail)
+	assert.NotNil(t, errFail)
 }
 func TestUpdateCoverageStore(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
@@ -55,12 +65,12 @@ func TestUpdateCoverageStore(t *testing.T) {
 	})
 	assert.True(t, modified)
 	assert.Nil(t, err)
-	modified, err = gsCatalog.UpdateCoverageStore("sf_dummy", CoverageStore{
+	modifiedFail, errFail := gsCatalog.UpdateCoverageStore("sf_dummy", CoverageStore{
 		Name:        "sfdem",
 		Description: "Updated",
 	})
-	assert.False(t, modified)
-	assert.NotNil(t, err)
+	assert.False(t, modifiedFail)
+	assert.NotNil(t, errFail)
 }
 
 func TestGeoserverImplemetCoverageService(t *testing.T) {
