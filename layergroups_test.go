@@ -57,7 +57,7 @@ func TestCreateLayerGroup(t *testing.T) {
 				Maxy: 54.1141},
 			Crs: &proj,
 		}}
-	created, createErr := gsCatalog.CreateLayerGroup("", &layergroup2)
+	created, createErr := gsCatalog.CreateLayerGroup("topp", &layergroup2)
 	assert.True(t, created)
 	assert.Nil(t, createErr)
 	createdWorkspace, createErrWorkspace := gsCatalog.CreateLayerGroup("layerGroupsTestWorkspace", &layergroup)
