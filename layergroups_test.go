@@ -20,6 +20,34 @@ func TestGetLayerGroups(t *testing.T) {
 	assert.NotNil(t, groupsErr)
 }
 
+func TestCreateLayerGroup(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	workspace := Resource{Name: ""}
+	var proj interface{} = "EPSG:4326"
+	layergroup := LayerGroup{Name: "golang",
+		Title:     "Go",
+		Mode:      "SINGLE",
+		Workspace: &workspace,
+		Publishables: Publishables{Published: []*GroupPublishableItem{
+			{Type: "layer", Name: "tiger:poly_landmarks", Href: "http://localhost:8080/geoserver/rest/workspaces/tiger/layers/poly_landmarks.json"},
+		}}, Styles: LayerGroupStyles{Style: []*Resource{
+			{Name: "poly_landmarks", Href: "http://localhost:8080/geoserver/rest/styles/poly_landmarks.json"},
+		}}, Bounds: NativeBoundingBox{
+			BoundingBox: BoundingBox{
+				Minx: -74.047185,
+				Maxx: -73.90782,
+				Miny: 40.679648,
+				Maxy: 40.882078},
+			Crs: &proj,
+		}}
+	created, createErr := gsCatalog.CreateLayerGroup("", &layergroup)
+	assert.True(t, created)
+	assert.Nil(t, createErr)
+	gsCatalog = GetCatalog("http://localhost:8080/geoserver_dummy/", "admin", "geoserver")
+	createdFail, createErrFail := gsCatalog.CreateLayerGroup("", &layergroup)
+	assert.False(t, createdFail)
+	assert.NotNil(t, createErrFail)
+}
 func TestGetLayerGroup(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
 	layerGroup, err := gsCatalog.GetLayerGroup("", "tiger-ny")
