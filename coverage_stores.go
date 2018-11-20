@@ -7,17 +7,10 @@ import (
 
 // CoverageStoresService define all geoserver CoverageStores operations
 type CoverageStoresService interface {
-
-	// GetCoverageStores return all coverage store as resources
 	GetCoverageStores(workspaceName string) (coverageStores []*Resource, err error)
-
-	// CreateCoverageStore create coverage store in geoserver and return created one else return error
+	GetCoverageStore(workspaceName string, gridName string) (coverageStore *CoverageStore, err error)
 	CreateCoverageStore(workspaceName string, coverageStore CoverageStore) (created bool, err error)
-
-	// UpdateCoverageStore  parital update coverage store in geoserver else return error
 	UpdateCoverageStore(workspaceName string, coverageStore CoverageStore) (modified bool, err error)
-
-	// DeleteCoverageStore delete coverage store from geoserver else return error
 	DeleteCoverageStore(workspaceName string, coverageStore string, recurse bool) (deleted bool, err error)
 }
 
@@ -57,11 +50,36 @@ func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*R
 	}
 	var coverageStoresResponse struct {
 		CoverageStores struct {
-			CoverageStore []*Resource
-		}
+			CoverageStore []*Resource `json:"coverageStore,omitempty"`
+		} `json:"coverageStores,omitempty"`
 	}
 	g.DeSerializeJSON(response, &coverageStoresResponse)
 	coverageStores = coverageStoresResponse.CoverageStores.CoverageStore
+	return
+}
+
+// GetCoverageStore return  coverage store from a workspace,
+// err is an error if error occurred else err is nil
+func (g *GeoServer) GetCoverageStore(workspaceName string, gridName string) (coverageStore *CoverageStore, err error) {
+	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", gridName)
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
+	if responseCode != statusOk {
+		g.logger.Error(string(response))
+		coverageStore = nil
+		err = g.GetError(responseCode, response)
+		return
+	}
+	var coverageStoreResponse struct {
+		CoverageStore *CoverageStore `json:"coverageStore,omitempty"`
+	}
+	g.DeSerializeJSON(response, &coverageStoreResponse)
+	coverageStore = coverageStoreResponse.CoverageStore
 	return
 }
 
