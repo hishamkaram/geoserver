@@ -77,6 +77,7 @@ type LayerGroupService interface {
 	GetLayerGroups(workspaceName string) (layerGroups []*Resource, err error)
 	GetLayerGroup(workspaceName string, layerGroupName string) (layer *LayerGroup, err error)
 	CreateLayerGroup(workspaceName string, layerGroup *LayerGroup) (created bool, err error)
+	DeleteLayerGroup(workspaceName string, layerGroupName string) (deleted bool, err error)
 }
 
 //GetLayerGroups  get all layergroups from workspace in geoserver else return error,
@@ -160,5 +161,29 @@ func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGrou
 		return
 	}
 	created = true
+	return
+}
+
+//DeleteLayerGroup delete geoserver layergroup else return error,
+//if workspace is "" will delete public layergroup with name ${layerGroupName} if exists
+func (g *GeoServer) DeleteLayerGroup(workspaceName string, layerGroupName string) (deleted bool, err error) {
+	if workspaceName != "" {
+		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
+	}
+	targetURL := g.ParseURL("rest", workspaceName, "layergroups", layerGroupName)
+	httpRequest := HTTPRequest{
+		Method: deleteMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
+	if responseCode != statusOk {
+		g.logger.Error(string(response))
+		deleted = false
+		err = g.GetError(responseCode, response)
+		return
+	}
+	deleted = true
 	return
 }

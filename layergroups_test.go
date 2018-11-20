@@ -80,6 +80,15 @@ func TestGetLayerGroup(t *testing.T) {
 	assert.Equal(t, layerGroupFail, &LayerGroup{})
 	assert.NotNil(t, layerGroupErr)
 }
+func TestDeleteLayerGroup(t *testing.T) {
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	deleted, deleteErr := gsCatalog.DeleteLayerGroup("", "tasmania")
+	assert.True(t, deleted)
+	assert.Nil(t, deleteErr)
+	deletedFail, deleteErrFail := gsCatalog.DeleteLayerGroup("tasmania", "tasmania")
+	assert.False(t, deletedFail)
+	assert.NotNil(t, deleteErrFail)
+}
 func TestUnmarshalJSON(t *testing.T) {
 	data := []byte(`<layerGroups>
 	<layerGroup>
