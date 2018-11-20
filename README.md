@@ -20,12 +20,12 @@
 </p>
 
 # Geoserver
-geoserver Is a Go Package For Manipulating a GeoServer Instance via the GeoServer REST API.
+geoserver Is a Go Package For Manipulating a GeoServer Instance via the GeoServer REST API. 
 
-How to install:
+---
+## How to install:
 - `got get github.com/hishamkaram/geoserver`
-
-## [Documentation](https://godoc.org/github.com/hishamkaram/geoserver)
+---
 
 ## usage:
   - Create new Catalog (which contains all available operations):
@@ -99,3 +99,17 @@ How to install:
        ```
   - You can find more examples by check testing files
   - You can find all supported operations on [Godocs](https://godoc.org/github.com/hishamkaram/geoserver)
+  ---
+
+### TESTING
+|   | Go Version | Geoserver Version | Tested             |
+|---|------------|-------------------|--------------------|
+| 1 | 1.9.x      | 2.13.x            | :heavy_check_mark: |
+| 2 | 1.9.x      | 2.14.x            | :heavy_check_mark: |
+| 3 | 1.10.x     | 2.13.x            | :heavy_check_mark: |
+| 4 | 1.10.x     | 2.14.x            | :heavy_check_mark: |
+| 5 | 1.11.x     | 2.13.x            | :heavy_check_mark: |
+| 6 | 1.11.x     | 2.14.x            | :heavy_check_mark: |
+
+___
+### [Documentation](https://godoc.org/github.com/hishamkaram/geoserver)
