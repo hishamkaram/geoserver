@@ -40,9 +40,29 @@ func TestCreateLayerGroup(t *testing.T) {
 				Maxy: 40.882078},
 			Crs: &proj,
 		}}
-	created, createErr := gsCatalog.CreateLayerGroup("", &layergroup)
+	workspace2 := Resource{Name: "topp"}
+	layergroup2 := LayerGroup{Name: "golang_topp",
+		Title:     "Go",
+		Mode:      "SINGLE",
+		Workspace: &workspace2,
+		Publishables: Publishables{Published: []*GroupPublishableItem{
+			{Type: "layer", Name: "topp:tasmania_state_boundaries", Href: "http://localhost:8080/geoserver/rest/workspaces/topp/layers/tasmania_state_boundaries.json"},
+		}}, Styles: LayerGroupStyles{Style: []*Resource{
+			{Name: "green", Href: "http://localhost:8080/geoserver/rest/styles/green.json"},
+		}}, Bounds: NativeBoundingBox{
+			BoundingBox: BoundingBox{
+				Minx: -130.85168,
+				Maxx: 148.47914100000003,
+				Miny: -43.648056,
+				Maxy: 54.1141},
+			Crs: &proj,
+		}}
+	created, createErr := gsCatalog.CreateLayerGroup("", &layergroup2)
 	assert.True(t, created)
 	assert.Nil(t, createErr)
+	createdWorkspace, createErrWorkspace := gsCatalog.CreateLayerGroup("layerGroupsTestWorkspace", &layergroup)
+	assert.True(t, createdWorkspace)
+	assert.Nil(t, createErrWorkspace)
 	gsCatalog = GetCatalog("http://localhost:8080/geoserver_dummy/", "admin", "geoserver")
 	createdFail, createErrFail := gsCatalog.CreateLayerGroup("", &layergroup)
 	assert.False(t, createdFail)
