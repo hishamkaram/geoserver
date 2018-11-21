@@ -23,6 +23,14 @@ type HTTPRequest struct {
 	Method   string
 }
 
+//UtilsInterface contians common function used to help you deal with data and geoserver api
+type UtilsInterface interface {
+	DoRequest(request HTTPRequest) (responseText []byte, statusCode int)
+	SerializeStruct(structObj interface{}) ([]byte, error)
+	DeSerializeJSON(response []byte, structObj interface{}) (err error)
+	ParseURL(urlParts ...string) (parsedURL string)
+}
+
 //DoRequest Send request and return result and statusCode
 func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusCode int) {
 	defer func() {

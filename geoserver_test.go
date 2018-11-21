@@ -24,11 +24,6 @@ func TestLoadConfig(t *testing.T) {
 	assert.Nil(t, geoserver)
 	assert.NotNil(t, err)
 }
-func TestSetLogger(t *testing.T) {
-	var gsCatalog GeoServer
-	gsCatalog.SetLogger()
-	assert.NotNil(t, gsCatalog.logger)
-}
 func TestGetGeoserverRequest(t *testing.T) {
 	gsCatalog := GetCatalog("", "", "")
 	request := gsCatalog.GetGeoserverRequest("", getMethod, jsonType, bytes.NewBuffer(make([]byte, 0, 0)), jsonType)

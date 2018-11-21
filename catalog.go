@@ -12,6 +12,7 @@ type Catalog interface {
 	LayerGroupService
 	CoverageStoresService
 	FeatureTypeService
+	UtilsInterface
 }
 
 //GetCatalog return geoserver catalog instance,
@@ -25,7 +26,7 @@ func GetCatalog(geoserverURL string, username string, password string) (catalog 
 		Username:   username,
 		Password:   password,
 		httpClient: &http.Client{},
+		logger:     GetLogger(),
 	}
-	geoserver.SetLogger()
 	return &geoserver
 }

@@ -32,15 +32,9 @@ func (g *GeoServer) LoadConfig(configFile string) (geoserver *GeoServer, err err
 		g.logger.Errorf("Unmarshal: %v", err)
 		return
 	}
-	g.SetLogger()
+	g.logger = GetLogger()
 	geoserver = g
 	return
-}
-
-//SetLogger sets instance logger
-func (g *GeoServer) SetLogger() *GeoServer {
-	g.logger = GetLogger()
-	return g
 }
 
 // GetGeoserverRequest creates a HTTP request with geoserver credintails and header
