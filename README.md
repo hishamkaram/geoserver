@@ -24,7 +24,15 @@ geoserver Is a Go Package For Manipulating a GeoServer Instance via the GeoServe
 
 ---
 ## How to install:
-- `got get github.com/hishamkaram/geoserver`
+- `go get -v gopkg.in/hishamkaram/geoserver.v1`
+  - now you can import the package from `gopkg.in/hishamkaram/geoserver.v1` example:
+  ```
+  import (
+    ...
+    "gopkg.in/hishamkaram/geoserver.v1"
+    ...
+  )
+  ```
 ---
 
 ## usage:
