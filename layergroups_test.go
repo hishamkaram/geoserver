@@ -23,7 +23,10 @@ func TestGetLayerGroups(t *testing.T) {
 func TestCreateLayerGroup(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
 	workspace := Resource{Name: ""}
-	var proj interface{} = "EPSG:4326"
+	proj := CRSType{
+		Class: "string",
+		Value: "EPSG:4326",
+	}
 	layergroup := LayerGroup{Name: "golang",
 		Title:     "Go",
 		Mode:      "SINGLE",

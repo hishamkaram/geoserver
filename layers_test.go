@@ -73,7 +73,7 @@ func TestPublishPostgisLayer(t *testing.T) {
 
 }
 func TestUploadShapeFile(t *testing.T) {
-	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	gsCatalog := GetCatalog("http://localhost:8080/geoserver14/", "admin", "geoserver")
 	zippedShapefile := filepath.Join(gsCatalog.getGoGeoserverPackageDir(), "testdata", "hurricane_tracks.zip")
 	uploaded, err := gsCatalog.UploadShapeFile(zippedShapefile, "shapefileWorkspace", "")
 	assert.True(t, uploaded)
