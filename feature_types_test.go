@@ -75,7 +75,7 @@ func TestCRSTypeMarshalJSON(t *testing.T) {
 	strSrsData, strSrserr := strSrs.MarshalJSON()
 	assert.Nil(t, strSrserr)
 	assert.NotNil(t, strSrsData)
-	emptySrs := CRSType{}
+	var emptySrs CRSType
 	emptySrsData, emptySrsErr := emptySrs.MarshalJSON()
 	assert.Equal(t, "{}", string(emptySrsData))
 	assert.Nil(t, emptySrsErr)
