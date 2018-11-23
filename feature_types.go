@@ -31,9 +31,10 @@ func (u *CRSType) UnmarshalJSON(data []byte) error {
 //MarshalJSON custom crs serialization
 func (u *CRSType) MarshalJSON() ([]byte, error) {
 	if IsEmpty(u) {
-		return []byte(""), nil
+		x := ""
+		return json.Marshal(&x)
 	} else if !IsEmpty(u.Class) && u.Class == "string" {
-		return []byte(u.Value), nil
+		return json.Marshal(u.Value)
 	}
 	type crsType struct {
 		Class string `json:"@class,omitempty"`
