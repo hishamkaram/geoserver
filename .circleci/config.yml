@@ -1,0 +1,32 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: 'golang:latest'
+      - image: tmaier/docker-compose
+    working_directory: /go/src/github.com/hisham/karam
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: build docker images
+          command: |
+            docker-compose build --build-arg GEOSERVER_VERSION=2.14.0
+      - run:
+          name: start docker containers
+          command: |
+            docker-compose up -d
+            docker ps
+      - run:
+          name: install deps
+          command: |
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+            go get golang.org/x/tools/cmd/cover
+            go get github.com/mattn/goveralls
+            dep ensure -v
+      - run:
+          name: wait for containers to be ready then start test
+          command: |
+            chmod +x ./scripts/*.sh
+            ./scripts/restore_layer.sh
+            while [[ "$(curl -u admin:geoserver -s -o /dev/null -w ''%{http_code}'' localhost:8080/geoserver/rest/about/status)" != "200" ]]; do sleep 5 && echo "."; done go test -v -covermode=count -coverprofile=coverage.out
