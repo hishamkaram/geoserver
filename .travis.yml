@@ -38,3 +38,7 @@ before_install:
   - go get github.com/mattn/goveralls
 script:
   -  bash -c "./scripts/restore_layer.sh && ./scripts/entry.sh"
+cache:
+  bundler: true
+  directories:
+    - $HOME/docker
