@@ -2,6 +2,7 @@ version: '3'
 
 services:
   geoserver:
+    image: geoserver:${GS_VERSION}
     restart: unless-stopped
     hostname: geoserver
     build:
