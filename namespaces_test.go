@@ -29,7 +29,7 @@ func TestNamespaceExists(t *testing.T) {
 }
 func TestGetNamespace(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
-	namespace, err := gsCatalog.GetNamespace("cite")
+	namespace, err := gsCatalog.GetNamespace("sf")
 	assert.NotNil(t, namespace)
 	assert.Nil(t, err)
 	namespace, err = gsCatalog.GetNamespace("golang_namespace_test_dummy")

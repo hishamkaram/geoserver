@@ -22,7 +22,7 @@ services:
   - docker
 env:
   - DOCKER_COMPOSE_VERSION=1.23.1 GS_VERSION=2.13.0
-  - DOCKER_COMPOSE_VERSION=1.23.1 GS_VERSION=2.14.0
+  - DOCKER_COMPOSE_VERSION=1.23.1 GS_VERSION=2.15.0
 
 before_install:
   - sudo rm /usr/local/bin/docker-compose
@@ -30,7 +30,6 @@ before_install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
   - sudo apt-get install realpath -y
-  - docker-compose build --build-arg GEOSERVER_VERSION=${GS_VERSION}
   - docker-compose up -d
   - docker ps
   - chmod +x ./scripts/*.sh
