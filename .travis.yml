@@ -30,7 +30,7 @@ before_install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
   - sudo apt-get install realpath -y
-  - docker-compose build --build-arg GEOSERVER_VERSION=${GS_VERSION}
+  - docker-compose build 
   - docker-compose up -d
   - docker ps
   - chmod +x ./scripts/*.sh

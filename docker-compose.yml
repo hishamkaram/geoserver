@@ -1,19 +1,27 @@
-version: '3'
+version: "2.1"
 
 services:
   geoserver:
-    restart: unless-stopped
-    hostname: geoserver
-    build:
-      context: ./
-      dockerfile: docker/Dockerfile
-    user: root
+    image: kartoza/geoserver:2.15.2
+    volumes:
+      - geoserver-data:/opt/geoserver/data_dir
     ports:
       - "8080:8080"
+    restart: on-failure
+    env_file:
+      - docker/env/geoserver.env
+    depends_on:
+      postgis:
+        condition: service_healthy
+    healthcheck:
+      test: curl --fail -s http://localhost:8080/ || exit 1
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
   postgis:
     image: kartoza/postgis:10.0-2.4
     volumes:
-      - 'postgis-data:/var/lib/postgresql'
+      - "postgis-data:/var/lib/postgresql"
     environment:
       - POSTGRES_DB=gis
       - POSTGRES_USER=golang
@@ -22,5 +30,8 @@ services:
     ports:
       - 5436:5432
     restart: unless-stopped
+    healthcheck:
+      test: "exit 0"
 volumes:
   postgis-data:
+  geoserver-data:
