@@ -15,9 +15,9 @@ before_script:
   - sudo service postgresql restart
 language: go
 go:
-  - "1.9"
-  - "1.10.x"
   - "1.11.x"
+  - "1.12.x"
+  - "1.13.x"
 services:
   - docker
 env:
