@@ -4,15 +4,15 @@ addons:
   postgresql: "10"
   apt:
     packages:
-    - postgresql-10
-    - postgresql-client-10
+      - postgresql-10
+      - postgresql-client-10
 
 before_script:
-    # Use default port
-    - sudo sed -i 's/port = 5433/port = 5432/' /etc/postgresql/10/main/postgresql.conf
-    # Use 9.6 auth config:
-    - sudo cp /etc/postgresql/{9.6,10}/main/pg_hba.conf
-    - sudo service postgresql restart
+  # Use default port
+  - sudo sed -i 's/port = 5433/port = 5432/' /etc/postgresql/10/main/postgresql.conf
+  # Use 9.6 auth config:
+  - sudo cp /etc/postgresql/{9.6,10}/main/pg_hba.conf
+  - sudo service postgresql restart
 language: go
 go:
   - "1.9"
@@ -30,11 +30,13 @@ before_install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
   - sudo apt-get install realpath -y
-  - docker-compose build 
+  - docker-compose build
   - docker-compose up -d
   - docker ps
   - chmod +x ./scripts/*.sh
+  - go mod download
+  - go mod verify
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/mattn/goveralls
 script:
-  -  bash -c "./scripts/restore_layer.sh && ./scripts/entry.sh"
+  - bash -c "./scripts/restore_layer.sh && ./scripts/entry.sh"
