@@ -23,6 +23,7 @@ services:
 env:
   - DOCKER_COMPOSE_VERSION=1.20.1 GS_VERSION=2.13.0
   - DOCKER_COMPOSE_VERSION=1.20.1 GS_VERSION=2.14.0
+  - GO111MODULE=on
 
 before_install:
   - sudo rm /usr/local/bin/docker-compose
