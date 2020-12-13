@@ -2,12 +2,13 @@ version: "2.1"
 
 services:
   geoserver:
-    image: kartoza/geoserver:2.15.2
-    volumes:
-      - geoserver-data:/opt/geoserver/data_dir
+    image: geoserver
+    build:
+      context: ./
+      dockerfile: ./docker/Dockerfile
+    restart: always
     ports:
-      - "8080:8080"
-    restart: on-failure
+      - 8080:8080
     env_file:
       - docker/env/geoserver.env
     depends_on:
