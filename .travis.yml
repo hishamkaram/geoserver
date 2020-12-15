@@ -4,25 +4,27 @@ addons:
   postgresql: "10"
   apt:
     packages:
-    - postgresql-10
-    - postgresql-client-10
+      - postgresql-10
+      - postgresql-client-10
 
 before_script:
-    # Use default port
-    - sudo sed -i 's/port = 5433/port = 5432/' /etc/postgresql/10/main/postgresql.conf
-    # Use 9.6 auth config:
-    - sudo cp /etc/postgresql/{9.6,10}/main/pg_hba.conf
-    - sudo service postgresql restart
+  # Use default port
+  - sudo sed -i 's/port = 5433/port = 5432/' /etc/postgresql/10/main/postgresql.conf
+  # Use 9.6 auth config:
+  - sudo cp /etc/postgresql/{9.6,10}/main/pg_hba.conf
+  - sudo service postgresql restart
 language: go
 go:
-  - "1.9"
-  - "1.10.x"
   - "1.11.x"
+  - "1.12.x"
+  - "1.13.x"
 services:
   - docker
 env:
-  - DOCKER_COMPOSE_VERSION=1.23.1 GS_VERSION=2.13.0
-  - DOCKER_COMPOSE_VERSION=1.23.1 GS_VERSION=2.15.0
+  - DOCKER_COMPOSE_VERSION=1.20.1 GS_VERSION=2.13.0 GO111MODULE=on
+  - DOCKER_COMPOSE_VERSION=1.20.1 GS_VERSION=2.14.0 GO111MODULE=on
+
+install: true
 
 before_install:
   - sudo rm /usr/local/bin/docker-compose
@@ -30,14 +32,17 @@ before_install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
   - sudo apt-get install realpath -y
+  - docker-compose build
   - docker-compose up -d
   - docker ps
   - chmod +x ./scripts/*.sh
+  - go mod download
+  - go mod verify
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/mattn/goveralls
 script:
-  -  bash -c "./scripts/restore_layer.sh && ./scripts/entry.sh"
+  - bash -c "./scripts/restore_layer.sh && ./scripts/entry.sh"
+
 cache:
   bundler: true
   directories:
-    - $HOME/docker

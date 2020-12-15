@@ -25,7 +25,7 @@ func GetCatalog(geoserverURL string, username string, password string) (catalog 
 		ServerURL:  geoserverURL,
 		Username:   username,
 		Password:   password,
-		httpClient: &http.Client{},
+		HttpClient: &http.Client{},
 		logger:     GetLogger(),
 	}
 	return &geoserver

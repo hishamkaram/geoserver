@@ -55,7 +55,7 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 		}
 		req.URL.RawQuery = q.Encode()
 	}
-	response, responseErr := g.httpClient.Do(req)
+	response, responseErr := g.HttpClient.Do(req)
 	if responseErr != nil {
 		panic(responseErr)
 	}
@@ -69,7 +69,7 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 func (g *GeoServer) GetError(statusCode int, text []byte) (err error) {
 	geoserverErr, ok := statusErrorMapping[statusCode]
 	if !ok {
-		geoserverErr = errors.New("Unexpected Error")
+		geoserverErr = fmt.Errorf("Unexpected Error with status code %d", statusCode)
 	}
 	errDetails := string(text)
 	fullMSG := fmt.Sprintf("abstract:%s\ndetails:%s\n", geoserverErr, errDetails)

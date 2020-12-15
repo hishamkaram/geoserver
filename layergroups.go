@@ -142,6 +142,7 @@ func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGrou
 	serializedGroup, _ := g.SerializeStruct(group)
 	targetURL := g.ParseURL("rest", workspaceName, "layergroups")
 	data := bytes.NewBuffer(serializedGroup)
+
 	httpRequest := HTTPRequest{
 		Method:   postMethod,
 		Accept:   jsonType,
