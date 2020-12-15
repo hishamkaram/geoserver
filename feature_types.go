@@ -1,9 +1,50 @@
 package geoserver
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 )
+
+//CRSType geoserver crs response
+type CRSType struct {
+	Class string `json:"@class,omitempty"`
+	Value string `json:"$,omitempty"`
+}
+
+//UnmarshalJSON custom deserialization to handle published layers of group
+func (u *CRSType) UnmarshalJSON(data []byte) error {
+	var raw interface{}
+	err := json.Unmarshal(data, &raw)
+	if err != nil {
+		return err
+	}
+	switch raw := raw.(type) {
+	case map[string]interface{}:
+		*u = CRSType{Class: raw["@class"].(string), Value: raw["$"].(string)}
+	case interface{}:
+		*u = CRSType{Class: "string", Value: string(data)}
+	}
+	return nil
+}
+
+//MarshalJSON custom crs serialization
+func (u *CRSType) MarshalJSON() ([]byte, error) {
+	if IsEmpty(u) {
+		x := ""
+		return json.Marshal(&x)
+	} else if !IsEmpty(u.Class) && u.Class == "string" {
+		return json.Marshal(u.Value)
+	}
+	type crsType struct {
+		Class string `json:"@class,omitempty"`
+		Value string `json:"$,omitempty"`
+	}
+	return json.Marshal(&crsType{
+		Class: u.Class,
+		Value: u.Value,
+	})
+}
 
 // FeatureTypeService define all geoserver featuretype operations
 type FeatureTypeService interface {
@@ -44,13 +85,13 @@ type ResponseSRS struct {
 // NativeBoundingBox is geoserver NativeBoundingBox for FeatureType
 type NativeBoundingBox struct {
 	BoundingBox
-	Crs *interface{} `json:"crs,omitempty"`
+	Crs *CRSType `json:"crs,omitempty"`
 }
 
 // LatLonBoundingBox is geoserver LatLonBoundingBox for FeatureType
 type LatLonBoundingBox struct {
 	BoundingBox
-	Crs string `json:"crs,omitempty"`
+	Crs *CRSType `json:"crs,omitempty"`
 }
 
 // MetadataLink is geoserver metadata link
@@ -75,23 +116,6 @@ type Attributes struct {
 	Attribute []*Attribute `json:"attribute,omitempty"`
 }
 
-//NativeCRSAsEntry get CRS to Entry
-func NativeCRSAsEntry(in interface{}) []Entry {
-	nativeCRS := make([]Entry, 0)
-	switch v := in.(type) {
-	case map[string]interface{}:
-		for k, value := range v {
-			nativeCRS = append(nativeCRS, Entry{Key: k, Value: value.(string)})
-		}
-
-	case string:
-		nativeCRS = append(nativeCRS, Entry{Key: "crs", Value: in.(string)})
-	default:
-		nativeCRS = append(nativeCRS, Entry{})
-	}
-	return nativeCRS
-}
-
 // Attribute is geoserver FeatureType Attribute
 type Attribute struct {
 	Name      string `json:"name,omitempty"`
@@ -112,7 +136,7 @@ type FeatureType struct {
 	Keywords               *Keywords          `json:"keywords,omitempty"`
 	Metadatalinks          *MetadataLinks     `json:"metadatalinks,omitempty"`
 	DataLinks              *DataLinks         `json:"dataLinks,omitempty"`
-	NativeCRS              *interface{}       `json:"nativeCRS,omitempty"`
+	NativeCRS              *CRSType           `json:"nativeCRS,omitempty"`
 	Srs                    string             `json:"srs,omitempty"`
 	Enabled                bool               `json:"enabled,omitempty"`
 	NativeBoundingBox      *NativeBoundingBox `json:"nativeBoundingBox,omitempty"`
