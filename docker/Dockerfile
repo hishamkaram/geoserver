@@ -1,5 +1,5 @@
 FROM tomcat:9.0.4-jre8
-LABEL "MAINTAINER"="Cartologic Development Team"
+LABEL "MAINTAINER"="Hesham Karm<hishamwaleedkaram@gmail.com>"
 ENV JAVA_HOME /opt/java
 ARG GEOSERVER_VERSION=2.13.0
 ENV DEBIAN_FRONTEND noninteractive
