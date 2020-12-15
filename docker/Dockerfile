@@ -1,5 +1,5 @@
 FROM tomcat:9.0.4-jre8
-LABEL "MAINTAINER"="Cartologic Development Team"
+LABEL "MAINTAINER"="Hesham Karm<hishamwaleedkaram@gmail.com>"
 ENV JAVA_HOME /opt/java
 ARG GEOSERVER_VERSION=2.13.0
 ENV DEBIAN_FRONTEND noninteractive
@@ -21,7 +21,7 @@ RUN apt-get update \
 ENV JAVA_HOME /opt/java
 
 RUN cd /tmp && \
-    wget https://netix.dl.sourceforge.net/project/geoserver/GeoServer/${GEOSERVER_VERSION}/geoserver-${GEOSERVER_VERSION}-war.zip
+    wget https://downloads.sourceforge.net/project/geoserver/GeoServer/${GEOSERVER_VERSION}/geoserver-${GEOSERVER_VERSION}-war.zip
 RUN unzip /tmp/geoserver-${GEOSERVER_VERSION}-war.zip -d /tmp/geoserver
 RUN mv /tmp/geoserver/geoserver.war /usr/local/tomcat/webapps
 EXPOSE 8080
