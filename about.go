@@ -19,7 +19,7 @@ func (g *GeoServer) IsRunning() (running bool, err error) {
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		// g.logger.Error(string(response))
 		err = g.GetError(responseCode, response)
 		running = false
 		return

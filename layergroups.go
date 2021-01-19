@@ -95,7 +95,7 @@ func (g *GeoServer) GetLayerGroups(workspaceName string) (layerGroups []*Resourc
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		layerGroups = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -121,7 +121,7 @@ func (g *GeoServer) GetLayerGroup(workspaceName string, layerGroupName string) (
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		layerGroup = &LayerGroup{}
 		err = g.GetError(responseCode, response)
 		return
@@ -153,7 +153,7 @@ func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGrou
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusCreated {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		created = false
 		err = g.GetError(responseCode, response)
 		return
@@ -177,7 +177,7 @@ func (g *GeoServer) DeleteLayerGroup(workspaceName string, layerGroupName string
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)
 		return

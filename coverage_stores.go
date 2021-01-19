@@ -43,7 +43,7 @@ func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*R
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		// g.logger.Error(string(response))
 		coverageStores = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -70,7 +70,7 @@ func (g *GeoServer) GetCoverageStore(workspaceName string, gridName string) (cov
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		coverageStore = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -99,7 +99,7 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusCreated {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		created = false
 		err = g.GetError(responseCode, response)
 		return
@@ -122,7 +122,7 @@ func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore Cove
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		modified = false
 		err = g.GetError(responseCode, response)
 		return
@@ -142,7 +142,7 @@ func (g *GeoServer) DeleteCoverageStore(workspaceName string, coverageStore stri
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)
 		return

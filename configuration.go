@@ -23,7 +23,7 @@ func (g *GeoServer) RestConfigrationCache() (success bool, err error) {
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		// g.logger.Warn(string(response))
 		success = false
 		err = g.GetError(responseCode, response)
 		return
@@ -48,7 +48,7 @@ func (g *GeoServer) ReloadConfigration() (success bool, err error) {
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		// g.logger.Warn(string(response))
 		success = false
 		err = g.GetError(responseCode, response)
 		return

@@ -180,7 +180,7 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusCreated {
-		g.logger.Warn(string(response))
+		//g.logger.Warn(string(response))
 		created = false
 		err = g.GetError(responseCode, response)
 		return
@@ -201,7 +201,7 @@ func (g *GeoServer) DeleteDatastore(workspaceName string, datastoreName string, 
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+		//g.logger.Warn(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)
 		return

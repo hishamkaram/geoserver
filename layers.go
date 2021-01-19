@@ -92,7 +92,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName, "file.shp")
 	shapeFileBinary, err := ioutil.ReadFile(fileURI)
 	if err != nil {
-		g.logger.Error(err)
+		// g.logger.Error(err)
 		return
 	}
 
@@ -110,7 +110,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusCreated {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		uploaded = false
 		err = g.GetError(responseCode, response)
 		return
@@ -135,7 +135,7 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err err
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		layers = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -165,7 +165,7 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Lay
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		layer = &Layer{}
 		err = g.GetError(responseCode, response)
 		return
@@ -198,7 +198,7 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		modified = false
 		err = g.GetError(responseCode, response)
 		return
@@ -217,7 +217,7 @@ func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName stri
 		NativeName: tableName}}
 
 	serializedLayer, _ := g.SerializeStruct(data)
-	g.logger.Errorf("%s", serializedLayer)
+	//g.logger.Errorf("%s", serializedLayer)
 	httpRequest := HTTPRequest{
 		Method:   postMethod,
 		Accept:   jsonType,
@@ -228,7 +228,7 @@ func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName stri
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusCreated {
-		g.logger.Error(response)
+		//g.logger.Error(response)
 		published = false
 		err = g.GetError(responseCode, response)
 		return
@@ -252,7 +252,7 @@ func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse 
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)
 		return

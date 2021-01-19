@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
+	// "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -17,7 +17,7 @@ type GeoServer struct {
 	Password      string `yaml:"password"`
 
 	*http.Client
-	logger *logrus.Logger
+	// logger *logrus.Logger
 }
 
 //LoadConfig load geoserver config from yaml file
@@ -25,15 +25,15 @@ func (g *GeoServer) LoadConfig(configFile string) (geoserver *GeoServer, err err
 
 	yamlFile, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		g.logger.Errorf("yamlFile.Get err   %v ", err)
+		//g.logger.Errorf("yamlFile.Get err   %v ", err)
 		return
 	}
 	err = yaml.Unmarshal(yamlFile, g)
 	if err != nil {
-		g.logger.Errorf("Unmarshal: %v", err)
+		// g.logger.Errorf("Unmarshal: %v", err)
 		return
 	}
-	g.logger = GetLogger()
+	// g.logger = GetLogger()
 	geoserver = g
 	return
 }

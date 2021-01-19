@@ -60,7 +60,7 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err err
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		styles = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -90,7 +90,7 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Sty
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		style = &Style{}
 		err = g.GetError(responseCode, response)
 		return
@@ -133,7 +133,7 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusCreated {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		created = false
 		err = g.GetError(responseCode, response)
 		return
@@ -152,7 +152,7 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 	targetURL := g.ParseURL("rest", workspaceURL, "styles", styleName)
 	exists, _ := g.StyleExists(workspaceName, styleName)
 	if exists && !overwrite {
-		g.logger.Error(exists)
+		//g.logger.Error(exists)
 		success = false
 		err = g.GetError(statusForbidden, []byte("Style Already Exists"))
 		return
@@ -175,7 +175,7 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		success = false
 		err = g.GetError(responseCode, response)
 		return
@@ -199,7 +199,7 @@ func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bo
 	}
 	response, responseCode := g.DoRequest(httpRequest)
 	if responseCode != statusOk {
-		g.logger.Error(string(response))
+		//g.logger.Error(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)
 		return

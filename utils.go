@@ -61,7 +61,7 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 	}
 	defer response.Body.Close()
 	body, _ := ioutil.ReadAll(response.Body)
-	g.logger.Infof("url:%s  Status=%s", req.URL, response.Status)
+	//g.logger.Infof("url:%s  Status=%s", req.URL, response.Status)
 	return body, response.StatusCode
 }
 
@@ -98,7 +98,7 @@ func IsEmpty(object interface{}) bool {
 func (g *GeoServer) SerializeStruct(structObj interface{}) ([]byte, error) {
 	serializedStruct, err := json.Marshal(&structObj)
 	if err != nil {
-		g.logger.Error(err)
+		//g.logger.Error(err)
 		return nil, err
 	}
 	return serializedStruct, nil
@@ -108,7 +108,7 @@ func (g *GeoServer) SerializeStruct(structObj interface{}) ([]byte, error) {
 func (g *GeoServer) DeSerializeJSON(response []byte, structObj interface{}) (err error) {
 	err = json.Unmarshal(response, &structObj)
 	if err != nil {
-		g.logger.Error(err)
+		//g.logger.Error(err)
 		return err
 	}
 	return nil
@@ -130,7 +130,7 @@ func (g *GeoServer) ParseURL(urlParts ...string) (parsedURL string) {
 	}()
 	geoserverURL, err := url.Parse(g.ServerURL)
 	if err != nil {
-		g.logger.Error(err)
+		//g.logger.Error(err)
 		panic(err)
 	}
 	urlArr := append([]string{geoserverURL.Path}, urlParts...)
