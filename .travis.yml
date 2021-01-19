@@ -1,44 +1,28 @@
 dist: trusty
 sudo: required
-addons:
-  postgresql: "10"
-  apt:
-    packages:
-      - postgresql-10
-      - postgresql-client-10
 
-before_script:
-  # Use default port
-  - sudo sed -i 's/port = 5433/port = 5432/' /etc/postgresql/10/main/postgresql.conf
-  # Use 9.6 auth config:
-  - sudo cp /etc/postgresql/{9.6,10}/main/pg_hba.conf
-  - sudo service postgresql restart
 language: go
 go:
   - "1.11.x"
   - "1.12.x"
   - "1.13.x"
+  - "1.14.x"
+  - "1.15.x"
 services:
   - docker
 env:
   - DOCKER_COMPOSE_VERSION=1.20.1 GS_VERSION=2.13.0 GO111MODULE=on
   - DOCKER_COMPOSE_VERSION=1.20.1 GS_VERSION=2.14.0 GO111MODULE=on
+  - DOCKER_COMPOSE_VERSION=1.20.1 GS_VERSION=2.18.0 GO111MODULE=on
 
 install: true
 
 before_install:
-  - sudo rm /usr/local/bin/docker-compose
-  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-  - chmod +x docker-compose
-  - sudo mv docker-compose /usr/local/bin
-  - sudo apt-get install realpath -y
-  - docker-compose build
   - docker-compose up -d
-  - docker ps
-  - chmod +x ./scripts/*.sh
-  - go mod download
-  - go mod verify
-  - go get golang.org/x/tools/cmd/cover
   - go get github.com/mattn/goveralls
+
 script:
-  - bash -c "./scripts/restore_layer.sh && ./scripts/entry.sh"
+  - bash -c 'while [[ "$(curl -u admin:geoserver -s -o /dev/null -w ''%{http_code}'' localhost:8080/geoserver/rest/about/status)" != "200" ]]; do sleep 5 && echo "."; done'
+  - go test -v -covermode=count -coverprofile=coverage.out
+  - $GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+
