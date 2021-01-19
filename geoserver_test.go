@@ -10,7 +10,7 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 	var gsCatalog GeoServer
-	file, _ := filepath.Abs("../geoserver/testdata/config.yml")
+	file, _ := filepath.Abs("testdata/config.yml")
 	geoserver, err := gsCatalog.LoadConfig(file)
 	assert.NotNil(t, geoserver)
 	assert.Nil(t, err)
@@ -19,7 +19,7 @@ func TestLoadConfig(t *testing.T) {
 	geoserver, err = gsCatalog.LoadConfig(file)
 	assert.Nil(t, geoserver)
 	assert.NotNil(t, err)
-	file, _ = filepath.Abs("../geoserver/testdata/config.err.yml")
+	file, _ = filepath.Abs("testdata/config.err.yml")
 	geoserver, err = gsCatalog.LoadConfig(file)
 	assert.Nil(t, geoserver)
 	assert.NotNil(t, err)

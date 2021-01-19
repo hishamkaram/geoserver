@@ -3,13 +3,18 @@ version: "2.1"
 services:
   geoserver:
     build:
-      context: ./
-      dockerfile: ./docker/Dockerfile
+      context: docker/geoserver
     restart: always
     ports:
       - 8080:8080
-    env_file:
-      - docker/env/geoserver.env
+    environment:
+      ENABLE_JSONP: "true"
+      MAX_FILTER_RULES: "20"
+      OPTIMIZE_LINE_WIDTH: "false"
+      GEOSERVER_ADMIN_PASSWORD: "geoserver"
+      INITIAL_MEMORY: "2G"
+      MAXIMUM_MEMORY: "4G"
+      XFRAME_OPTIONS: "false"
     depends_on:
       postgis:
         condition: service_healthy
@@ -19,16 +24,15 @@ services:
       timeout: 10s
       retries: 3
   postgis:
-    image: kartoza/postgis:10.0-2.4
+    image: postgis/postgis:13-3.0-alpine
     volumes:
       - "postgis-data:/var/lib/postgresql"
+      - ./docker/postgis/init:/docker-entrypoint-initdb.d
     environment:
-      - POSTGRES_DB=gis
-      - POSTGRES_USER=golang
-      - POSTGRES_PASS=golang
-      - ALLOW_IP_RANGE=0.0.0.0/0
-    ports:
-      - 5436:5432
+      POSTGRES_DB: "gis"
+      POSTGRES_USER: "golang"
+      POSTGRES_PASSWORD: "golang"
+      ALLOW_IP_RANGE: "0.0.0.0/0"
     restart: unless-stopped
     healthcheck:
       test: "exit 0"
