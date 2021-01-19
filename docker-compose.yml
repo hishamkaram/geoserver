@@ -2,7 +2,6 @@ version: "2.1"
 
 services:
   geoserver:
-    image: geoserver
     build:
       context: ./
       dockerfile: ./docker/Dockerfile
