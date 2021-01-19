@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 )
 
@@ -53,7 +54,7 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err err
 	}
 	targetURL := fmt.Sprintf("%s/rest/%sstyles", g.ServerURL, workspaceName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
@@ -83,7 +84,7 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Sty
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
@@ -124,7 +125,7 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	serializedStyle, _ := g.SerializeStruct(StyleRequestBody{Style: &style})
 	data := bytes.NewBuffer(serializedStyle)
 	httpRequest := HTTPRequest{
-		Method: postMethod,
+		Method: http.MethodPost,
 		// Accept:   jsonType,
 		Data:     data,
 		DataType: jsonType,
@@ -166,7 +167,7 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 		}
 	}
 	httpRequest := HTTPRequest{
-		Method:   putMethod,
+		Method:   http.MethodPut,
 		Accept:   jsonType,
 		Data:     data,
 		DataType: sldType,
@@ -192,7 +193,7 @@ func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bo
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
 	httpRequest := HTTPRequest{
-		Method: deleteMethod,
+		Method: http.MethodDelete,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  map[string]string{"purge": strconv.FormatBool(purge)},

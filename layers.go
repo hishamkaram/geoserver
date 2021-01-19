@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -101,7 +102,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 		g.CreateWorkspace(workspaceName)
 	}
 	httpRequest := HTTPRequest{
-		Method:   putMethod,
+		Method:   http.MethodPut,
 		Accept:   jsonType,
 		Data:     bytes.NewBuffer(shapeFileBinary),
 		DataType: zipType,
@@ -128,7 +129,7 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err err
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "layers")
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
@@ -158,7 +159,7 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Lay
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "layers", layerName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
@@ -189,7 +190,7 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 
 	serializedLayer, _ := g.SerializeStruct(data)
 	httpRequest := HTTPRequest{
-		Method:   putMethod,
+		Method:   http.MethodPut,
 		Accept:   jsonType,
 		Data:     bytes.NewBuffer(serializedLayer),
 		DataType: jsonType,
@@ -219,7 +220,7 @@ func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName stri
 	serializedLayer, _ := g.SerializeStruct(data)
 	//g.logger.Errorf("%s", serializedLayer)
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
+		Method:   http.MethodPost,
 		Accept:   jsonType,
 		Data:     bytes.NewBuffer(serializedLayer),
 		DataType: jsonType,
@@ -245,7 +246,7 @@ func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse 
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "layers", layerName)
 	httpRequest := HTTPRequest{
-		Method: deleteMethod,
+		Method: http.MethodDelete,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},

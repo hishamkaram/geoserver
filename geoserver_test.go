@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"net/http"
 	"path/filepath"
 	"testing"
 
@@ -26,6 +27,6 @@ func TestLoadConfig(t *testing.T) {
 }
 func TestGetGeoserverRequest(t *testing.T) {
 	gsCatalog := GetCatalog("", "", "")
-	request := gsCatalog.GetGeoserverRequest("", getMethod, jsonType, bytes.NewBuffer(make([]byte, 0, 0)), jsonType)
+	request := gsCatalog.GetGeoserverRequest("", http.MethodGet, jsonType, bytes.NewBuffer(make([]byte, 0, 0)), jsonType)
 	assert.NotNil(t, request)
 }

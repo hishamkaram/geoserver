@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 )
 
 //PublishedGroupLayers geoserver published layers
@@ -88,7 +89,7 @@ func (g *GeoServer) GetLayerGroups(workspaceName string) (layerGroups []*Resourc
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "layergroups")
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
@@ -114,7 +115,7 @@ func (g *GeoServer) GetLayerGroup(workspaceName string, layerGroupName string) (
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "layergroups", layerGroupName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
@@ -144,7 +145,7 @@ func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGrou
 	data := bytes.NewBuffer(serializedGroup)
 
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
+		Method:   http.MethodPost,
 		Accept:   jsonType,
 		Data:     data,
 		DataType: jsonType,
@@ -170,7 +171,7 @@ func (g *GeoServer) DeleteLayerGroup(workspaceName string, layerGroupName string
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "layergroups", layerGroupName)
 	httpRequest := HTTPRequest{
-		Method: deleteMethod,
+		Method: http.MethodDelete,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,

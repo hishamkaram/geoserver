@@ -3,6 +3,7 @@ package geoserver
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 )
 
@@ -180,7 +181,7 @@ func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) 
 	}
 	targetURL := g.ParseURL("rest", workspaceName, datastoreName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
@@ -209,7 +210,7 @@ func (g *GeoServer) DeleteFeatureType(workspaceName string, datastoreName string
 	}
 	targetURL := g.ParseURL("rest", workspaceName, datastoreName, "featuretypes", featureTypeName)
 	httpRequest := HTTPRequest{
-		Method: deleteMethod,
+		Method: http.MethodDelete,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
@@ -235,7 +236,7 @@ func (g *GeoServer) GetFeatureType(workspaceName string, datastoreName string, f
 	}
 	targetURL := g.ParseURL("rest", workspaceName, datastoreName, featureTypeName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,

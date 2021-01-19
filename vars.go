@@ -19,10 +19,6 @@ const (
 	sldType             = "application/vnd.ogc.sld+xml"
 	contentTypeHeader   = "Content-Type"
 	acceptHeader        = "Accept"
-	getMethod           = "GET"
-	putMethod           = "PUT"
-	postMethod          = "POST"
-	deleteMethod        = "DELETE"
 )
 
 var statusErrorMapping = map[int]error{

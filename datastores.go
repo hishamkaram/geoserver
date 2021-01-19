@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"net/http"
 	"strconv"
 )
 
@@ -97,7 +98,7 @@ func (connection *DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
 func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  map[string]string{"quietOnNotFound": strconv.FormatBool(quietOnNotFound)},
@@ -117,7 +118,7 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []*Resource,
 	//TODO: check if workspace exist before creating it
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores")
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
@@ -143,7 +144,7 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 	//TODO: check if workspace exist before creating it
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
@@ -171,7 +172,7 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 	}
 	data, _ := g.SerializeStruct(datastore)
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
+		Method:   http.MethodPost,
 		Accept:   jsonType,
 		Data:     bytes.NewBuffer(data),
 		DataType: jsonType,
@@ -194,7 +195,7 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 func (g *GeoServer) DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName)
 	httpRequest := HTTPRequest{
-		Method: deleteMethod,
+		Method: http.MethodDelete,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},

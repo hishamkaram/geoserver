@@ -1,6 +1,8 @@
 package geoserver
 
 import (
+	"net/http"
+
 	"github.com/hishamkaram/geoserver/wms"
 )
 
@@ -9,7 +11,7 @@ import (
 func (g *GeoServer) GetCapabilities(workspaceName string) (cap *wms.Capabilities, err error) {
 	targetURL := g.ParseURL(workspaceName, "wms")
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: appXMLType,
 		URL:    targetURL,
 		Query:  map[string]string{"service": "wms", "version": "1.1.1", "request": "GetCapabilities"},

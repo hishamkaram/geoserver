@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"net/http"
 	"strconv"
 )
 
@@ -36,7 +37,7 @@ type CoverageStoreRequestBody struct {
 func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*Resource, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores")
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
@@ -63,7 +64,7 @@ func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*R
 func (g *GeoServer) GetCoverageStore(workspaceName string, gridName string) (coverageStore *CoverageStore, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", gridName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
@@ -91,7 +92,7 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 	}
 	serializedData, _ := g.SerializeStruct(data)
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
+		Method:   http.MethodPost,
 		Data:     bytes.NewBuffer(serializedData),
 		DataType: jsonType + "; charset=utf-8",
 		Accept:   jsonType,
@@ -114,7 +115,7 @@ func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore Cove
 	data := CoverageStoreRequestBody{CoverageStore: &coverageStore}
 	serializedData, _ := g.SerializeStruct(data)
 	httpRequest := HTTPRequest{
-		Method:   putMethod,
+		Method:   http.MethodPut,
 		Data:     bytes.NewBuffer(serializedData),
 		DataType: jsonType,
 		Accept:   jsonType,
@@ -135,7 +136,7 @@ func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore Cove
 func (g *GeoServer) DeleteCoverageStore(workspaceName string, coverageStore string, recurse bool) (deleted bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", coverageStore)
 	httpRequest := HTTPRequest{
-		Method: deleteMethod,
+		Method: http.MethodDelete,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},

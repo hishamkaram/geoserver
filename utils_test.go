@@ -1,6 +1,7 @@
 package geoserver
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,7 @@ func TestDoRequest(t *testing.T) {
 		URL:    "http://localhost:8080/geoserver/"})
 	assert.Equal(t, statusCode, 0)
 	assert.NotNil(t, responseText)
-	responseText, statusCode = gsCatalog.DoRequest(HTTPRequest{Method: getMethod,
+	responseText, statusCode = gsCatalog.DoRequest(HTTPRequest{Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    "http://localhost:8080/geoserver/wfs"})
 	assert.NotEqual(t, statusCode, 0)
