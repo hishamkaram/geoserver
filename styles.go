@@ -51,7 +51,7 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err err
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	targetURL := fmt.Sprintf("%srest/%sstyles", g.ServerURL, workspaceName)
+	targetURL := fmt.Sprintf("%s/rest/%sstyles", g.ServerURL, workspaceName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
 		Accept: jsonType,
