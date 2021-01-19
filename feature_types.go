@@ -127,6 +127,13 @@ type Attribute struct {
 	Length    int16  `json:"length,omitempty"`
 }
 
+// FeatureTypeListResponse is geoserver response for AvailableFeatureType
+type FeatureTypeListResponse struct {
+	List struct {
+		Strings []string `json:"string"`
+	}
+}
+
 // FeatureType is geoserver FeatureType
 type FeatureType struct {
 	Name                   string             `json:"name,omitempty"`
@@ -169,6 +176,33 @@ type FeatureTypesResponseBody struct {
 //FeatureTypesRequestBody is the api body
 type FeatureTypesRequestBody struct {
 	FeatureType *FeatureType `json:"featureTypes,omitempty"`
+}
+
+// GetFeatureTypeList return all featureTypes in workspace and datastore if error occurred err will be return and nil for featureTypes
+func (g *GeoServer) GetFeatureTypeList(workspaceName, datastoreName string, kind string) (featureTypeList []string, err error) {
+	if workspaceName != "" {
+		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
+	}
+	if datastoreName != "" {
+		datastoreName = fmt.Sprintf("datastores/%s/featuretypes", datastoreName)
+	}
+	if kind == "" {
+		kind = "all"
+	}
+	targetURL := g.ParseURL("rest", workspaceName, datastoreName)
+	httpRequest := HTTPRequest{
+		Method: http.MethodGet,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  map[string]string{"list": kind},
+	}
+	response, responseCode := g.DoRequest(httpRequest)
+	if responseCode != statusOk {
+		return nil, g.GetError(responseCode, response)
+	}
+
+	r := FeatureTypeListResponse{}
+	return r.List.Strings, g.DeSerializeJSON(response, &r)
 }
 
 // GetFeatureTypes return all featureTypes in workspace and datastore if error occurred err will be return and nil for featrueTypes
