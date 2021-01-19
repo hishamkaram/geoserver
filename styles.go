@@ -124,8 +124,8 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	serializedStyle, _ := g.SerializeStruct(StyleRequestBody{Style: &style})
 	data := bytes.NewBuffer(serializedStyle)
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
-		Accept:   jsonType,
+		Method: postMethod,
+		// Accept:   jsonType,
 		Data:     data,
 		DataType: jsonType,
 		URL:      targetURL,
