@@ -60,7 +60,7 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err err
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Error(string(response))
 		styles = nil
 		err = g.GetError(responseCode, response)
@@ -90,7 +90,7 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Sty
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Error(string(response))
 		style = &Style{}
 		err = g.GetError(responseCode, response)
@@ -133,7 +133,7 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
+	if responseCode != http.StatusCreated {
 		//g.logger.Error(string(response))
 		created = false
 		err = g.GetError(responseCode, response)
@@ -155,7 +155,7 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 	if exists && !overwrite {
 		//g.logger.Error(exists)
 		success = false
-		err = g.GetError(statusForbidden, []byte("Style Already Exists"))
+		err = g.GetError(http.StatusForbidden, []byte("Style Already Exists"))
 		return
 	}
 	if !exists {
@@ -175,7 +175,7 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Error(string(response))
 		success = false
 		err = g.GetError(responseCode, response)
@@ -199,7 +199,7 @@ func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bo
 		Query:  map[string]string{"purge": strconv.FormatBool(purge)},
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Error(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)

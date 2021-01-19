@@ -53,7 +53,7 @@ func (g *GeoServer) CreateNamespace(Prefix string, URI string) (created bool, er
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
+	if responseCode != http.StatusCreated {
 		//g.logger.Warn(string(response))
 		created = false
 		err = g.GetError(responseCode, response)
@@ -84,7 +84,7 @@ func (g *GeoServer) DeleteNamespace(Prefix string) (deleted bool, err error) {
 		URL:    url,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Warn(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)
@@ -104,7 +104,7 @@ func (g *GeoServer) GetNamespaces() (namespaces []*Namespace, err error) {
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Warn(string(response))
 		namespaces = nil
 		err = g.GetError(responseCode, response)
@@ -130,7 +130,7 @@ func (g *GeoServer) GetNamespace(Prefix string) (namespace Namespace, err error)
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Error(string(response))
 		err = g.GetError(responseCode, response)
 		return

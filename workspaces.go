@@ -56,7 +56,7 @@ func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, err err
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
+	if responseCode != http.StatusCreated {
 		//g.logger.Warn(string(response))
 		created = false
 		err = g.GetError(responseCode, response)
@@ -88,7 +88,7 @@ func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (deleted
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Warn(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)
@@ -108,7 +108,7 @@ func (g *GeoServer) GetWorkspaces() (workspaces []*Resource, err error) {
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Warn(string(response))
 		workspaces = nil
 		err = g.GetError(responseCode, response)
@@ -134,7 +134,7 @@ func (g *GeoServer) GetWorkspace(workspaceName string) (workspace Workspace, err
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Error(string(response))
 		err = g.GetError(responseCode, response)
 		return

@@ -110,7 +110,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
+	if responseCode != http.StatusCreated {
 		//g.logger.Error(string(response))
 		uploaded = false
 		err = g.GetError(responseCode, response)
@@ -135,7 +135,7 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err err
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Error(string(response))
 		layers = nil
 		err = g.GetError(responseCode, response)
@@ -165,7 +165,7 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Lay
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Error(string(response))
 		layer = &Layer{}
 		err = g.GetError(responseCode, response)
@@ -198,7 +198,7 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Error(string(response))
 		modified = false
 		err = g.GetError(responseCode, response)
@@ -228,7 +228,7 @@ func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName stri
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
+	if responseCode != http.StatusCreated {
 		//g.logger.Error(response)
 		published = false
 		err = g.GetError(responseCode, response)
@@ -252,7 +252,7 @@ func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse 
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Error(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)

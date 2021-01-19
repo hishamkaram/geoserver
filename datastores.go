@@ -132,7 +132,7 @@ func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, 
 		Query:  map[string]string{"quietOnNotFound": strconv.FormatBool(quietOnNotFound)},
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		exists = false
 		err = g.GetError(responseCode, response)
 		return
@@ -152,7 +152,7 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []*Resource,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		datastores = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -178,7 +178,7 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		datastore = &Datastore{}
 		err = g.GetError(responseCode, response)
 		return
@@ -208,7 +208,7 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
+	if responseCode != http.StatusCreated {
 		//g.logger.Warn(string(response))
 		created = false
 		err = g.GetError(responseCode, response)
@@ -229,7 +229,7 @@ func (g *GeoServer) DeleteDatastore(workspaceName string, datastoreName string, 
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		//g.logger.Warn(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)

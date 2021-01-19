@@ -197,7 +197,7 @@ func (g *GeoServer) GetFeatureTypeList(workspaceName, datastoreName string, kind
 		Query:  map[string]string{"list": kind},
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		return nil, g.GetError(responseCode, response)
 	}
 
@@ -221,7 +221,7 @@ func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) 
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		featureTypes = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -250,7 +250,7 @@ func (g *GeoServer) DeleteFeatureType(workspaceName string, datastoreName string
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		deleted = false
 		err = g.GetError(responseCode, response)
 		return
@@ -276,7 +276,7 @@ func (g *GeoServer) GetFeatureType(workspaceName string, datastoreName string, f
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		featureType = nil
 		err = g.GetError(responseCode, response)
 		return

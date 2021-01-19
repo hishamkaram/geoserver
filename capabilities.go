@@ -17,7 +17,7 @@ func (g *GeoServer) GetCapabilities(workspaceName string) (cap *wms.Capabilities
 		Query:  map[string]string{"service": "wms", "version": "1.1.1", "request": "GetCapabilities"},
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		// g.logger.Error(string(response))
 		cap = nil
 		err = g.GetError(responseCode, response)
