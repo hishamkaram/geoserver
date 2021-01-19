@@ -15,8 +15,9 @@ type GeoServer struct {
 	ServerURL     string `yaml:"geoserver_url"`
 	Username      string `yaml:"username"`
 	Password      string `yaml:"password"`
-	HttpClient    *http.Client
-	logger        *logrus.Logger
+
+	*http.Client
+	logger *logrus.Logger
 }
 
 //LoadConfig load geoserver config from yaml file

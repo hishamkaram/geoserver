@@ -22,11 +22,11 @@ type Catalog interface {
 // return geoserver structObj
 func GetCatalog(geoserverURL string, username string, password string) (catalog *GeoServer) {
 	geoserver := GeoServer{
-		ServerURL:  geoserverURL,
-		Username:   username,
-		Password:   password,
-		HttpClient: &http.Client{},
-		logger:     GetLogger(),
+		ServerURL: geoserverURL,
+		Username:  username,
+		Password:  password,
+		Client:    &http.Client{},
+		logger:    GetLogger(),
 	}
 	return &geoserver
 }

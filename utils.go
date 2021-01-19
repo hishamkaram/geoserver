@@ -55,7 +55,7 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 		}
 		req.URL.RawQuery = q.Encode()
 	}
-	response, responseErr := g.HttpClient.Do(req)
+	response, responseErr := g.Client.Do(req)
 	if responseErr != nil {
 		panic(responseErr)
 	}
