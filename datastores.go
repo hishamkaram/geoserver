@@ -44,13 +44,16 @@ type DatastoreDetails struct {
 
 // DatastoreConnection holds parameters to create new datastore in geoserver
 type DatastoreConnection struct {
-	Name   string
-	Host   string
-	Port   int
-	DBName string
-	DBUser string
-	DBPass string
-	Type   string
+	Name           string
+	Host           string
+	Port           int
+	DBName         string
+	DBUser         string
+	DBPass         string
+	Type           string
+	Schema         string
+	MinConnections int
+	MaxConnections int
 }
 
 // DatastoreConnectionParams in datastore json
@@ -90,6 +93,31 @@ func (connection *DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
 				},
 			},
 		},
+	}
+	if connection.Schema != "" {
+		datastore.ConnectionParameters.Entry = append(datastore.ConnectionParameters.Entry,
+			&Entry{
+				Key:   "schema",
+				Value: connection.Schema,
+			},
+		)
+	}
+
+	if connection.MinConnections != 0 {
+		datastore.ConnectionParameters.Entry = append(datastore.ConnectionParameters.Entry,
+			&Entry{
+				Key:   "min connections",
+				Value: strconv.Itoa(connection.MinConnections),
+			},
+		)
+	}
+	if connection.MaxConnections != 0 {
+		datastore.ConnectionParameters.Entry = append(datastore.ConnectionParameters.Entry,
+			&Entry{
+				Key:   "max connections",
+				Value: strconv.Itoa(connection.MaxConnections),
+			},
+		)
 	}
 	return
 }
