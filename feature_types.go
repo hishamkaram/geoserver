@@ -23,6 +23,8 @@ func (u *CRSType) UnmarshalJSON(data []byte) error {
 	switch raw := raw.(type) {
 	case map[string]interface{}:
 		*u = CRSType{Class: raw["@class"].(string), Value: raw["$"].(string)}
+	case string:
+		*u = CRSType{Class: "string", Value: string(raw)}
 	case interface{}:
 		*u = CRSType{Class: "string", Value: string(data)}
 	}
