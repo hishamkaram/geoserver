@@ -43,13 +43,14 @@ type DatastoreDetails struct {
 
 // DatastoreConnection holds parameters to create new datastore in geoserver
 type DatastoreConnection struct {
-	Name   string
-	Host   string
-	Port   int
-	DBName string
-	DBUser string
-	DBPass string
-	Type   string
+	Name     string
+	Host     string
+	Port     int
+	DBName   string
+	DBSchema string
+	DBUser   string
+	DBPass   string
+	Type     string
 }
 
 // DatastoreConnectionParams in datastore json
@@ -74,6 +75,10 @@ func (connection *DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
 				{
 					Key:   "database",
 					Value: connection.DBName,
+				},
+				{
+					Key:   "schema",
+					Value: connection.DBSchema,
 				},
 				{
 					Key:   "user",
@@ -165,6 +170,9 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 //CreateDatastore create a datastore under provided workspace
 func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores")
+	if datastoreConnection.DBSchema == "" {
+		datastoreConnection.DBSchema = "public"
+	}
 	store := datastoreConnection.GetDatastoreObj()
 	datastore := DatastoreDetails{
 		Datastore: &store,
