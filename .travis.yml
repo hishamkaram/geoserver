@@ -1,17 +1,17 @@
 dist: trusty
 sudo: required
 addons:
-  postgresql: "10"
+  postgresql: "11"
   apt:
     packages:
-      - postgresql-10
-      - postgresql-client-10
+      - postgresql-11
+      - postgresql-client-11
 
 before_script:
   # Use default port
-  - sudo sed -i 's/port = 5433/port = 5432/' /etc/postgresql/10/main/postgresql.conf
+  - sudo sed -i 's/port = 5433/port = 5432/' /etc/postgresql/11/main/postgresql.conf
   # Use 9.6 auth config:
-  - sudo cp /etc/postgresql/{9.6,10}/main/pg_hba.conf
+  - sudo cp /etc/postgresql/{9.6,11}/main/pg_hba.conf
   - sudo service postgresql restart
 language: go
 go:
