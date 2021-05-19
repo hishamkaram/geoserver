@@ -112,12 +112,12 @@ geoserver Is a Go Package For Manipulating a GeoServer Instance via the GeoServe
 ### TESTING
 |   | Go Version | Geoserver Version | Tested             |
 |---|------------|-------------------|--------------------|
-| 1 | 1.11.x      | 2.13.x            | :heavy_check_mark: |
-| 2 | 1.11.x      | 2.14.x            | :heavy_check_mark: |
-| 3 | 1.12.x     | 2.13.x            | :heavy_check_mark: |
-| 4 | 1.12.x     | 2.14.x            | :heavy_check_mark: |
-| 5 | 1.13.x     | 2.13.x            | :heavy_check_mark: |
-| 6 | 1.13.x     | 2.14.x            | :heavy_check_mark: |
+| 1 | 1.13.x      | 2.13.x            | :heavy_check_mark: |
+| 2 | 1.13.x      | 2.14.x            | :heavy_check_mark: |
+| 3 | 1.14.x     | 2.13.x            | :heavy_check_mark: |
+| 4 | 1.14.x     | 2.14.x            | :heavy_check_mark: |
+| 5 | 1.15.x     | 2.13.x            | :heavy_check_mark: |
+| 6 | 1.15.x     | 2.14.x            | :heavy_check_mark: |
 
 ___
 ### [Documentation](https://godoc.org/github.com/hishamkaram/geoserver)
