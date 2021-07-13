@@ -1,4 +1,4 @@
-module github.com/deltabrot/geoserver
+module github.com/hishamkaram/geoserver
 
 go 1.15
 

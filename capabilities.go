@@ -1,7 +1,7 @@
 package geoserver
 
 import (
-	"github.com/deltabrot/geoserver/wms"
+	"github.com/hishamkaram/geoserver/wms"
 )
 
 //GetCapabilities Retrieves metadata about the service, including supported operations and parameters,
