@@ -14,7 +14,7 @@ type Coverage struct {
 	NativeFormat         string             `json:"nativeFormat,omitempty"`
 	Namespace            *Resource          `json:"namespace,omitempty"`
 	Title                string             `json:"title,omitempty"`
-	Abstract             string             `json:"abstract,omitempty"`
+	Description          string             `json:"description,omitempty"`
 	Keywords             *Keywords          `json:"keywords,omitempty"`
 	NativeCRS            *CRSType           `json:"nativeCRS,omitempty"`
 	Srs                  string             `json:"srs,omitempty"`
