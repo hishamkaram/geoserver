@@ -3,7 +3,9 @@ package geoserver
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 )
 
 // Coverage is geoserver Coverage (raster layer) data struct
@@ -15,6 +17,7 @@ type Coverage struct {
 	Namespace            *Resource          `json:"namespace,omitempty"`
 	Title                string             `json:"title,omitempty"`
 	Description          string             `json:"description,omitempty"`
+	Abstract             string             `json:"abstract,omitempty"`
 	Keywords             *Keywords          `json:"keywords,omitempty"`
 	NativeCRS            *CRSType           `json:"nativeCRS,omitempty"`
 	Srs                  string             `json:"srs,omitempty"`
@@ -138,6 +141,40 @@ func (g *GeoServer) GetCoverage(workspaceName string, coverageName string) (cove
 func (g *GeoServer) DeleteCoverage(workspaceName string, layerName string, recurse bool) (deleted bool, err error) {
 	//it's just a wrapper about DeleteLayer function as it does the same in the most use cases
 	return g.DeleteLayer(workspaceName, layerName, recurse)
+}
+
+//UpdateCoverage updates geoserver coverage (raster layer), else returns error,
+func (g *GeoServer) UpdateCoverage(workspaceName string, coverage *Coverage) (modified bool, err error) {
+
+	items := strings.Split(coverage.Store.Name, ":")
+	if len(items) != 2 {
+		return false, errors.New("internal error during coverage update, can't build store name")
+	}
+	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", items[1], "coverages", coverage.Name)
+
+	type coverageUpdateRequestBody struct {
+		Coverage Coverage `json:"coverage,omitempty"`
+	}
+
+	data := coverageUpdateRequestBody{Coverage: *coverage}
+
+	serializedLayer, _ := g.SerializeStruct(data)
+	httpRequest := HTTPRequest{
+		Method:   putMethod,
+		Accept:   jsonType,
+		Data:     bytes.NewBuffer(serializedLayer),
+		DataType: jsonType,
+		URL:      targetURL,
+		Query:    nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
+	if responseCode != statusOk {
+		g.logger.Error(string(response))
+		err = g.GetError(responseCode, response)
+		return
+	}
+	modified = true
+	return
 }
 
 //PublishCoverage publishes coverage from coverageStore
