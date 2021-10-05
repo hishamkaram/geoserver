@@ -64,10 +64,10 @@ func TestPublishCoverage(t *testing.T) {
 		coveragesRemoveCoverage(t)
 	}
 
-	done, err := gsCatalog.PublishCoverage(coveragesTestWorkspace, coveragesTestStoreName, coveragesTestCoverageName)
+	done, err := gsCatalog.PublishCoverage(coveragesTestWorkspace, coveragesTestStoreName, coveragesTestCoverageName, "")
 	assert.True(t, done)
 	assert.Nil(t, err)
-	done, errFail := gsCatalog.PublishCoverage(coveragesTestWorkspace, coveragesTestStoreName, "dummy")
+	done, errFail := gsCatalog.PublishCoverage(coveragesTestWorkspace, coveragesTestStoreName, "dummy", "")
 	assert.False(t, done)
 	assert.NotNil(t, errFail)
 
@@ -95,7 +95,7 @@ func TestGetCoverage(t *testing.T) {
 	//preparing
 	coveragesPrepareTestStorage(t, coveragesTestStoreName)
 
-	_, err := gsCatalog.PublishCoverage(coveragesTestWorkspace, coveragesTestStoreName, coveragesTestCoverageName)
+	_, err := gsCatalog.PublishCoverage(coveragesTestWorkspace, coveragesTestStoreName, coveragesTestCoverageName, "")
 	if err != nil && !strings.Contains(err.Error(), "exists") {
 		assert.Fail(t, "can't publish the coverage", err.Error())
 	}
@@ -122,7 +122,7 @@ func TestUpdateCoverage(t *testing.T) {
 		coveragesRemoveCoverage(t)
 	}
 
-	_, err = gsCatalog.PublishCoverage(coveragesTestWorkspace, coveragesTestStoreName, coveragesTestCoverageName)
+	_, err = gsCatalog.PublishCoverage(coveragesTestWorkspace, coveragesTestStoreName, coveragesTestCoverageName, "")
 	if err != nil {
 		assert.Fail(t, "can't publish the coverage", err.Error())
 	}
@@ -160,7 +160,7 @@ func TestGetCoverages(t *testing.T) {
 	}
 	assert.True(t, len(coverages) == 0)
 
-	_, err = gsCatalog.PublishCoverage(coveragesTestWorkspace, coveragesTestStoreName, coveragesTestCoverageName)
+	_, err = gsCatalog.PublishCoverage(coveragesTestWorkspace, coveragesTestStoreName, coveragesTestCoverageName, "")
 	if err != nil {
 		assert.Fail(t, "can't publish the coverage", err.Error())
 	}

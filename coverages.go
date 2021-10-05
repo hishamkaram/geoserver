@@ -178,11 +178,15 @@ func (g *GeoServer) UpdateCoverage(workspaceName string, coverage *Coverage) (mo
 }
 
 //PublishCoverage publishes coverage from coverageStore
-func (g *GeoServer) PublishCoverage(workspaceName string, coverageStoreName string, coverageName string) (published bool, err error) {
+func (g *GeoServer) PublishCoverage(workspaceName string, coverageStoreName string, coverageName string, publishName string) (published bool, err error) {
+
+	if publishName == "" {
+		publishName = coverageName
+	}
 
 	publishRequest := publishCoverageRequest{
 		&publishedCoverageDescr{
-			Name:               coverageName,
+			Name:               publishName,
 			NativeCoverageName: coverageName,
 		},
 	}
