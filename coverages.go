@@ -28,8 +28,8 @@ type Coverage struct {
 	Store                *Resource          `json:"store,omitempty"`
 	CqlFilter            string             `json:"cqlFilter,omitempty"`
 	OverridingServiceSRS bool               `json:"overridingServiceSRS,omitempty"`
-	//Metadata               *Metadata          `json:"metadata,omitempty"`  //need to fix an implementation due to json parse error
-	//SupportedFormats       []string			  `json:"supportedFormats,omitempty"`  //need to fix an implementation due to json parse error
+	//Metadata               *Metadata          `json:"metadata,omitempty"`  //need to fix the implementation due to json parse error
+	//SupportedFormats       []string			  `json:"supportedFormats,omitempty"`  //need to fix the implementation due to json parse error
 }
 
 type publishedCoverageDescr struct {
@@ -79,7 +79,7 @@ func (g *GeoServer) GetCoverages(workspaceName string) (coverages []*Resource, e
 	return coveragesResponse.Coverages.Coverage, nil
 }
 
-// GetStoreCoverages returns all coverages (raster layers) names including unpublished for coverageStore as string list,
+// GetStoreCoverages returns a list for all coverages (raster layers) names including unpublished for coverageStore,
 // err is an error if error occurred else err is nil
 func (g *GeoServer) GetStoreCoverages(workspaceName string, coverageStore string) (coverages []string, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", coverageStore, "coverages")
@@ -137,7 +137,8 @@ func (g *GeoServer) GetCoverage(workspaceName string, coverageName string) (cove
 	return &coverageResponse.Coverage, nil
 }
 
-//DeleteCoverage removes the coverage,
+// DeleteCoverage removes the coverage,
+// err is an error if error occurred else err is nil
 func (g *GeoServer) DeleteCoverage(workspaceName string, layerName string, recurse bool) (deleted bool, err error) {
 	//it's just a wrapper about DeleteLayer function as it does the same in the most use cases
 	return g.DeleteLayer(workspaceName, layerName, recurse)
@@ -177,7 +178,8 @@ func (g *GeoServer) UpdateCoverage(workspaceName string, coverage *Coverage) (mo
 	return
 }
 
-//PublishCoverage publishes coverage from coverageStore
+// PublishCoverage publishes coverage from coverageStore
+// coverageName - the name of the layer in the coverageStore (use GetStoreCoverages to get them), publishName - the name it was presented at geoserver
 func (g *GeoServer) PublishCoverage(workspaceName string, coverageStoreName string, coverageName string, publishName string) (published bool, err error) {
 
 	if publishName == "" {
@@ -193,6 +195,7 @@ func (g *GeoServer) PublishCoverage(workspaceName string, coverageStoreName stri
 	return g.publishCoverage(workspaceName, coverageStoreName, publishRequest)
 }
 
+// publishCoverage publishes coverage
 func (g *GeoServer) publishCoverage(workspaceName string, coverageStoreName string, publishCoverageRequest publishCoverageRequest) (published bool, err error) {
 
 	if workspaceName != "" {
