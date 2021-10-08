@@ -78,11 +78,6 @@ type PublishPostgisLayerRequest struct {
 	FeatureType *FeatureType `json:"featureType,omitempty"`
 }
 
-//PublishGeoTiffLayerRequest is the api body
-type PublishGeoTiffLayerRequest struct {
-	Coverage *Coverage `json:"coverage,omitempty"`
-}
-
 // GetshpFiledsName datastore name from shapefile name
 func (g *GeoServer) GetshpFiledsName(filename string) string {
 	name := strings.TrimSuffix(filename, filepath.Ext(filename))
@@ -222,40 +217,6 @@ func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName stri
 	targetURL := g.ParseURL("rest", workspaceName, "datastores", datastoreName, "/featuretypes")
 	data := PublishPostgisLayerRequest{FeatureType: &FeatureType{Name: publishName,
 		NativeName: tableName}}
-
-	serializedLayer, _ := g.SerializeStruct(data)
-	g.logger.Errorf("%s", serializedLayer)
-	httpRequest := HTTPRequest{
-		Method:   postMethod,
-		Accept:   jsonType,
-		Data:     bytes.NewBuffer(serializedLayer),
-		DataType: jsonType,
-		URL:      targetURL,
-		Query:    nil,
-	}
-	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
-		g.logger.Error(response)
-		published = false
-		err = g.GetError(responseCode, response)
-		return
-	}
-	published = true
-	return
-}
-
-//PublishGeoTiffLayer publish geotiff to geoserver
-func (g *GeoServer) PublishGeoTiffLayer(workspaceName string, coveragestoreName string, publishName string, fileName string) (published bool, err error) {
-	if workspaceName != "" {
-		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
-	}
-	targetURL := g.ParseURL("rest", workspaceName, "coveragestores", coveragestoreName, "/coverages")
-	data := PublishGeoTiffLayerRequest{
-		Coverage: &Coverage{
-			Name:               publishName,
-			NativeCoverageName: fileName,
-		},
-	}
 
 	serializedLayer, _ := g.SerializeStruct(data)
 	g.logger.Errorf("%s", serializedLayer)
