@@ -1,6 +1,7 @@
 package geoserver
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -138,4 +139,81 @@ func (g *GeoServer) ParseURL(urlParts ...string) (parsedURL string) {
 	parsedURL = geoserverURL.String()
 	return
 
+}
+
+//requestResource does request, gets resource data and fill the response struct with parsed json
+func (g *GeoServer) requestResource(targetURL string, response interface{}) (err error) {
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  nil,
+	}
+	responseData, responseCode := g.DoRequest(httpRequest)
+	if responseCode != statusOk {
+		g.logger.Error(string(responseData))
+		err = g.GetError(responseCode, responseData)
+		return
+	}
+
+	if err = json.Unmarshal(responseData, response); err != nil {
+		return fmt.Errorf("can't parse respose from %v: %v", targetURL, err)
+	}
+
+	return
+}
+
+//createEntity does POST request to create a resource or entity
+//checkError is a callback function processing the error, if nil the default error processing will perform
+func (g *GeoServer) createEntity(targetURL string, entity interface{}, checkError func(statusCode int, response []byte) error) (created bool, err error) {
+
+	var serializedLayer []byte
+	if entity != nil {
+		serializedLayer, _ = g.SerializeStruct(entity)
+	} else {
+		serializedLayer = []byte{}
+	}
+
+	httpRequest := HTTPRequest{
+		Method:   postMethod,
+		Accept:   jsonType,
+		Data:     bytes.NewBuffer(serializedLayer),
+		DataType: jsonType,
+		URL:      targetURL,
+		Query:    nil,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
+
+	if checkError == nil {
+		if responseCode != statusCreated {
+			g.logger.Error(string(response))
+			err = g.GetError(responseCode, response)
+			return
+		}
+	} else {
+		err = checkError(responseCode, response)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+//deleteEntity does DELETE request to delete the entity
+func (g *GeoServer) deleteEntity(targetURL string) (deleted bool, err error) {
+
+	httpRequest := HTTPRequest{
+		Method: deleteMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+	}
+	response, responseCode := g.DoRequest(httpRequest)
+	if responseCode != statusOk {
+		g.logger.Error(string(response))
+		err = g.GetError(responseCode, response)
+		return
+	}
+
+	return true, nil
 }

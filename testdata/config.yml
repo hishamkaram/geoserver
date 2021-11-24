@@ -1,4 +1,4 @@
 -workspace: golang
--geoserver_url: http://localhost:8080/geoserver13/
+-geoserver_url: http://localhost:8080/geoserver/
 -username: admin
 -password: geoserver
