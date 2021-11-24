@@ -3,14 +3,43 @@ package geoserver
 import (
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetFeatrueTypes(t *testing.T) {
-	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
-	featureTypes, err := gsCatalog.GetFeatureTypes("sf", "sf")
+var (
+	testZippedShapeFile = filepath.Join(gsCatalog.getGoGeoserverPackageDir(), "testdata", "museum_nyc.zip")
+	testWorkspace       = "someNonExistentWorkspace"
+	testDatastore       = "someNonExistentDatastore"
+)
+
+func featureTypePrecondition(t *testing.T) {
+	_, err := gsCatalog.CreateWorkspace(testWorkspace)
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
+		assert.Fail(t, "can't create workspace as a precondition for FeatureTypes test")
+	}
+	uploaded, err := gsCatalog.UploadShapeFile(testZippedShapeFile, testWorkspace, testDatastore)
+	if !uploaded || err != nil {
+		assert.Fail(t, "can't upload shapefile as a precondition for FeatureTypes test")
+	}
+}
+
+func featureTypePostcondition() {
+	_, _ = gsCatalog.DeleteWorkspace(testWorkspace, true)
+}
+
+func TestGetFeatureTypes(t *testing.T) {
+	before()
+
+	//precondition
+	featureTypePrecondition(t)
+	defer func() {
+		featureTypePostcondition()
+	}()
+
+	featureTypes, err := gsCatalog.GetFeatureTypes(testWorkspace, testDatastore)
 	assert.NotNil(t, featureTypes)
 	assert.NotEmpty(t, featureTypes)
 	assert.Nil(t, err)
@@ -18,30 +47,34 @@ func TestGetFeatrueTypes(t *testing.T) {
 	assert.Nil(t, featureTypes)
 	assert.NotNil(t, err)
 }
-func TestGetFeatrueType(t *testing.T) {
-	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
-	featureType, err := gsCatalog.GetFeatureType("sf", "sf", "bugsites")
+
+func TestGetFeatureType(t *testing.T) {
+	before()
+	featureTypePrecondition(t)
+	defer func() {
+		featureTypePostcondition()
+	}()
+	featureType, err := gsCatalog.GetFeatureType(testWorkspace, testDatastore, "museum_nyc")
 	assert.NotNil(t, featureType)
 	assert.NotEmpty(t, featureType)
 	assert.Nil(t, err)
-	featureType, err = gsCatalog.GetFeatureType("tiger", "nyc", "poi")
-	assert.NotNil(t, featureType)
-	assert.NotEmpty(t, featureType)
-	assert.Nil(t, err)
-	featureType, err = gsCatalog.GetFeatureType("sf_dummy", "sf_dummy", "bugsites")
+	featureType, err = gsCatalog.GetFeatureType(testWorkspace, testDatastore, "wrongFeatureType")
 	assert.Nil(t, featureType)
 	assert.NotNil(t, err)
 }
+
 func TestDeleteFeatureType(t *testing.T) {
-	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
-	zippedShapefile := filepath.Join(gsCatalog.getGoGeoserverPackageDir(), "testdata", "museum_nyc.zip")
-	uploaded, err := gsCatalog.UploadShapeFile(zippedShapefile, "featureTypeWorkspace", "")
-	assert.True(t, uploaded)
-	assert.Nil(t, err)
-	deleted, err := gsCatalog.DeleteFeatureType("featureTypeWorkspace", "", "museum_nyc", true)
+	before()
+
+	featureTypePrecondition(t)
+	defer func() {
+		featureTypePostcondition()
+	}()
+
+	deleted, err := gsCatalog.DeleteFeatureType(testWorkspace, testDatastore, "museum_nyc", true)
 	assert.True(t, deleted)
 	assert.Nil(t, err)
-	deleted, err = gsCatalog.DeleteFeatureType("sf_dummy", "s_dummyf", "archsites", true)
+	deleted, err = gsCatalog.DeleteFeatureType(testWorkspace, testDatastore, "wrongFeatureType", true)
 	assert.False(t, deleted)
 	assert.NotNil(t, err)
 }
@@ -82,7 +115,7 @@ func TestCRSTypeMarshalJSON(t *testing.T) {
 
 }
 
-func TestGeoserverImplemetFeatureTypeService(t *testing.T) {
+func TestGeoserverImplementFeatureTypeService(t *testing.T) {
 	gsCatalog := reflect.TypeOf(&GeoServer{})
 	FeatureTypeServiceType := reflect.TypeOf((*FeatureTypeService)(nil)).Elem()
 	check := gsCatalog.Implements(FeatureTypeServiceType)
