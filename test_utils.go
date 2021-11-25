@@ -29,6 +29,13 @@ type testEnv struct {
 		DBUser string
 		DBPass string
 	} `yaml:"postgres"`
+
+	PostgresJNDI struct {
+		Name              string
+		Type              string
+		JndiReferenceName string
+		Options           []Entry
+	} `yaml:"postgresJNDI"`
 }
 
 func test_before(t *testing.T) {

@@ -6,9 +6,31 @@ geoserver:
 
 postgres:
    name: "datastores_test"
-   port: 5432
+   port: 25432
    host: "localhost"
    type: "postgis"
-   dbname: "cartoview_datastore"
-   dbpass: "xxxx"
-   dbuser: "postgres"
+   dbname: "gis"
+   dbpass: "docker"
+   dbuser: "docker"
+
+postgresJNDI:
+   name: "datastores_test"
+   type: "postgis"
+   jndireferencename: "java:comp/env/jdbc/postgres"
+   options:
+      - key: "Estimated extends"
+        value: "true"
+      - key: "fetch size"
+        value: "1000"
+      - key: "Expose primary keys"
+        value: "true"
+      - key: "Support on the fly geometry simplification"
+        value: "true"
+      - key: "Batch insert size"
+        value: "100"
+      - key: "preparedStatements"
+        value: "false"
+      - key: "Method used to simplify geometries"
+        value: "FAST"
+      - key: "Loose bbox"
+        value: "true"

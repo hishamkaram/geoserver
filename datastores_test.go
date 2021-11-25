@@ -92,6 +92,11 @@ func (suite *GeoserverDatastoreSuite) Test04DeleteDatastore() {
 
 func (suite *GeoserverDatastoreSuite) Test05GetDatastores() {
 	_, _ = suite.CreateDatastore()
+
+	defer func() {
+		_, _ = suite.gsCatalog.DeleteDatastore(suite.workspaceName, suite.datastoreName, true)
+	}()
+
 	datastores, err := suite.gsCatalog.GetDatastores(suite.workspaceName)
 	assert.NotEmpty(suite.T(), datastores)
 	assert.NotNil(suite.T(), datastores)
@@ -102,12 +107,37 @@ func (suite *GeoserverDatastoreSuite) Test05GetDatastores() {
 }
 
 func (suite *GeoserverDatastoreSuite) Test06GetDatastoreDetails() {
+	_, _ = suite.CreateDatastore()
+	defer func() {
+		_, _ = suite.gsCatalog.DeleteDatastore(suite.workspaceName, suite.datastoreName, true)
+	}()
 	datastore, err := suite.gsCatalog.GetDatastoreDetails(suite.workspaceName, suite.datastoreName)
 	assert.NotEmpty(suite.T(), datastore)
 	assert.NotNil(suite.T(), datastore)
 	assert.Nil(suite.T(), err)
 	datastore, err = suite.gsCatalog.GetDatastoreDetails(suite.workspaceName, suite.datastoreName+"_dummy")
 	assert.Equal(suite.T(), datastore, &Datastore{})
+	assert.NotNil(suite.T(), err)
+}
+
+func (suite *GeoserverDatastoreSuite) Test07CreateDatastoreJNDI() {
+
+	p := testConfig.PostgresJNDI
+	conn := DatastoreJNDIConnection{
+		Name:              p.Name,
+		Type:              p.Type,
+		JndiReferenceName: p.JndiReferenceName,
+		Options:           p.Options,
+	}
+	defer func() {
+		_, _ = suite.gsCatalog.DeleteDatastore(suite.workspaceName, suite.datastoreName, true)
+	}()
+	created, err := suite.gsCatalog.CreateDatastore(conn, suite.workspaceName)
+	assert.True(suite.T(), created)
+	assert.Nil(suite.T(), err)
+
+	created, err = suite.gsCatalog.CreateDatastore(conn, suite.workspaceName)
+	assert.False(suite.T(), created)
 	assert.NotNil(suite.T(), err)
 }
 
