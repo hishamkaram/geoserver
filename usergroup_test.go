@@ -7,7 +7,7 @@ import (
 )
 
 func TestGeoServer_GetUsers(t *testing.T) {
-	before()
+	test_before(t)
 	users, err := gsCatalog.GetUsers("")
 	assert.Nil(t, err)
 	assert.NotEqual(t, len(users), 0)
@@ -17,7 +17,7 @@ func TestGeoServer_GetUsers(t *testing.T) {
 }
 
 func TestGeoServer_GetGroups(t *testing.T) {
-	before()
+	test_before(t)
 	users, err := gsCatalog.GetGroups("")
 	assert.Nil(t, err)
 	//no groups in default configuration
@@ -28,14 +28,14 @@ func TestGeoServer_GetGroups(t *testing.T) {
 }
 
 func TestGeoServer_GetRoles(t *testing.T) {
-	before()
+	test_before(t)
 	roles, err := gsCatalog.GetRoles()
 	assert.Nil(t, err)
 	assert.NotEqual(t, len(roles), 0)
 }
 
 func TestGeoServer_GetUserRoles(t *testing.T) {
-	before()
+	test_before(t)
 	roles, err := gsCatalog.GetUserRoles("admin")
 	assert.Nil(t, err)
 	assert.NotEqual(t, len(roles), 0)
@@ -47,7 +47,7 @@ func TestGeoServer_GetUserRoles(t *testing.T) {
 }
 
 func TestGeoServer_CreateUser(t *testing.T) {
-	before()
+	test_before(t)
 
 	user := "someNonExistentUser"
 	created, err := gsCatalog.CreateUser(user, "any", "")
@@ -64,7 +64,7 @@ func TestGeoServer_CreateUser(t *testing.T) {
 }
 
 func TestGeoServer_CreateGroup(t *testing.T) {
-	before()
+	test_before(t)
 	group := "someNonExistentGroup"
 
 	created, err := gsCatalog.CreateGroup(group, "")
@@ -81,7 +81,7 @@ func TestGeoServer_CreateGroup(t *testing.T) {
 }
 
 func TestGeoServer_CreateRole(t *testing.T) {
-	before()
+	test_before(t)
 
 	role := "someNonExistentRole"
 
@@ -100,7 +100,7 @@ func TestGeoServer_CreateRole(t *testing.T) {
 }
 
 func TestGeoServer_AddUserRole(t *testing.T) {
-	before()
+	test_before(t)
 
 	role := "someNonExistentRole"
 	user := "someNonExistentUser"
@@ -127,7 +127,7 @@ func TestGeoServer_AddUserRole(t *testing.T) {
 }
 
 func TestGeoServer_DeleteUserRole(t *testing.T) {
-	before()
+	test_before(t)
 
 	role := "someNonExistentRole"
 	user := "someNonExistentUser"
@@ -162,7 +162,7 @@ func TestGeoServer_DeleteUserRole(t *testing.T) {
 }
 
 func TestGeoServer_DeleteRole(t *testing.T) {
-	before()
+	test_before(t)
 
 	created, err := gsCatalog.CreateRole("someNonExistentRole")
 	if !created || err != nil {
@@ -179,7 +179,7 @@ func TestGeoServer_DeleteRole(t *testing.T) {
 }
 
 func TestGeoServer_DeleteUser(t *testing.T) {
-	before()
+	test_before(t)
 
 	user := "UserDeleteTest"
 	_, err := gsCatalog.CreateUser(user, "test", "")
@@ -197,7 +197,7 @@ func TestGeoServer_DeleteUser(t *testing.T) {
 }
 
 func TestGeoServer_DeleteGroup(t *testing.T) {
-	before()
+	test_before(t)
 
 	group := "GroupDeleteTest"
 	_, err := gsCatalog.CreateGroup(group, "")

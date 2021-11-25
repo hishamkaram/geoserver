@@ -31,7 +31,7 @@ func featureTypePostcondition() {
 }
 
 func TestGetFeatureTypes(t *testing.T) {
-	before()
+	test_before(t)
 
 	//precondition
 	featureTypePrecondition(t)
@@ -49,7 +49,7 @@ func TestGetFeatureTypes(t *testing.T) {
 }
 
 func TestGetFeatureType(t *testing.T) {
-	before()
+	test_before(t)
 	featureTypePrecondition(t)
 	defer func() {
 		featureTypePostcondition()
@@ -64,7 +64,7 @@ func TestGetFeatureType(t *testing.T) {
 }
 
 func TestDeleteFeatureType(t *testing.T) {
-	before()
+	test_before(t)
 
 	featureTypePrecondition(t)
 	defer func() {

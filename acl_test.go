@@ -7,14 +7,14 @@ import (
 )
 
 func TestGeoServer_GetLayersAclRules(t *testing.T) {
-	before()
+	test_before(t)
 	rules, err := gsCatalog.GetLayersAclRules()
 	assert.Nil(t, err)
 	assert.NotEqual(t, len(rules), 0)
 }
 
 func TestGeoServer_AddDeleteLayersAclRule(t *testing.T) {
-	before()
+	test_before(t)
 
 	aclRule := AclRule{
 		Workspace: "someNonExistentWorkspace",

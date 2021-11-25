@@ -1,0 +1,14 @@
+geoserver:
+   workspace: "someNonExistentWorkspace"
+   geoserver_url: "http://localhost:8080/geoserver/"
+   username: "admin"
+   password: "geoserver"
+
+postgres:
+   name: "datastores_test"
+   port: 5432
+   host: "localhost"
+   type: "postgis"
+   dbname: "cartoview_datastore"
+   dbpass: "xxxx"
+   dbuser: "postgres"

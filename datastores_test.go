@@ -19,16 +19,21 @@ type GeoserverDatastoreSuite struct {
 
 func (suite *GeoserverDatastoreSuite) SetupSuite() {
 
-	suite.workspaceName = "datastores_test"
-	suite.datastoreName = "datastores_test"
+	test_before(suite.T())
+
+	p := testConfig.Postgres
+
+	suite.workspaceName = testConfig.Geoserver.Workspace
+	suite.datastoreName = p.Name
+
 	suite.conn = DatastoreConnection{
 		Name:   suite.datastoreName,
-		Port:   5432,
-		Host:   "localhost",
-		Type:   "postgis",
-		DBName: "cartoview_datastore",
-		DBPass: "xxxx",
-		DBUser: "postgres",
+		Port:   p.Port,
+		Host:   p.Host,
+		Type:   p.Type,
+		DBName: p.DBName,
+		DBPass: p.DBPass,
+		DBUser: p.DBUser,
 	}
 
 	suite.gsCatalog = GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
