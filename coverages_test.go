@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-var gsCatalog *GeoServer
-
 var (
 	coveragesTestWorkspace      = "sf"
 	coveragesTestCoverageName   = "sfdem"
@@ -19,12 +17,6 @@ var (
 		coveragesTestDummyStoreName: "file:data/sf/dummy.tif",
 	}
 )
-
-func before() {
-	if gsCatalog == nil {
-		gsCatalog = GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
-	}
-}
 
 func coveragesPrepareTestStorage(t *testing.T, storeName string) {
 	//creating coverageStore if doesn't exist
@@ -54,7 +46,7 @@ func coveragesRemoveCoverage(t *testing.T) {
 }
 
 func TestPublishCoverage(t *testing.T) {
-	before()
+	test_before(t)
 
 	//preparing
 	coveragesPrepareTestStorage(t, coveragesTestStoreName)
@@ -76,7 +68,7 @@ func TestPublishCoverage(t *testing.T) {
 
 /*
 func TestPublishGeoTiffLayer(t *testing.T) {
-	before()
+	test_before(t)
 
 	_, err := gsCatalog.PublishGeoTiffLayer(coveragesTestWorkspace, coveragesTestStoreName + "1", coveragesTestCoverageName, coveragesTestStoreFile[coveragesTestStoreName])
 
@@ -90,7 +82,7 @@ func TestPublishGeoTiffLayer(t *testing.T) {
 
 func TestGetCoverage(t *testing.T) {
 
-	before()
+	test_before(t)
 
 	//preparing
 	coveragesPrepareTestStorage(t, coveragesTestStoreName)
@@ -112,7 +104,7 @@ func TestGetCoverage(t *testing.T) {
 }
 
 func TestUpdateCoverage(t *testing.T) {
-	before()
+	test_before(t)
 
 	//preparing
 	coveragesPrepareTestStorage(t, coveragesTestStoreName)
@@ -144,7 +136,7 @@ func TestUpdateCoverage(t *testing.T) {
 }
 
 func TestGetCoverages(t *testing.T) {
-	before()
+	test_before(t)
 
 	//preparing
 	coveragesPrepareTestStorage(t, coveragesTestStoreName)
@@ -175,7 +167,7 @@ func TestGetCoverages(t *testing.T) {
 }
 
 func TestGetStorageCoverages(t *testing.T) {
-	before()
+	test_before(t)
 
 	//preparing
 	coveragesPrepareTestStorage(t, coveragesTestStoreName)
