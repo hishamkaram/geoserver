@@ -25,26 +25,27 @@ type AclRule struct {
 	Roles     []string     // list of roles allowed to perform the operation, null or empty array equal "*"
 }
 
-// AclRuleToString convert aclRule to string representation a geoserver expect
-func (g *GeoServer) AclRuleToString(rule AclRule) (ruleString string, rolesString string) {
-	if rule.Workspace == "" {
-		rule.Workspace = "*"
+// ToStrings convert aclRule to string representation a geoserver expects
+func (aclRule AclRule) ToStrings() (ruleString string, rolesString string) {
+	if aclRule.Workspace == "" {
+		aclRule.Workspace = "*"
 	}
-	if rule.Layer == "" {
-		rule.Layer = "*"
+	if aclRule.Layer == "" {
+		aclRule.Layer = "*"
 	}
-	if rule.Operation == "" {
-		rule.Operation = AclOpRead
+	if aclRule.Operation == "" {
+		aclRule.Operation = AclOpRead
 	}
-	if rule.Roles == nil || len(rule.Roles) == 0 {
-		rule.Roles = []string{"*"}
+	if aclRule.Roles == nil || len(aclRule.Roles) == 0 {
+		aclRule.Roles = []string{"*"}
 	}
 
-	return fmt.Sprintf("%v.%v.%v", rule.Workspace, rule.Layer, rule.Operation), strings.Join(rule.Roles, ",")
+	return fmt.Sprintf("%v.%v.%v", aclRule.Workspace, aclRule.Layer, aclRule.Operation), strings.Join(aclRule.Roles, ",")
+
 }
 
 // StringToAclRule parse and convert aclRule from string representation to AclRule struct
-func (g *GeoServer) StringToAclRule(rule string, roles string) (aclRule AclRule, err error) {
+func StringToAclRule(rule string, roles string) (aclRule AclRule, err error) {
 	parts := strings.Split(rule, ".")
 	if len(parts) != 3 {
 		err = errors.New("wrong acl string")
@@ -75,7 +76,7 @@ func (g *GeoServer) GetLayersAclRules() (rules []AclRule, err error) {
 
 	rules = make([]AclRule, 0, len(aclResponse))
 	for key, value := range aclResponse {
-		aclRule, err := g.StringToAclRule(key, value)
+		aclRule, err := StringToAclRule(key, value)
 		if err != nil {
 			return rules, err
 		}
@@ -90,7 +91,7 @@ func (g *GeoServer) AddLayersAclRule(aclRule AclRule) (done bool, err error) {
 
 	targetURL := g.ParseURL("rest", "security", "acl", "layers")
 
-	ruleString, roleString := g.AclRuleToString(aclRule)
+	ruleString, roleString := aclRule.ToStrings()
 	createAclRequest := map[string]string{
 		ruleString: roleString,
 	}
@@ -107,7 +108,7 @@ func (g *GeoServer) AddLayersAclRule(aclRule AclRule) (done bool, err error) {
 // DeleteLayersAclRule deletes acl rule
 // returns true/false if deleted or not, err is an error if error occurred else err is nil
 func (g *GeoServer) DeleteLayersAclRule(aclRule AclRule) (done bool, err error) {
-	ruleString, _ := g.AclRuleToString(aclRule)
+	ruleString, _ := aclRule.ToStrings()
 	targetURL := g.ParseURL("rest", "security", "acl", "layers", ruleString)
 	return g.deleteEntity(targetURL)
 }
