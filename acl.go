@@ -91,11 +91,11 @@ func (g *GeoServer) AddLayersAclRule(aclRule AclRule) (done bool, err error) {
 	targetURL := g.ParseURL("rest", "security", "acl", "layers")
 
 	ruleString, roleString := g.AclRuleToString(aclRule)
-	createUserRequest := map[string]string{
+	createAclRequest := map[string]string{
 		ruleString: roleString,
 	}
 
-	return g.createEntity(targetURL, createUserRequest, func(statusCode int, response []byte) error {
+	return g.createEntity(targetURL, createAclRequest, func(statusCode int, response []byte) error {
 		if statusCode != statusOk {
 			g.logger.Error(string(response))
 			return g.GetError(statusCode, response)
