@@ -6,12 +6,38 @@ geoserver:
 
 postgres:
    name: "datastores_test"
-   port: 25432
+   port: 5432
    host: "localhost"
    type: "postgis"
    dbname: "gis"
    dbpass: "docker"
    dbuser: "docker"
+   options:
+     - key: "Expose primary keys"
+       value: "true"
+     - key: "fetch size"
+       value: "1000"
+     - key: "Support on the fly geometry simplification"
+       value: "true"
+     - key: "Batch insert size"
+       value: "100"
+     - key: "preparedStatements"
+       value: "false"
+     - key: "Method used to simplify geometries"
+       value: "FAST"
+     - key: "Loose bbox"
+       value: "true"
+     - key: "encode functions"
+       value: "true"
+     - key: "validate connections"
+       value: "true"
+     - key: "max connections"
+       value: "10"
+     - key: "min connections"
+       value: "1"
+     - key: "Test while idle"
+       value: "true"
+
 
 postgresJNDI:
    name: "datastores_test"

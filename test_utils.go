@@ -21,13 +21,14 @@ type testEnv struct {
 	} `yaml:"geoserver"`
 
 	Postgres struct {
-		Name   string
-		Host   string
-		Port   int
-		Type   string
-		DBName string
-		DBUser string
-		DBPass string
+		Name    string
+		Host    string
+		Port    int
+		Type    string
+		DBName  string
+		DBUser  string
+		DBPass  string
+		Options []Entry
 	} `yaml:"postgres"`
 
 	PostgresJNDI struct {

@@ -1,6 +1,7 @@
 package geoserver
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -78,6 +79,136 @@ func TestDeleteFeatureType(t *testing.T) {
 	assert.False(t, deleted)
 	assert.NotNil(t, err)
 }
+
+func TestCreateFeatureType(t *testing.T) {
+	test_before(t)
+
+	_, err := gsCatalog.CreateWorkspace(testWorkspace)
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
+		assert.Fail(t, "can't create workspace as a precondition for CreateFeatureTypes test")
+	}
+	defer func() {
+		_, _ = gsCatalog.DeleteWorkspace(testWorkspace, true)
+	}()
+
+	featureType := FeatureType{}
+
+	err = json.Unmarshal(featureTypeCreatingSample(), &featureType)
+	assert.Nil(t, err)
+
+	p := testConfig.Postgres
+
+	conn := DatastoreConnection{
+		Name:    testDatastore,
+		Port:    p.Port,
+		Host:    p.Host,
+		Type:    p.Type,
+		DBName:  p.DBName,
+		DBPass:  p.DBPass,
+		DBUser:  p.DBUser,
+		Options: p.Options,
+	}
+
+	defer func() {
+		_, _ = gsCatalog.DeleteDatastore(testWorkspace, testDatastore, true)
+	}()
+
+	created, err := gsCatalog.CreateDatastore(conn, testWorkspace)
+	if !created || err != nil {
+		assert.Fail(t, "Can't create datastore as precondition to CreateFeatureType")
+		return
+	}
+
+	created, err = gsCatalog.CreateFeatureType(testWorkspace, testDatastore, &featureType)
+	assert.True(t, created)
+	assert.Nil(t, err)
+
+	created, err = gsCatalog.CreateFeatureType(testWorkspace, testDatastore, &featureType)
+	assert.True(t, created)
+	assert.Nil(t, err)
+
+}
+
+func featureTypeCreatingSample() []byte {
+	return []byte(`
+	{
+		"name": "polygon",
+		"title": "polygon",
+		"srs": "EPSG:4326",
+		"nativeBoundingBox": {
+		  "minx": -180,
+		  "maxx": 180,
+		  "miny": -90,
+		  "maxy": 90,
+		  "crs": "EPSG:4326"
+		},
+		"latLonBoundingBox": {
+		  "minx": -180,
+		  "maxx": 180,
+		  "miny": -90,
+		  "maxy": 90,
+		  "crs": "EPSG:4326"
+		},
+		"projectionPolicy": "FORCE_DECLARED",
+		"serviceConfiguration": false,
+		"simpleConversionEnabled": false,
+		"padWithZeros": false,
+		"forcedDecimal": false,
+		"overridingServiceSRS": false,
+		"skipNumberMatched": false,
+		"circularArcPresent": false,
+		"attributes": {
+		  "attribute": [
+			{
+			  "name": "group",
+			  "maxOccurs": 1,
+			  "nillable": true,
+			  "binding": "java.lang.Integer"
+			},
+			{
+			  "name": "name",
+			  "maxOccurs": 1,
+              "length": 100,
+			  "nillable": true,
+			  "binding": "java.lang.String"
+			},
+			{
+			  "name": "descr",
+			  "maxOccurs": 1,
+			  "length": 256,
+			  "nillable": true,
+			  "binding": "java.lang.String"
+			},
+			{
+			  "name": "style",
+			  "maxOccurs": 1,
+			  "length": 256,
+			  "nillable": true,
+			  "binding": "java.lang.String"
+			},
+			{
+			  "name": "options",
+			  "maxOccurs": 1,
+			  "nillable": true,
+			  "binding": "java.lang.String"
+			},
+			{
+			  "name": "geom",
+			  "maxOccurs": 1,
+			  "nillable": true,
+			  "binding": "org.locationtech.jts.geom.MultiPolygon"
+			},
+			{
+			  "name": "created",
+			  "maxOccurs": 1,
+			  "nillable": true,
+			  "binding": "java.sql.Timestamp"
+			}
+		  ]
+		}
+  	}`)
+}
+
 func TestCRSTypeMarshalJSON(t *testing.T) {
 	proj := []byte(`PROJCS["NAD27 / UTM zone 13N",
 	GEOGCS["NAD27",

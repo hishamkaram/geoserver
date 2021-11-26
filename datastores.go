@@ -56,6 +56,7 @@ type DatastoreConnection struct {
 	DBUser   string
 	DBPass   string
 	Type     string
+	Options  []Entry //additional options
 }
 
 // DatastoreConnectionParams in datastore json
@@ -90,8 +91,10 @@ func (connection DatastoreJNDIConnection) GetDatastoreObj() (datastore Datastore
 		},
 	}
 
-	for i, _ := range connection.Options {
-		datastore.ConnectionParameters.Entry = append(datastore.ConnectionParameters.Entry, &connection.Options[i])
+	if connection.Options != nil {
+		for i, _ := range connection.Options {
+			datastore.ConnectionParameters.Entry = append(datastore.ConnectionParameters.Entry, &connection.Options[i])
+		}
 	}
 	return
 }
@@ -138,6 +141,11 @@ func (connection DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
 				},
 			},
 		},
+	}
+	if connection.Options != nil {
+		for i, _ := range connection.Options {
+			datastore.ConnectionParameters.Entry = append(datastore.ConnectionParameters.Entry, &connection.Options[i])
+		}
 	}
 	return
 }
