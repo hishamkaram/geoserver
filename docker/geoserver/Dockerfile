@@ -5,6 +5,8 @@ ARG GEOSERVER_VERSION=2.18.1
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get -qq update && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 648ACFD622F3D138 && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0E98404D386FA1D9 && \
     apt-get -qq install -y wget && \
     rm -rf /var/lib/apt/lists/*
 
