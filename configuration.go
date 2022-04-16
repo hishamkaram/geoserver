@@ -1,6 +1,9 @@
 package geoserver
 
-import "bytes"
+import (
+	"bytes"
+	"net/http"
+)
 
 // ConfigurationService define geoserver Configuration operations
 type ConfigurationService interface {
@@ -14,7 +17,7 @@ type ConfigurationService interface {
 func (g *GeoServer) RestConfigrationCache() (success bool, err error) {
 	targetURL := g.ParseURL("rest", "reset")
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
+		Method:   http.MethodPost,
 		Accept:   jsonType,
 		Data:     bytes.NewBuffer([]byte("")),
 		DataType: jsonType,
@@ -22,8 +25,8 @@ func (g *GeoServer) RestConfigrationCache() (success bool, err error) {
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+	if responseCode != http.StatusOK {
+		// g.logger.Warn(string(response))
 		success = false
 		err = g.GetError(responseCode, response)
 		return
@@ -39,7 +42,7 @@ func (g *GeoServer) RestConfigrationCache() (success bool, err error) {
 func (g *GeoServer) ReloadConfigration() (success bool, err error) {
 	targetURL := g.ParseURL("rest", "reload")
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
+		Method:   http.MethodPost,
 		Accept:   jsonType,
 		Data:     bytes.NewBuffer([]byte("")),
 		DataType: jsonType,
@@ -47,8 +50,8 @@ func (g *GeoServer) ReloadConfigration() (success bool, err error) {
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+	if responseCode != http.StatusOK {
+		// g.logger.Warn(string(response))
 		success = false
 		err = g.GetError(responseCode, response)
 		return

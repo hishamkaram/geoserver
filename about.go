@@ -1,5 +1,7 @@
 package geoserver
 
+import "net/http"
+
 // AboutService define all geoserver About operations
 type AboutService interface {
 	//IsRunning check if geoserver is running return true and error if if error occure
@@ -14,12 +16,12 @@ func (g *GeoServer) IsRunning() (running bool, err error) {
 	targetURL := g.ParseURL("rest", "about", "version")
 	httpRequest := HTTPRequest{
 		URL:    targetURL,
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		// g.logger.Error(string(response))
 		err = g.GetError(responseCode, response)
 		running = false
 		return

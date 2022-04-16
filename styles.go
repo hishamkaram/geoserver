@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 )
 
@@ -51,16 +52,16 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err err
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
 	}
-	targetURL := fmt.Sprintf("%srest/%sstyles", g.ServerURL, workspaceName)
+	targetURL := fmt.Sprintf("%s/rest/%sstyles", g.ServerURL, workspaceName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		styles = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -83,14 +84,14 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Sty
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		style = &Style{}
 		err = g.GetError(responseCode, response)
 		return
@@ -124,16 +125,16 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	serializedStyle, _ := g.SerializeStruct(StyleRequestBody{Style: &style})
 	data := bytes.NewBuffer(serializedStyle)
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
-		Accept:   jsonType,
+		Method: http.MethodPost,
+		// Accept:   jsonType,
 		Data:     data,
 		DataType: jsonType,
 		URL:      targetURL,
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusCreated {
+		//g.logger.Error(string(response))
 		created = false
 		err = g.GetError(responseCode, response)
 		return
@@ -152,9 +153,9 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 	targetURL := g.ParseURL("rest", workspaceURL, "styles", styleName)
 	exists, _ := g.StyleExists(workspaceName, styleName)
 	if exists && !overwrite {
-		g.logger.Error(exists)
+		//g.logger.Error(exists)
 		success = false
-		err = g.GetError(statusForbidden, []byte("Style Already Exists"))
+		err = g.GetError(http.StatusForbidden, []byte("Style Already Exists"))
 		return
 	}
 	if !exists {
@@ -166,7 +167,7 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 		}
 	}
 	httpRequest := HTTPRequest{
-		Method:   putMethod,
+		Method:   http.MethodPut,
 		Accept:   jsonType,
 		Data:     data,
 		DataType: sldType,
@@ -174,8 +175,8 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		success = false
 		err = g.GetError(responseCode, response)
 		return
@@ -192,14 +193,14 @@ func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bo
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "styles", styleName)
 	httpRequest := HTTPRequest{
-		Method: deleteMethod,
+		Method: http.MethodDelete,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  map[string]string{"purge": strconv.FormatBool(purge)},
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)
 		return

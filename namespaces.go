@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"net/http"
 )
 
 // NamespaceService define all geoserver namespace operations
@@ -44,7 +45,7 @@ func (g *GeoServer) CreateNamespace(Prefix string, URI string) (created bool, er
 	targetURL := g.ParseURL("rest", "namespaces")
 	data := bytes.NewBuffer(serializedNamespace)
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
+		Method:   http.MethodPost,
 		Accept:   jsonType,
 		Data:     data,
 		DataType: jsonType + "; charset=utf-8",
@@ -52,8 +53,8 @@ func (g *GeoServer) CreateNamespace(Prefix string, URI string) (created bool, er
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
-		g.logger.Warn(string(response))
+	if responseCode != http.StatusCreated {
+		//g.logger.Warn(string(response))
 		created = false
 		err = g.GetError(responseCode, response)
 		return
@@ -78,13 +79,13 @@ func (g *GeoServer) NamespaceExists(Prefix string) (exists bool, err error) {
 func (g *GeoServer) DeleteNamespace(Prefix string) (deleted bool, err error) {
 	url := g.ParseURL("rest", "namespaces", Prefix)
 	httpRequest := HTTPRequest{
-		Method: deleteMethod,
+		Method: http.MethodDelete,
 		Accept: jsonType,
 		URL:    url,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Warn(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)
 		return
@@ -97,14 +98,14 @@ func (g *GeoServer) DeleteNamespace(Prefix string) (deleted bool, err error) {
 func (g *GeoServer) GetNamespaces() (namespaces []*Namespace, err error) {
 	url := g.ParseURL("rest", "namespaces")
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    url,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Warn(string(response))
 		namespaces = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -123,14 +124,14 @@ func (g *GeoServer) GetNamespaces() (namespaces []*Namespace, err error) {
 func (g *GeoServer) GetNamespace(Prefix string) (namespace Namespace, err error) {
 	url := g.ParseURL("rest", "namespaces", Prefix)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    url,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		err = g.GetError(responseCode, response)
 		return
 	}

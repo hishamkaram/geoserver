@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -94,7 +95,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName, "file.shp")
 	shapeFileBinary, err := ioutil.ReadFile(fileURI)
 	if err != nil {
-		g.logger.Error(err)
+		// g.logger.Error(err)
 		return
 	}
 
@@ -103,7 +104,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 		g.CreateWorkspace(workspaceName)
 	}
 	httpRequest := HTTPRequest{
-		Method:   putMethod,
+		Method:   http.MethodPut,
 		Accept:   jsonType,
 		Data:     bytes.NewBuffer(shapeFileBinary),
 		DataType: zipType,
@@ -111,8 +112,8 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusCreated {
+		//g.logger.Error(string(response))
 		uploaded = false
 		err = g.GetError(responseCode, response)
 		return
@@ -130,14 +131,14 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err err
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "layers")
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		layers = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -160,14 +161,14 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Lay
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "layers", layerName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		layer = &Layer{}
 		err = g.GetError(responseCode, response)
 		return
@@ -191,7 +192,7 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 
 	serializedLayer, _ := g.SerializeStruct(data)
 	httpRequest := HTTPRequest{
-		Method:   putMethod,
+		Method:   http.MethodPut,
 		Accept:   jsonType,
 		Data:     bytes.NewBuffer(serializedLayer),
 		DataType: jsonType,
@@ -199,8 +200,8 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		modified = false
 		err = g.GetError(responseCode, response)
 		return
@@ -219,9 +220,9 @@ func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName stri
 		NativeName: tableName}}
 
 	serializedLayer, _ := g.SerializeStruct(data)
-	g.logger.Errorf("%s", serializedLayer)
+	//g.logger.Errorf("%s", serializedLayer)
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
+		Method:   http.MethodPost,
 		Accept:   jsonType,
 		Data:     bytes.NewBuffer(serializedLayer),
 		DataType: jsonType,
@@ -229,8 +230,8 @@ func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName stri
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
-		g.logger.Error(response)
+	if responseCode != http.StatusCreated {
+		//g.logger.Error(response)
 		published = false
 		err = g.GetError(responseCode, response)
 		return
@@ -247,14 +248,14 @@ func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse 
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "layers", layerName)
 	httpRequest := HTTPRequest{
-		Method: deleteMethod,
+		Method: http.MethodDelete,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)
 		return

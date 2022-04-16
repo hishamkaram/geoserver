@@ -3,6 +3,7 @@ package geoserver
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 )
 
@@ -22,6 +23,8 @@ func (u *CRSType) UnmarshalJSON(data []byte) error {
 	switch raw := raw.(type) {
 	case map[string]interface{}:
 		*u = CRSType{Class: raw["@class"].(string), Value: raw["$"].(string)}
+	case string:
+		*u = CRSType{Class: "string", Value: string(raw)}
 	case interface{}:
 		*u = CRSType{Class: "string", Value: string(data)}
 	}
@@ -126,6 +129,13 @@ type Attribute struct {
 	Length    int16  `json:"length,omitempty"`
 }
 
+// FeatureTypeListResponse is geoserver response for AvailableFeatureType
+type FeatureTypeListResponse struct {
+	List struct {
+		Strings []string `json:"string"`
+	}
+}
+
 // FeatureType is geoserver FeatureType
 type FeatureType struct {
 	Name                   string             `json:"name,omitempty"`
@@ -170,6 +180,33 @@ type FeatureTypesRequestBody struct {
 	FeatureType *FeatureType `json:"featureTypes,omitempty"`
 }
 
+// GetFeatureTypeList return all featureTypes in workspace and datastore if error occurred err will be return and nil for featureTypes
+func (g *GeoServer) GetFeatureTypeList(workspaceName, datastoreName string, kind string) (featureTypeList []string, err error) {
+	if workspaceName != "" {
+		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
+	}
+	if datastoreName != "" {
+		datastoreName = fmt.Sprintf("datastores/%s/featuretypes", datastoreName)
+	}
+	if kind == "" {
+		kind = "all"
+	}
+	targetURL := g.ParseURL("rest", workspaceName, datastoreName)
+	httpRequest := HTTPRequest{
+		Method: http.MethodGet,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  map[string]string{"list": kind},
+	}
+	response, responseCode := g.DoRequest(httpRequest)
+	if responseCode != http.StatusOK {
+		return nil, g.GetError(responseCode, response)
+	}
+
+	r := FeatureTypeListResponse{}
+	return r.List.Strings, g.DeSerializeJSON(response, &r)
+}
+
 // GetFeatureTypes return all featureTypes in workspace and datastore if error occurred err will be return and nil for featrueTypes
 func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) (featureTypes []*Resource, err error) {
 	if workspaceName != "" {
@@ -180,13 +217,13 @@ func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) 
 	}
 	targetURL := g.ParseURL("rest", workspaceName, datastoreName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		featureTypes = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -222,13 +259,13 @@ func (g *GeoServer) DeleteFeatureType(workspaceName string, datastoreName string
 	}
 	targetURL := g.ParseURL("rest", workspaceName, datastoreName, "featuretypes", featureTypeName)
 	httpRequest := HTTPRequest{
-		Method: deleteMethod,
+		Method: http.MethodDelete,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		deleted = false
 		err = g.GetError(responseCode, response)
 		return
@@ -248,13 +285,13 @@ func (g *GeoServer) GetFeatureType(workspaceName string, datastoreName string, f
 	}
 	targetURL := g.ParseURL("rest", workspaceName, datastoreName, featureTypeName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
+	if responseCode != http.StatusOK {
 		featureType = nil
 		err = g.GetError(responseCode, response)
 		return

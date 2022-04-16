@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"net/http"
 	"strconv"
 )
 
@@ -47,7 +48,7 @@ func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, err err
 	targetURL := g.ParseURL("rest", "workspaces")
 	data := bytes.NewBuffer(serializedWorkspace)
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
+		Method:   http.MethodPost,
 		Accept:   jsonType,
 		Data:     data,
 		DataType: jsonType + "; charset=utf-8",
@@ -55,8 +56,8 @@ func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, err err
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
-		g.logger.Warn(string(response))
+	if responseCode != http.StatusCreated {
+		//g.logger.Warn(string(response))
 		created = false
 		err = g.GetError(responseCode, response)
 		return
@@ -81,14 +82,14 @@ func (g *GeoServer) WorkspaceExists(workspaceName string) (exists bool, err erro
 func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (deleted bool, err error) {
 	url := g.ParseURL("rest", "workspaces", workspaceName)
 	httpRequest := HTTPRequest{
-		Method: deleteMethod,
+		Method: http.MethodDelete,
 		Accept: jsonType,
 		URL:    url,
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Warn(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)
 		return
@@ -101,14 +102,14 @@ func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (deleted
 func (g *GeoServer) GetWorkspaces() (workspaces []*Resource, err error) {
 	url := g.ParseURL("rest", "workspaces")
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    url,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Warn(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Warn(string(response))
 		workspaces = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -127,14 +128,14 @@ func (g *GeoServer) GetWorkspaces() (workspaces []*Resource, err error) {
 func (g *GeoServer) GetWorkspace(workspaceName string) (workspace Workspace, err error) {
 	url := g.ParseURL("rest", "workspaces", workspaceName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    url,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		err = g.GetError(responseCode, response)
 		return
 	}

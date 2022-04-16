@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 )
 
 //PublishedGroupLayers geoserver published layers
@@ -88,14 +89,14 @@ func (g *GeoServer) GetLayerGroups(workspaceName string) (layerGroups []*Resourc
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "layergroups")
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		layerGroups = nil
 		err = g.GetError(responseCode, response)
 		return
@@ -114,14 +115,14 @@ func (g *GeoServer) GetLayerGroup(workspaceName string, layerGroupName string) (
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "layergroups", layerGroupName)
 	httpRequest := HTTPRequest{
-		Method: getMethod,
+		Method: http.MethodGet,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		layerGroup = &LayerGroup{}
 		err = g.GetError(responseCode, response)
 		return
@@ -144,7 +145,7 @@ func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGrou
 	data := bytes.NewBuffer(serializedGroup)
 
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
+		Method:   http.MethodPost,
 		Accept:   jsonType,
 		Data:     data,
 		DataType: jsonType,
@@ -152,8 +153,8 @@ func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGrou
 		Query:    nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusCreated {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusCreated {
+		//g.logger.Error(string(response))
 		created = false
 		err = g.GetError(responseCode, response)
 		return
@@ -170,14 +171,14 @@ func (g *GeoServer) DeleteLayerGroup(workspaceName string, layerGroupName string
 	}
 	targetURL := g.ParseURL("rest", workspaceName, "layergroups", layerGroupName)
 	httpRequest := HTTPRequest{
-		Method: deleteMethod,
+		Method: http.MethodDelete,
 		Accept: jsonType,
 		URL:    targetURL,
 		Query:  nil,
 	}
 	response, responseCode := g.DoRequest(httpRequest)
-	if responseCode != statusOk {
-		g.logger.Error(string(response))
+	if responseCode != http.StatusOK {
+		//g.logger.Error(string(response))
 		deleted = false
 		err = g.GetError(responseCode, response)
 		return

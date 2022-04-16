@@ -232,18 +232,29 @@ func TestCRSTypeMarshalJSON(t *testing.T) {
 	AXIS["Northing", NORTH],
 	AUTHORITY["EPSG","26713"]]}`)
 	projected := CRSType{Class: "projected", Value: string(proj)}
-	projectedData, err := projected.MarshalJSON()
+	projectedData, err := json.Marshal(projected)
 	assert.Nil(t, err)
 	assert.NotNil(t, projectedData)
 	strSrs := CRSType{Class: "string", Value: "EPSG:4326"}
-	strSrsData, strSrserr := strSrs.MarshalJSON()
+	strSrsData, strSrserr := json.Marshal(strSrs)
 	assert.Nil(t, strSrserr)
 	assert.NotNil(t, strSrsData)
 	var emptySrs CRSType
-	emptySrsData, emptySrsErr := emptySrs.MarshalJSON()
+	emptySrsData, emptySrsErr := json.Marshal(emptySrs)
 	assert.Equal(t, "{}", string(emptySrsData))
 	assert.Nil(t, emptySrsErr)
+}
 
+func TestCRSTypeUnmarshalJSON(t *testing.T) {
+	proj := []byte(`"GEOGCS[\"WGS 84\", \n  DATUM[\"World Geodetic System 1984\", \n    SPHEROID[\"WGS 84\", 6378137.0, 298.257223563, AUTHORITY[\"EPSG\",\"7030\"]], \n    AUTHORITY[\"EPSG\",\"6326\"]], \n  PRIMEM[\"Greenwich\", 0.0, AUTHORITY[\"EPSG\",\"8901\"]], \n  UNIT[\"degree\", 0.017453292519943295], \n  AXIS[\"Geodetic longitude\", EAST], \n  AXIS[\"Geodetic latitude\", NORTH], \n  AUTHORITY[\"EPSG\",\"4326\"]]"`)
+
+	projected := CRSType{}
+	assert.Nil(t, json.Unmarshal(proj, &projected))
+	assert.NotNil(t, projected)
+	assert.Equal(t, projected.Class, "string")
+	var s string
+	assert.Nil(t, json.Unmarshal(proj, &s))
+	assert.Equal(t, projected.Value, s)
 }
 
 func TestGeoserverImplementFeatureTypeService(t *testing.T) {

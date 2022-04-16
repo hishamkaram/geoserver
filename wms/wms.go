@@ -2,7 +2,6 @@ package wms
 
 import (
 	"encoding/xml"
-	"log"
 )
 
 //OnlineResource tag
@@ -206,11 +205,7 @@ type Capabilities struct {
 }
 
 //ParseCapabilities read wms capabilities
-func ParseCapabilities(xmlByte []byte) *Capabilities {
+func ParseCapabilities(xmlByte []byte) (*Capabilities, error) {
 	var cap Capabilities
-	err := xml.Unmarshal(xmlByte, &cap)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return &cap
+	return &cap, xml.Unmarshal(xmlByte, &cap)
 }

@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"net/http"
 	"path/filepath"
 	"testing"
 
@@ -10,7 +11,7 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 	var gsCatalog GeoServer
-	file, _ := filepath.Abs("../geoserver/testdata/config.yml")
+	file, _ := filepath.Abs("testdata/config.yml")
 	geoserver, err := gsCatalog.LoadConfig(file)
 	assert.NotNil(t, geoserver)
 	assert.Nil(t, err)
@@ -19,13 +20,13 @@ func TestLoadConfig(t *testing.T) {
 	geoserver, err = gsCatalog.LoadConfig(file)
 	assert.Nil(t, geoserver)
 	assert.NotNil(t, err)
-	file, _ = filepath.Abs("../geoserver/testdata/config.err.yml")
+	file, _ = filepath.Abs("testdata/config.err.yml")
 	geoserver, err = gsCatalog.LoadConfig(file)
 	assert.Nil(t, geoserver)
 	assert.NotNil(t, err)
 }
 func TestGetGeoserverRequest(t *testing.T) {
 	gsCatalog := GetCatalog("", "", "")
-	request := gsCatalog.GetGeoserverRequest("", getMethod, jsonType, bytes.NewBuffer(make([]byte, 0, 0)), jsonType)
+	request := gsCatalog.GetGeoserverRequest("", http.MethodGet, jsonType, bytes.NewBuffer(make([]byte, 0, 0)), jsonType)
 	assert.NotNil(t, request)
 }
