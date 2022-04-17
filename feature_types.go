@@ -197,6 +197,19 @@ func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) 
 	return
 }
 
+// CreateFeatureType creates featureType in workspace and datastore
+// Creating featureType is only allowed to database related datastores (like postgresql, etc)
+// if error occurred err will be return and nil for featrueTypes
+func (g *GeoServer) CreateFeatureType(workspaceName string, datastoreName string, featureType *FeatureType) (created bool, err error) {
+	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName, "featuretypes")
+
+	createFeatureTypeRequest := struct {
+		FeatureType *FeatureType `json:"featureType"`
+	}{featureType}
+
+	return g.createEntity(targetURL, createFeatureTypeRequest, nil)
+}
+
 // DeleteFeatureType Delete FeatureType from geoserver given that workspaceName, datastoreName, featureTypeName
 // if featuretype deleted successfully will return true and nil for err
 // if error occurred will return false and error for err

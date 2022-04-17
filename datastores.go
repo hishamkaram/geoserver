@@ -18,7 +18,7 @@ type DatastoreService interface {
 	GetDatastoreDetails(workspaceName string, datastoreName string) (datastore *Datastore, err error)
 
 	//CreateDatastore create a datastore under provided workspace
-	CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error)
+	CreateDatastore(datastoreConnection DatastoreConnector, workspaceName string) (created bool, err error)
 
 	// DeleteDatastore deletes a datastore from geoserver else return error
 	DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, err error)
@@ -41,6 +41,11 @@ type DatastoreDetails struct {
 	Datastore *Datastore `json:"dataStore"`
 }
 
+//DatastoreConnector interface to datastore connection object
+type DatastoreConnector interface {
+	GetDatastoreObj() (datastore Datastore)
+}
+
 // DatastoreConnection holds parameters to create new datastore in geoserver
 type DatastoreConnection struct {
 	Name     string
@@ -51,6 +56,7 @@ type DatastoreConnection struct {
 	DBUser   string
 	DBPass   string
 	Type     string
+	Options  []Entry //additional options
 }
 
 // DatastoreConnectionParams in datastore json
@@ -58,8 +64,49 @@ type DatastoreConnectionParams struct {
 	Entry []*Entry `json:"entry,omitempty"`
 }
 
+// DatastoreJNDIConnection holds parameters to create new datastore using JNDI connection pool
+// see https://docs.geoserver.org/stable/en/user/tutorials/tomcat-jndi/tomcat-jndi.html
+type DatastoreJNDIConnection struct {
+	Name              string
+	Type              string //dbtype
+	JndiReferenceName string //
+	Options           []Entry
+}
+
+//GetDatastoreObj return datastore Object to send to geoserver
+func (connection DatastoreJNDIConnection) GetDatastoreObj() (datastore Datastore) {
+	datastore = Datastore{
+		Name: connection.Name,
+		ConnectionParameters: DatastoreConnectionParams{
+			Entry: []*Entry{
+				{
+					Key:   "jndiReferenceName",
+					Value: connection.JndiReferenceName,
+				},
+				{
+					Key:   "dbtype",
+					Value: connection.Type,
+				},
+			},
+		},
+	}
+
+	if connection.Options != nil {
+		for i := range connection.Options {
+			datastore.ConnectionParameters.Entry = append(datastore.ConnectionParameters.Entry, &connection.Options[i])
+		}
+	}
+	return
+}
+
 //GetDatastoreObj return datastore Object to send to geoserver rest
-func (connection *DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
+func (connection DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
+
+	dbSchema := connection.DBSchema
+	if dbSchema == "" {
+		dbSchema = "public"
+	}
+
 	datastore = Datastore{
 		Name: connection.Name,
 		ConnectionParameters: DatastoreConnectionParams{
@@ -78,7 +125,7 @@ func (connection *DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
 				},
 				{
 					Key:   "schema",
-					Value: connection.DBSchema,
+					Value: dbSchema,
 				},
 				{
 					Key:   "user",
@@ -94,6 +141,11 @@ func (connection *DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
 				},
 			},
 		},
+	}
+	if connection.Options != nil {
+		for i := range connection.Options {
+			datastore.ConnectionParameters.Entry = append(datastore.ConnectionParameters.Entry, &connection.Options[i])
+		}
 	}
 	return
 }
@@ -168,11 +220,9 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 }
 
 //CreateDatastore create a datastore under provided workspace
-func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error) {
+func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnector, workspaceName string) (created bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores")
-	if datastoreConnection.DBSchema == "" {
-		datastoreConnection.DBSchema = "public"
-	}
+
 	store := datastoreConnection.GetDatastoreObj()
 	datastore := DatastoreDetails{
 		Datastore: &store,
