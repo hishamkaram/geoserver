@@ -18,7 +18,7 @@ type DatastoreService interface {
 	GetDatastoreDetails(workspaceName string, datastoreName string) (datastore *Datastore, err error)
 
 	//CreateDatastore create a datastore under provided workspace
-	CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error)
+	CreateDatastore(datastoreConnection DatastoreConnector, workspaceName string) (created bool, err error)
 
 	// DeleteDatastore deletes a datastore from geoserver else return error
 	DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, err error)
@@ -92,7 +92,7 @@ func (connection DatastoreJNDIConnection) GetDatastoreObj() (datastore Datastore
 	}
 
 	if connection.Options != nil {
-		for i, _ := range connection.Options {
+		for i := range connection.Options {
 			datastore.ConnectionParameters.Entry = append(datastore.ConnectionParameters.Entry, &connection.Options[i])
 		}
 	}
@@ -143,7 +143,7 @@ func (connection DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
 		},
 	}
 	if connection.Options != nil {
-		for i, _ := range connection.Options {
+		for i := range connection.Options {
 			datastore.ConnectionParameters.Entry = append(datastore.ConnectionParameters.Entry, &connection.Options[i])
 		}
 	}
