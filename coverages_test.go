@@ -128,12 +128,15 @@ func TestUpdateCoverage(t *testing.T) {
 
 	_, err = gsCatalog.PublishCoverage(coveragesTestWorkspace, coveragesTestStoreName, coveragesTestCoverageName, "")
 	if err != nil {
-		assert.Fail(t, "can't publish the coverage", err.Error())
+		t.Fatalf("can't publish the coverage: %v", err)
 	}
 
 	coverage, err := gsCatalog.GetCoverage(coveragesTestWorkspace, coveragesTestCoverageName)
 	if err != nil {
-		assert.Fail(t, "can't get the coverage", err.Error())
+		t.Fatalf("can't get the coverage: %v", err)
+	}
+	if coverage == nil {
+		t.Fatalf("got nil coverage with no error")
 	}
 
 	coverage.Title = "NEW TITLE"

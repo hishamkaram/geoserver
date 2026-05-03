@@ -1,0 +1,72 @@
+name: Integration tests
+
+# Integration tests boot a real GeoServer + PostGIS via docker compose and
+# exercise the package against it. The build is heavy (downloads GeoServer
+# WAR from SourceForge and waits for Tomcat to start), so we don't run it
+# on every push — only on demand and on a weekly schedule.
+
+on:
+  workflow_dispatch:
+    inputs:
+      geoserver:
+        description: GeoServer version to test against
+        required: false
+        default: "2.28.0"
+        type: choice
+        options:
+          - "2.27.4"
+          - "2.28.0"
+  schedule:
+    # Sundays at 03:17 UTC — outside common deploy windows.
+    - cron: "17 3 * * 0"
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integration-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  matrix:
+    name: GeoServer ${{ matrix.geoserver }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        geoserver: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.geoserver)) || fromJSON('["2.27.4", "2.28.0"]') }}
+    env:
+      GEOSERVER_VERSION: ${{ matrix.geoserver }}
+      GEOSERVER_URL: http://localhost:8080/geoserver/
+      GEOSERVER_USER: admin
+      GEOSERVER_PASS: geoserver
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          check-latest: true
+          cache: true
+
+      - name: Boot GeoServer + PostGIS
+        run: docker compose up -d --wait --wait-timeout=420
+
+      - name: Show GeoServer version
+        run: |
+          curl -fsS -u ${GEOSERVER_USER}:${GEOSERVER_PASS} "${GEOSERVER_URL}rest/about/version.json" | head -c 1024 || true
+
+      - name: Run integration tests
+        run: go test -race -tags=integration -timeout=15m ./...
+
+      - name: Compose logs (on failure)
+        if: failure()
+        run: docker compose logs --no-color --tail=400
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
