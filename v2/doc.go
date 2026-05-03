@@ -2,15 +2,26 @@
 //
 // # Status
 //
-// v2 is in development. Only the Workspaces resource is currently
-// implemented as a reference; other resources (datastores, styles, layers,
-// layergroups, coverages, namespaces, settings, security, ACL, about,
-// capabilities, feature types) port in subsequent PRs following the same
-// pattern. Until v2 reaches v2.0.0, the v1 line remains the recommended
-// import for production use:
+// v2 has full v1 feature parity at master and exceeds it. The
+// package covers every "everyone needs it" endpoint group identified
+// in the gap analysis: catalog (workspaces, datastores, feature
+// types, coverage stores, coverages, layers, layer groups, styles,
+// namespaces), settings, system (reload + cache reset), about,
+// security (users / groups / roles + layer ACL), per-service OWS
+// configuration (WMS / WFS / WCS / WMTS), file-upload publishing on
+// stores, layer–style associations, GeoWebCache (per-layer cache
+// config + seed/reseed/truncate + diskquota), the Importer
+// extension (batch ingest), and the OWS read-only trio
+// (GetCapabilities + DescribeFeatureType + DescribeCoverage).
+//
+// Public API may still refine before v2.0.0 based on early-adopter
+// feedback. The latest published preview tag is one of the
+// v2.0.0-alpha.* line — see the v2 README for the current pin.
+// Until v2 reaches v2.0.0, the v1 line remains the recommended
+// import for production:
 //
 //	import "github.com/hishamkaram/geoserver"        // v1: stable, full surface
-//	import "github.com/hishamkaram/geoserver/v2"     // v2: in development
+//	import "github.com/hishamkaram/geoserver/v2"     // v2: preview
 //
 // See ../ROADMAP.md for the v2 milestones and ../docs/migration-v1-to-v2.md
 // for the v1 → v2 migration guide.
@@ -25,9 +36,11 @@
 //     use is safe.
 //   - Mandatory [context.Context] as first arg on every public method. No
 //     Background shims, no twin pairs.
-//   - Sub-client pattern. (*Client).Workspaces returns a per-resource
-//     client whose methods follow a consistent List / Get / Exists /
-//     Create / Update / Delete / Iter shape.
+//   - Sub-client pattern. Public fields like (*Client).Workspaces and
+//     (*Client).Datastores expose typed per-resource clients with
+//     consistent List / Get / Create / Update / Delete / Iter shapes.
+//     Hierarchical resources fluently chain through scope —
+//     c.Datastores.InWorkspace("topp"), c.FeatureTypes.InWorkspace(ws).InDatastore(ds).
 //   - Single error type. Every HTTP error is a [*APIError] wrapping one
 //     of the package sentinels ([ErrNotFound], [ErrConflict], …) so
 //     errors.Is and errors.As are the supported match styles.
@@ -55,7 +68,7 @@
 //	}
 //
 //	ctx := context.Background()
-//	workspaces, err := c.Workspaces.List(ctx, workspaces.ListOptions{})
+//	wss, err := c.Workspaces.List(ctx, workspaces.ListOptions{})
 //	if errors.Is(err, geoserver.ErrUnauthorized) {
 //	    // handle bad credentials
 //	}

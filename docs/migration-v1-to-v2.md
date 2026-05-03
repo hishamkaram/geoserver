@@ -1,6 +1,6 @@
 # Migration from v1.x to v2.x
 
-> **Status: pre-alpha.** v2 has feature parity with v1 (catalog, security, ACL, settings, namespaces, about); only WMS GetCapabilities is deferred to a later v2.x point release. The public API may shift before `v2.0.0-alpha.1`. Until a stable v2 tag ships, **prefer v1.x for production usage**.
+> **Status: alpha.** Latest published preview is `v2.0.0-alpha.4`. v2 has full v1 feature parity at `master` plus surfaces v1 never had — per-service OWS settings, file-upload publishing, layer–style associations, GeoWebCache, the Importer extension, and the OWS read-only trio (GetCapabilities + DescribeFeatureType + DescribeCoverage). The public API may still shift before `v2.0.0`. Until a stable v2 tag ships, **prefer v1.x for production usage**.
 
 This guide walks through the concrete API differences between v1.x (`github.com/hishamkaram/geoserver`) and v2.x (`github.com/hishamkaram/geoserver/v2`). Each section pairs a v1 snippet with the v2 equivalent.
 
@@ -216,9 +216,89 @@ Default user/group service is `"default"`; pass `""` to `UsersInService` / `Grou
 | `gs.IsRunningContext(ctx)` | `c.About.Ping(ctx)` (returns `error`, not `(bool, error)`) |
 | (none) | `c.About.Version(ctx)` — full component version document |
 
-### WMS GetCapabilities
+### OWS read-only operations (WMS / WFS / WCS)
 
-Deferred. v2 will introduce an `ows/wms/` subpackage in a follow-up release; until then continue using v1's `gs.GetCapabilitiesContext(ctx, ws)` for capability XML parsing.
+| v1.x | v2.x |
+|---|---|
+| `gs.GetCapabilitiesContext(ctx, ws)` (WMS only) | `c.WMS.GetCapabilities(ctx, opts)` and `c.WMS.InWorkspace(ws).GetCapabilities(ctx, opts)` |
+| (none — v1 has no WFS Capabilities client) | `c.WFS.GetCapabilities(ctx, opts)`, `c.WFS.DescribeFeatureType(ctx, opts)` |
+| (none — v1 has no WCS Capabilities client) | `c.WCS.GetCapabilities(ctx, opts)`, `c.WCS.DescribeCoverage(ctx, opts)` |
+
+`wms.ParseCapabilities(io.Reader)`, `wfs.ParseCapabilities` / `ParseFeatureSchema`, and `wcs.ParseCapabilities` / `ParseCoverageDescriptions` are exposed for out-of-band parsing of fixtures or bodies fetched through a custom transport.
+
+## Surfaces v2 has that v1 doesn't
+
+These didn't have v1 equivalents — the migration is "use v2 if you need them."
+
+### File-upload publishing on stores
+
+```go
+// Shapefile: PUT /workspaces/topp/datastores/states_shp/file.shp
+zip, _ := os.Open("states.zip")
+defer zip.Close()
+_ = c.Datastores.InWorkspace("topp").UploadFile(ctx, "states_shp", zip,
+    datastores.UploadOptions{Extension: "shp"})
+
+// GeoTIFF + harvest a new mosaic granule
+_ = c.CoverageStores.InWorkspace("nurc").HarvestGranule(ctx, "world_mosaic",
+    strings.NewReader("/srv/geoserver/granules/2026_05_03.tif"),
+    coveragestores.UploadOptions{
+        Method:    coveragestores.UploadMethodExternal,
+        Extension: "imagemosaic",
+    })
+```
+
+### Layer–style associations
+
+```go
+// Add an alternative renderer to a layer (concurrency-safe; one POST).
+_ = c.Layers.InWorkspace("topp").AddStyle(ctx, "states", "line", layers.AddStyleOptions{})
+
+// Promote it to default in the same call.
+_ = c.Layers.InWorkspace("topp").AddStyle(ctx, "states", "polygon",
+    layers.AddStyleOptions{Default: true})
+```
+
+### Per-service OWS settings (incl. per-workspace overrides)
+
+```go
+// Cap WFS maxFeatures globally.
+wfs, _ := c.Services.WFS().Get(ctx)
+wfs.MaxFeatures = 10_000
+_ = c.Services.WFS().Update(ctx, wfs)
+
+// Per-workspace override; DELETE falls back to global.
+_ = c.Services.WMS().InWorkspace("topp").Update(ctx,
+    &services.WMSSettings{MaxRenderingTime: 30})
+```
+
+### GeoWebCache
+
+```go
+// Invalidate every cached tile for a layer after a data update.
+_ = c.GWC.Seed().Submit(ctx, "topp:states", &gwc.SeedRequest{
+    SRS: gwc.SRS{Number: 4326}, ZoomStart: 0, ZoomStop: 8,
+    Format: "image/png", Type: gwc.OpTruncate,
+    GridSetID: "EPSG:4326",
+    Bounds: &gwc.Bounds{Coords: gwc.BoundsCoords{Double: []float64{-180, -90, 180, 90}}},
+})
+
+// Disk-quota policy.
+dq, _ := c.GWC.DiskQuota().Get(ctx)
+```
+
+### Importer extension (batch ingest)
+
+```go
+imp, err := c.Imports.Create(ctx, imports.ImportRequest{
+    TargetWorkspace: "topp",
+    Data: &imports.Data{Type: imports.DataTypeDirectory,
+                        Location: "/srv/data/incoming/2026-05-03"},
+}, imports.CreateOptions{Execute: true})
+// Poll c.Imports.Get(ctx, imp.ID) until imp.State reaches StateComplete.
+```
+
+The dev/test docker image bakes the Importer plugin in (`docker/Dockerfile`); without that, calls to `c.Imports.*` return `ErrNotFound`.
 
 ## Side-by-side: a typical workflow
 
@@ -261,14 +341,19 @@ if err := c.FeatureTypes.InWorkspace("demo").InDatastore("states_pg").
 
 ## When to upgrade
 
-When v2 hits `v2.0.0` (final, not alpha/beta), this section will document a recommended migration window. Until then, v1.x is the supported path; v2 is preview-quality and the surface may shift.
+`v2.0.0-alpha.4` is preview-quality — feature-complete on the gap-analysis "everyone needs it" surface, exercised against real GeoServer 2.27.4 LTS + 2.28.0 stable in CI, but the public API may still refine before `v2.0.0`. Reasonable adoption strategy:
+
+- **Production**: stay on v1.x until v2.0.0 lands.
+- **New projects / internal tools**: try `v2.0.0-alpha.4` and file shape-feedback issues. The current API surface is the candidate for `v2.0.0-beta.1` (frozen-for-review).
+- **Migrations from v1 to v2**: use this guide; the catalog mappings above are stable. The non-catalog surfaces (file-upload, services, GWC, imports) are net-new with no v1 equivalent — adoption-time effort.
 
 ## Contributing to v2
 
 v2 development happens in the same repository under `/v2/`. To contribute:
 
-1. Open / claim an issue scoping the resource port (e.g., "Port WMS GetCapabilities to v2" once the `ows/wms/` subpackage lands).
-2. Follow the `workspaces` reference resource (`v2/rest/workspaces/`) as the pattern.
-3. Open a PR. CI runs `Unit tests v2 (Go 1.25)` against `/v2/`.
+1. Open / claim an issue. The "tier-2 also-rans" list in `ROADMAP.md` is a good starting point — each item is tractable as its own PR.
+2. Follow the established sub-client pattern (`v2/rest/<resource>/`). Reference packages: `workspaces` (flat CRUD), `datastores` (workspace-scoped), `featuretypes` (workspace + datastore-scoped), `services` (per-service generic), `gwc` (out-of-`/rest/` URL prefix).
+3. **Run integration tests locally before push** — `make compose-up && cd v2 && go test -tags=integration ./rest/<resource>/`. CI's wire-format coverage runs on real GeoServer 2.27.4 LTS + 2.28.0 stable, but local-first catches quirks faster.
+4. Open a PR. The 7 required CI checks must pass: Lint, Unit, Unit v2, govulncheck, Analyze (Go), GeoServer 2.27.4, GeoServer 2.28.0.
 
 See [`../CONTRIBUTING.md`](../CONTRIBUTING.md) for the general PR workflow.

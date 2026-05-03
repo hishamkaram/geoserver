@@ -1,15 +1,26 @@
 # geoserver/v2
 
-> 🧪 **`v2.0.0-alpha.2` is published.** v2 now exceeds v1's surface at `master`: workspaces, datastores, feature types, coverage stores, coverages, layers, layer groups, styles, namespaces, settings, about, security, ACL, system (reload + cache reset), plus full OWS GetCapabilities trio — `v2/ows/wms`, `v2/ows/wfs`, `v2/ows/wcs`. Public API may still change before `v2.0.0` based on early-adopter feedback — no production guarantees yet. **For stable production use, stay on the v1 line:**
+> 🧪 **`v2.0.0-alpha.4` is published.** v2 closes the gap-analysis plan's "everyone needs it" surface. Coverage at `master`:
+>
+> - **Catalog**: workspaces, datastores, feature types, coverage stores, coverages, layers (incl. add-style sub-resource), layer groups, styles, namespaces.
+> - **Settings**: global `c.Settings` + per-service `c.Services.WMS()`/`WFS()`/`WCS()`/`WMTS()` (global + per-workspace overrides).
+> - **System**: `c.System.Reload` and `ResetCache`. **About**: ping + version.
+> - **Security**: users, groups, roles, role-user assignment + layer ACL rules.
+> - **File-upload publishing**: `c.Datastores.UploadFile` (Shapefile / GeoPackage / external) and `c.CoverageStores.UploadFile` + `HarvestGranule` (GeoTIFF / ImageMosaic / mosaic granules).
+> - **GeoWebCache**: `c.GWC.Layers()` (cache config), `Seed()` (seed/reseed/truncate), `DiskQuota()`.
+> - **Importer extension**: `c.Imports` (sessions + tasks). The dev/test docker image bakes the plugin in for CI integration coverage.
+> - **OWS**: `c.WMS` / `c.WFS` / `c.WCS` GetCapabilities; WFS `DescribeFeatureType`; WCS `DescribeCoverage`.
+>
+> Public API may still change before `v2.0.0` based on early-adopter feedback — no production guarantees yet. **For stable production use, stay on the v1 line:**
 >
 > ```go
 > import "github.com/hishamkaram/geoserver"          // v1.1.x — stable, full surface
-> import "github.com/hishamkaram/geoserver/v2"       // v2.0.0-alpha.2 — preview
+> import "github.com/hishamkaram/geoserver/v2"       // v2.0.0-alpha.4 — preview
 > ```
 >
 > Install:
 > ```sh
-> go get github.com/hishamkaram/geoserver/v2@v2.0.0-alpha.2
+> go get github.com/hishamkaram/geoserver/v2@v2.0.0-alpha.4
 > ```
 
 This module ships with its own `go.mod` at `/v2/`; v1 and v2 release independently (`v1.x.y` / `v2.x.y` tags).
