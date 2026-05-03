@@ -35,6 +35,7 @@ services:
       - "5436:5432"
     volumes:
       - postgis-data:/var/lib/postgresql/data
+      - ./docker/postgis/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U golang -d gis"]
       interval: 5s

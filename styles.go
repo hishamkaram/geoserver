@@ -3,6 +3,7 @@ package geoserver
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
@@ -89,6 +90,20 @@ func (g *GeoServer) GetStylesContext(ctx context.Context, workspaceName string) 
 		err = g.GetError(responseCode, response)
 		return
 	}
+	// GeoServer 2.28 returns `{"styles":""}` (bare string) for an empty
+	// styles collection and `{"styles":{"style":[...]}}` for a populated
+	// one. Decode into json.RawMessage first and then into the typed
+	// shape only if the payload is an object.
+	var stylesEnvelope struct {
+		Styles json.RawMessage `json:"styles,omitempty"`
+	}
+	if err = g.DeSerializeJSON(response, &stylesEnvelope); err != nil {
+		return nil, err
+	}
+	if len(stylesEnvelope.Styles) == 0 || string(stylesEnvelope.Styles) == "null" || stylesEnvelope.Styles[0] == '"' {
+		// Empty list per GeoServer's empty-collection convention.
+		return nil, nil
+	}
 	var stylesResponse struct {
 		Styles struct {
 			Style []*Resource `json:"style,omitempty"`
@@ -159,10 +174,19 @@ func (g *GeoServer) CreateStyleContext(ctx context.Context, workspaceName string
 	}
 	data := bytes.NewBuffer(serializedStyle)
 	httpRequest := HTTPRequest{
-		Method:   postMethod,
-		Accept:   jsonType,
+		Method: postMethod,
+		// GeoServer 2.28's workspace-scoped POST /styles inspects the
+		// Accept header to dispatch to a style-format handler. With
+		// "application/json" it looks for a JSON style handler (which
+		// doesn't exist) and 500s with
+		// "No such style handler: format = application/json". Sending
+		// "*/*" disables that dispatch and routes the request to the
+		// metadata-creation path. The body Content-Type is also
+		// stamped with "; charset=utf-8" — bare "application/json"
+		// triggers the same 500 in older 2.x versions.
+		Accept:   "*/*",
 		Data:     data,
-		DataType: jsonType,
+		DataType: jsonType + "; charset=utf-8",
 		URL:      targetURL,
 		Query:    nil,
 	}
