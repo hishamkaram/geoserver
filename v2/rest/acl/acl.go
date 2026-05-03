@@ -15,15 +15,14 @@ type Core interface {
 	DoStream(ctx context.Context, op string, method, requestURL string, query map[string]string) (io.ReadCloser, int, error)
 }
 
-// Client is the v2 ACL sub-client. The current surface is layer
-// ACLs; nested clients for service-level and catalog-level ACLs can
-// be added in follow-up PRs without breaking the existing API.
+// Client is the v2 ACL sub-client. It exposes four nested sub-clients:
+// [Client.Layers], [Client.Services], [Client.REST], and [Client.Catalog].
 //
 //	rules, _ := c.ACL.Layers().List(ctx, acl.ListOptions{})
-//	_ = c.ACL.Layers().Add(ctx, acl.Rule{
-//	    Workspace: "topp", Layer: "states",
-//	    Operation: acl.OpWrite, Roles: []string{"ROLE_EDITOR"},
+//	_ = c.ACL.Services().Add(ctx, acl.ServiceRule{
+//	    Service: "wms", Operation: "GetMap", Roles: []string{"ROLE_USER"},
 //	})
+//	mode, _ := c.ACL.Catalog().Get(ctx)
 type Client struct {
 	core Core
 }
@@ -37,6 +36,29 @@ func New(core Core) *Client {
 // roles can read / write / administer a given workspace.layer entity.
 func (c *Client) Layers() *LayersClient {
 	return &LayersClient{core: c.core}
+}
+
+// Services returns the service-ACL sub-client. Service ACLs control
+// which roles can invoke a given OWS operation (e.g. WMS GetMap, WFS
+// GetFeature). Rule key shape is "service.operation".
+func (c *Client) Services() *ServicesClient {
+	return &ServicesClient{core: c.core}
+}
+
+// REST returns the REST-ACL sub-client. REST ACLs control which
+// roles can hit a given URL pattern with a given set of HTTP methods.
+// Rule key shape is "<URL Ant pattern>:<HTTP methods>".
+func (c *Client) REST() *RESTClient {
+	return &RESTClient{core: c.core}
+}
+
+// Catalog returns the catalog-mode sub-client. The catalog mode
+// (HIDE / MIXED / CHALLENGE) controls how GeoServer advertises
+// secured layers in capabilities documents and how it responds to
+// access without the required privileges. The same client also
+// exposes the configuration reload endpoint.
+func (c *Client) Catalog() *CatalogClient {
+	return &CatalogClient{core: c.core}
 }
 
 // LayersClient operates on the /rest/security/acl/layers endpoint.
@@ -86,6 +108,24 @@ func (c *LayersClient) Add(ctx context.Context, rule Rule) error {
 	ruleStr, rolesStr := rule.Encode()
 	body := map[string]string{ruleStr: rolesStr}
 	return c.core.Do(ctx, op, http.MethodPost, u, body, nil, nil)
+}
+
+// Update edits an existing layer ACL rule's role list. GeoServer's
+// PUT semantics require the rule to already exist; modifying a
+// non-existent rule fails with 409 Conflict (use [LayersClient.Add]
+// to create instead).
+func (c *LayersClient) Update(ctx context.Context, rule Rule) error {
+	const op = "ACL.Layers.Update"
+	if rule.Operation == "" {
+		return errors.New(op + ": empty Operation")
+	}
+	u, err := c.core.URL("rest", "security", "acl", "layers")
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	ruleStr, rolesStr := rule.Encode()
+	body := map[string]string{ruleStr: rolesStr}
+	return c.core.Do(ctx, op, http.MethodPut, u, body, nil, nil)
 }
 
 // Delete removes a layer ACL rule. The rule is identified by its

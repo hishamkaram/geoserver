@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — ACL services / REST / catalog
+
+Closes the security tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). The v2 ACL sub-client previously covered only `c.ACL.Layers()`; this round adds the three sibling surfaces under `/rest/security/acl/`.
+
+- **`c.ACL.Services()`** — service ACL rules (`/rest/security/acl/services`). Rule key is the dotted pair `service.operation` (e.g. `wms.GetMap`, `*.*`). `List` / `Add` / `Update` / `Delete` mirror the layers shape.
+- **`c.ACL.REST()`** — REST ACL rules (`/rest/security/acl/rest`). Rule key is `<URL Ant pattern>:<HTTP methods>` in body form, `<pattern>;<methods>` in URL-path form for DELETE. `List` / `Add` / `Update` / `Delete`.
+- **`c.ACL.Catalog()`** — singleton catalog mode (`/rest/security/acl/catalog`). `Get` / `Update` (HIDE / MIXED / CHALLENGE) plus `Reload` (`/rest/security/acl/catalog/reload`) to reload the security configuration from disk.
+- **`c.ACL.Layers().Update`** — additive PUT method to edit an existing layer rule's role list (matches the new shape on Services and REST). Previously only Add (POST) was wired.
+- **Typed enums and rule structs** — `ServiceRule`, `RESTRule`, `CatalogMode` (with `CatalogModeHide` / `CatalogModeMixed` / `CatalogModeChallenge`); plus `Encode` / `Decode` helpers for round-tripping the wire format.
+
+### Wire-format quirks (acl package)
+
+- **Services validator forbids wildcard service + non-wildcard operation.** GeoServer rejects `{"*.GetMap":"..."}` with 422 "Invalid rule *.GetMap, when namespace is * then also layer must be *". Use either `*.*` (full wildcard) or a real `service.operation` pair (e.g. `wms.GetMap`).
+- **REST rule body uses `:` separator, URL path uses `;`.** GeoServer documents the body example as `"/**:GET":"ADMIN"` but the path-segment form for DELETE as `/**;GET`. `RESTRule.Encode` emits the body form; `RESTRule.EncodePathSegment` emits the URL form. `DecodeRESTRule` accepts both.
+- **REST DELETE is effectively non-functional on default GeoServer installs.** GeoServer's HTTP firewall (Spring Security) rejects URL paths containing `;` and `%2F` by default. `;` can be unblocked with `GEOSERVER_USE_STRICT_FIREWALL=false` (the dev/test docker stack now sets this); `%2F` requires Java-level Spring Security configuration that is not exposed via env vars or REST. `RESTClient.Delete` is wired for completeness but documented as requiring custom server configuration. `Add` / `List` / `Update` (which hit the list endpoint with no rule in URL) work against a default install. See `RESTClient` godoc for the full caveat.
+- **Dev/test docker image now disables `StrictHttpFirewall`.** `docker/env/geoserver.env` adds `GEOSERVER_USE_STRICT_FIREWALL=false` so the integration suite can exercise REST ACL endpoints. Production deployments retain the default strict firewall unless they opt in.
+
 ## [2.0.0-alpha.4] — 2026-05-03
 
 Fourth alpha. **Closes the planned "everyone needs it" REST API surface.** The narrower tier-2 backlog continues in [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Five focused PRs landed in sequence: layer–style associations, file-upload publishing on stores, per-service OWS settings (WMS/WFS/WCS/WMTS), GeoWebCache (layers + seed + diskquota), and the Importer extension. Dev/test docker image now bakes the importer plugin in. Public API may still refine before `v2.0.0` based on early-adopter feedback — no production guarantees yet.
