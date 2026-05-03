@@ -1,10 +1,15 @@
 # geoserver/v2
 
-> ⚠️ **In development.** v2 has feature parity with v1 today (catalog, security, ACL, settings, about, namespaces) — only WMS GetCapabilities is deferred to a v2.x point release once the `ows/wms/` XML subpackage lands. The public API is not yet stable; expect refinement before `v2.0.0-beta.1`. **For production use today, use the v1 line:**
+> 🧪 **`v2.0.0-alpha.1` is published.** v2 has feature parity with v1 today (workspaces, datastores, feature types, coverage stores, coverages, layers, layer groups, styles, namespaces, settings, about, security, ACL); only WMS GetCapabilities is deferred to a v2.x point release once the `ows/wms/` XML subpackage lands. Public API may still change before `v2.0.0` based on early-adopter feedback — no production guarantees yet. **For stable production use, stay on the v1 line:**
 >
 > ```go
-> import "github.com/hishamkaram/geoserver"          // v1 — stable, full surface
-> import "github.com/hishamkaram/geoserver/v2"       // v2 — in development
+> import "github.com/hishamkaram/geoserver"          // v1.1.x — stable, full surface
+> import "github.com/hishamkaram/geoserver/v2"       // v2.0.0-alpha.1 — preview
+> ```
+>
+> Install:
+> ```sh
+> go get github.com/hishamkaram/geoserver/v2@v2.0.0-alpha.1
 > ```
 
 This module ships with its own `go.mod` at `/v2/`; v1 and v2 release independently (`v1.x.y` / `v2.x.y` tags).

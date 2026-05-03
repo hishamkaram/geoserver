@@ -312,7 +312,7 @@ The library was dormant for ~3 years (Feb 2023 → May 2026) before being revive
 ## Roadmap
 
 - **v1.1.x** — security fixes, integration test maintenance, additive Dependabot updates.
-- **v2** — pre-alpha at `github.com/hishamkaram/geoserver/v2`. The full catalog (workspaces, datastores, feature types, coverage stores, coverages, layers, layer groups, styles, namespaces) plus security, ACL, settings, and about have been ported and unit-tested; only WMS GetCapabilities remains pending (deferred to a v2.x point release after the `ows/wms/` XML subpackage lands).
+- **v2** — `v2.0.0-alpha.1` published at `github.com/hishamkaram/geoserver/v2` (`go get github.com/hishamkaram/geoserver/v2@v2.0.0-alpha.1`). The full catalog (workspaces, datastores, feature types, coverage stores, coverages, layers, layer groups, styles, namespaces) plus security, ACL, settings, and about are ported and exercised by both unit and real-GeoServer integration suites on 2.27.4 LTS and 2.28.0 stable. Only WMS GetCapabilities remains pending (deferred to a v2.x point release after the `ows/wms/` XML subpackage lands). Public API may still refine before `v2.0.0` — no production guarantees yet.
 
   Design themes (now realized in code):
   - Resource sub-clients (`c.Workspaces.Get(ctx, name)`, `c.Datastores.InWorkspace(ws).Get(...)`, `c.FeatureTypes.InWorkspace(ws).InDatastore(ds).Get(...)`).
