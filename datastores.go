@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 )
 
@@ -138,7 +139,9 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []*Resource,
 			DataStore []*Resource
 		}
 	}
-	g.DeSerializeJSON(response, &query)
+	if err = g.DeSerializeJSON(response, &query); err != nil {
+		return nil, err
+	}
 	datastores = query.DataStores.DataStore
 	return
 }
@@ -161,7 +164,9 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 
 	}
 	var query DatastoreDetails
-	g.DeSerializeJSON(response, &query)
+	if err = g.DeSerializeJSON(response, &query); err != nil {
+		return &Datastore{}, err
+	}
 	datastore = query.Datastore
 	return
 
@@ -177,7 +182,10 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 	datastore := DatastoreDetails{
 		Datastore: &store,
 	}
-	data, _ := g.SerializeStruct(datastore)
+	data, serErr := g.SerializeStruct(datastore)
+	if serErr != nil {
+		return false, fmt.Errorf("CreateDatastore: serialize datastore: %w", serErr)
+	}
 	httpRequest := HTTPRequest{
 		Method:   postMethod,
 		Accept:   jsonType,

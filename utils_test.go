@@ -68,8 +68,8 @@ func TestDeSerializeJSON(t *testing.T) {
 }
 func TestGetGoGeoserverPackageDir(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
-	geoserverPath := gsCatalog.getGoGeoserverPackageDir()
-	assert.NotNil(t, geoserverPath)
+	geoserverPath, err := gsCatalog.getGoGeoserverPackageDir()
+	assert.NoError(t, err)
 	assert.NotEmpty(t, geoserverPath)
 }
 func TestParseURLL(t *testing.T) {

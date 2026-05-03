@@ -5,7 +5,7 @@ package geoserver
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -28,7 +28,7 @@ func (suite *GeoserverStyleSuite) SetupSuite() {
 
 func (suite *GeoserverStyleSuite) TestStyles() {
 	sldPath, _ := filepath.Abs("testdata/airports.sld")
-	sld, _ := ioutil.ReadFile(sldPath)
+	sld, _ := os.ReadFile(sldPath)
 	uploaded, err := suite.gsCatalog.UploadStyle(bytes.NewBuffer(sld), "styles_test", "test_test", false)
 	assert.True(suite.T(), uploaded)
 	assert.Nil(suite.T(), err)
@@ -68,7 +68,7 @@ func TestGeoserverImplemetStyleService(t *testing.T) {
 func TestStylesError(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver_dummy/", "admin", "geoserver")
 	sldPath, _ := filepath.Abs("testdata/airports.sld")
-	sld, _ := ioutil.ReadFile(sldPath)
+	sld, _ := os.ReadFile(sldPath)
 	created, uploadErr := gsCatalog.CreateStyle("styles_test", "test_test")
 	assert.False(t, created)
 	assert.NotNil(t, uploadErr)

@@ -80,6 +80,31 @@ linters:
           - prealloc
       - path: wms/wms\.go
         text: "ParseCapabilities is deprecated"
+      # v1.x backward compat: HttpClient, Id, XmlPostRequestLogBufferSize are
+      # public field names frozen for SemVer compatibility. They will be
+      # corrected in v2.
+      - path: geoserver\.go
+        linters: [revive]
+        text: "var-naming.*HttpClient"
+      - path: settings\.go
+        linters: [revive]
+        text: "var-naming.*(Id should be ID|XmlPostRequestLogBufferSize)"
+      # Historic error strings ("Not Found", "Forbidden", etc.) are part of the
+      # observable error format from v1.0; lowercasing them would break
+      # callers that match on text. The ST1005 warning is suppressed for vars.go.
+      - path: vars\.go
+        linters: [staticcheck]
+        text: "ST1005"
+      # gocritic style nits we don't want noise from:
+      # - sloppyReassign disagrees with named return values, which we use
+      # - paramTypeCombine is purely cosmetic
+      # - importShadow is the testify suite-test pattern (`suite *MySuite`)
+      - linters: [gocritic]
+        text: "sloppyReassign"
+      - linters: [gocritic]
+        text: "paramTypeCombine"
+      - linters: [gocritic]
+        text: "importShadow.*'suite'"
 
 formatters:
   enable:

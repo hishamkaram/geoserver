@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 )
 
@@ -53,7 +54,9 @@ func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*R
 			CoverageStore []*Resource `json:"coverageStore,omitempty"`
 		} `json:"coverageStores,omitempty"`
 	}
-	g.DeSerializeJSON(response, &coverageStoresResponse)
+	if err = g.DeSerializeJSON(response, &coverageStoresResponse); err != nil {
+		return nil, err
+	}
 	coverageStores = coverageStoresResponse.CoverageStores.CoverageStore
 	return
 }
@@ -78,7 +81,9 @@ func (g *GeoServer) GetCoverageStore(workspaceName string, gridName string) (cov
 	var coverageStoreResponse struct {
 		CoverageStore *CoverageStore `json:"coverageStore,omitempty"`
 	}
-	g.DeSerializeJSON(response, &coverageStoreResponse)
+	if err = g.DeSerializeJSON(response, &coverageStoreResponse); err != nil {
+		return nil, err
+	}
 	coverageStore = coverageStoreResponse.CoverageStore
 	return
 }
@@ -89,7 +94,10 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 	data := CoverageStoreRequestBody{
 		CoverageStore: &coverageStore,
 	}
-	serializedData, _ := g.SerializeStruct(data)
+	serializedData, serErr := g.SerializeStruct(data)
+	if serErr != nil {
+		return false, fmt.Errorf("CreateCoverageStore: serialize store: %w", serErr)
+	}
 	httpRequest := HTTPRequest{
 		Method:   postMethod,
 		Data:     bytes.NewBuffer(serializedData),
@@ -112,7 +120,10 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore CoverageStore) (modified bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", coverageStore.Name)
 	data := CoverageStoreRequestBody{CoverageStore: &coverageStore}
-	serializedData, _ := g.SerializeStruct(data)
+	serializedData, serErr := g.SerializeStruct(data)
+	if serErr != nil {
+		return false, fmt.Errorf("UpdateCoverageStore: serialize store: %w", serErr)
+	}
 	httpRequest := HTTPRequest{
 		Method:   putMethod,
 		Data:     bytes.NewBuffer(serializedData),

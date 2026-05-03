@@ -1,17 +1,28 @@
 package geoserver
 
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+)
 
-// SettingsService define geoserver settings operations
+// SettingsService defines the GeoServer global-settings operations.
+//
+// Note: in v1.0.x the interface declared an `UpdateGlobalSettings(...)` method
+// (plural) but the implementation was named `UpdateGlobalSetting` (singular),
+// so any consumer of this interface failed to compile. v1.1 ships both names —
+// callers should use the plural; the singular is kept for backward compatibility
+// and marked Deprecated.
 type SettingsService interface {
+	// GetGlobalSettings returns the GeoServer global settings, or an error.
+	GetGlobalSettings() (settings GlobalSettings, err error)
 
-	// GetGlobalSettings get global settings else return error
-	GetGlobalSettings() (settings *GlobalSettings, err error)
-
-	// UpdateGlobalSettings partial update global geoserver settings else return error
+	// UpdateGlobalSettings performs a partial update of the GeoServer global
+	// settings. Returns whether the change was applied and an error if any.
 	UpdateGlobalSettings(globalSettings GlobalSettings) (modified bool, err error)
 }
 
+// Contact describes the GeoServer contact-information block surfaced under
+// /rest/settings/contact.
 type Contact struct {
 	AddressCity         string `json:"addressCity,omitempty"`
 	AddressCountry      string `json:"addressCountry,omitempty"`
@@ -22,6 +33,8 @@ type Contact struct {
 	ContactPosition     string `json:"contactPosition,omitempty"`
 }
 
+// Settings is the GeoServer service-settings block (charset, decimals,
+// online-resource hints, etc.).
 type Settings struct {
 	Id                                 string      `json:"id,omitempty"`
 	Contact                            interface{} `json:"contact,omitempty"`
@@ -35,15 +48,20 @@ type Settings struct {
 	ShowModifiedTimeColumnsInAdminList bool        `json:"showModifiedTimeColumnsInAdminList,omitempty"`
 }
 
+// JaiExtOperations enumerates the JAI-Ext operations a GeoServer is configured
+// to expose; surfaced under settings.jai.jaiext.jaiExtOperations.
 type JaiExtOperations struct {
 	Class  string   `json:"@class,omitempty"`
 	String []string `json:"string,omitempty"`
 }
 
+// Jaiext wraps the JAI-Ext operation list reported by GeoServer.
 type Jaiext struct {
 	JaiExtOperations JaiExtOperations `json:"jaiExtOperations,omitempty"`
 }
 
+// Jai mirrors the JAI (Java Advanced Imaging) tunables reported under
+// settings.jai. See https://docs.geoserver.org/stable/en/user/server/jai.html
 type Jai struct {
 	AllowInterpolation bool        `json:"allowInterpolation,omitempty"`
 	Recycling          bool        `json:"recycling,omitempty"`
@@ -58,6 +76,8 @@ type Jai struct {
 	Jaiext             interface{} `json:"jaiext,omitempty"`
 }
 
+// CoverageAccess controls the thread pool that processes raster (coverage)
+// access; surfaced under settings.coverageAccess.
 type CoverageAccess struct {
 	MaxPoolSize           int    `json:"maxPoolSize,omitempty"`
 	CorePoolSize          int    `json:"corePoolSize,omitempty"`
@@ -66,6 +86,8 @@ type CoverageAccess struct {
 	ImageIOCacheThreshold int    `json:"imageIOCacheThreshold,omitempty"`
 }
 
+// Global is the top-level "global" settings document returned by
+// GET /rest/settings.json. It composes [Settings], [Jai], and [CoverageAccess].
 type Global struct {
 	Settings                    Settings       `json:"settings,omitempty"`
 	Jai                         Jai            `json:"jai,omitempty"`
@@ -81,7 +103,7 @@ type GlobalSettings struct {
 	Global Global `json:"global,omitempty"`
 }
 
-// GetGlobalSettings get global settings else return error
+// GetGlobalSettings returns the GeoServer global settings, or an error.
 func (g *GeoServer) GetGlobalSettings() (globalSettings GlobalSettings, err error) {
 	targetURL := g.ParseURL("rest", "settings")
 	httpRequest := HTTPRequest{
@@ -106,10 +128,23 @@ func (g *GeoServer) GetGlobalSettings() (globalSettings GlobalSettings, err erro
 	return
 }
 
-// UpdateGlobalSetting partial update global geoserver settings else return error
+// UpdateGlobalSettings performs a partial update of GeoServer global settings.
+// Returns whether the change was applied and any error.
+func (g *GeoServer) UpdateGlobalSettings(globalSettings GlobalSettings) (modified bool, err error) {
+	return g.UpdateGlobalSetting(globalSettings)
+}
+
+// UpdateGlobalSetting performs a partial update of GeoServer global settings.
+//
+// Deprecated: this name is retained for backward compatibility with v1.0.x;
+// new code should call [GeoServer.UpdateGlobalSettings] (plural), which
+// matches the [SettingsService] interface declaration.
 func (g *GeoServer) UpdateGlobalSetting(globalSettings GlobalSettings) (modified bool, err error) {
 	targetURL := g.ParseURL("rest", "settings")
-	serializedSettings, _ := g.SerializeStruct(globalSettings)
+	serializedSettings, serErr := g.SerializeStruct(globalSettings)
+	if serErr != nil {
+		return false, fmt.Errorf("UpdateGlobalSetting: serialize settings: %w", serErr)
+	}
 	httpRequest := HTTPRequest{
 		Method:   putMethod,
 		Accept:   jsonType,

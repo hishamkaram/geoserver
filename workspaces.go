@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 )
 
@@ -42,8 +43,11 @@ type WorkspaceRequestBody struct {
 // CreateWorkspace creates a workspace and return if created or not else return error
 func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, err error) {
 	//TODO: check if workspace exist before creating it
-	var workspace = Workspace{Name: workspaceName}
-	serializedWorkspace, _ := g.SerializeStruct(WorkspaceRequestBody{Workspace: &workspace})
+	workspace := Workspace{Name: workspaceName}
+	serializedWorkspace, serErr := g.SerializeStruct(WorkspaceRequestBody{Workspace: &workspace})
+	if serErr != nil {
+		return false, fmt.Errorf("CreateWorkspace: serialize workspace: %w", serErr)
+	}
 	targetURL := g.ParseURL("rest", "workspaces")
 	data := bytes.NewBuffer(serializedWorkspace)
 	httpRequest := HTTPRequest{
@@ -118,7 +122,9 @@ func (g *GeoServer) GetWorkspaces() (workspaces []*Resource, err error) {
 			Workspace []*Resource
 		}
 	}
-	g.DeSerializeJSON(response, &workspaceResponse)
+	if err = g.DeSerializeJSON(response, &workspaceResponse); err != nil {
+		return nil, err
+	}
 	workspaces = workspaceResponse.Workspaces.Workspace
 	return
 }
@@ -141,7 +147,9 @@ func (g *GeoServer) GetWorkspace(workspaceName string) (workspace Workspace, err
 	workspaceResponse := WorkspaceRequestBody{
 		Workspace: &Workspace{},
 	}
-	g.DeSerializeJSON(response, &workspaceResponse)
+	if err = g.DeSerializeJSON(response, &workspaceResponse); err != nil {
+		return Workspace{}, err
+	}
 	workspace = *workspaceResponse.Workspace
 	return
 }

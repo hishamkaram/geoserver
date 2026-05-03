@@ -194,7 +194,7 @@ func TestGetStorageCoverages(t *testing.T) {
 	coveragesPrepareTestStorage(t, coveragesTestDummyStoreName)
 
 	// we have to get the error while reading wrong storage
-	coverages, err = gsCatalog.GetStoreCoverages(coveragesTestWorkspace, coveragesTestDummyStoreName)
+	_, err = gsCatalog.GetStoreCoverages(coveragesTestWorkspace, coveragesTestDummyStoreName)
 	assert.NotNil(t, err)
 
 	_, err = gsCatalog.DeleteCoverageStore(coveragesTestWorkspace, coveragesTestDummyStoreName, true)
