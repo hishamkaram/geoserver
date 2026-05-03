@@ -24,7 +24,7 @@ PKG         := ./...
 COVER_FILE  := coverage.out
 INT_TAG     := integration
 
-GOLANGCI_LINT_VERSION ?= v1.62.0
+GOLANGCI_LINT_VERSION ?= v2.12.1
 
 .PHONY: help
 help: ## Show this help

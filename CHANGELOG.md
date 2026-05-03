@@ -56,7 +56,7 @@ Both contributions originally proposed by community contributors but never lande
 - Project `CLAUDE.md` (root) plus `.claude/agents`, `.claude/skills`, `.claude/commands` so Claude Code sessions in the repo auto-load the v1.1 conventions and have ready-made slash commands (`/integration-test`, `/lint-fix`, `/release-prep`, `/add-context-twin`, `/non-breaking-v1`).
 
 ### Changed
-- **Go version requirement**: minimum Go 1.23 (was Go 1.15). For users running `govulncheck` locally, Go 1.25.9 or newer is recommended to clear advisories `GO-2026-4946` (`crypto/x509`) and `GO-2026-4870` (`crypto/tls`); CI uses the latest 1.25.x patch via `check-latest: true`.
+- **Go version requirement**: minimum Go 1.25 (was Go 1.15). `go.mod` declares `go 1.25` plus `toolchain go1.25.9` so the auto toolchain mechanism (default since Go 1.21) pulls a Go release with patched `crypto/x509` and `crypto/tls` CVEs (`GO-2026-4946`, `GO-2026-4870`). Consumers using us as a dep are unaffected (their build uses their own Go ≥ 1.25).
 - **Logging**: switched from `github.com/sirupsen/logrus` to stdlib `log/slog`. Library logs at Debug for HTTP details, Warn for transport failures, Error for protocol violations. By default the logger is silent (`slog.DiscardHandler`); configure via `WithLogger(slog.Handler)`.
 - HTTP client now has a default 30s timeout (was unlimited). Override via `WithHTTPClient` or `WithTimeout`.
 - `ParseURL` now applies `url.PathEscape` per segment. Workspace/layer names with spaces, slashes, or non-ASCII characters now produce correct URLs (previously these produced malformed URLs).
