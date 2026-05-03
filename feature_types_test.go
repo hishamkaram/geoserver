@@ -93,6 +93,53 @@ func TestGeoserverImplemetFeatureTypeService(t *testing.T) {
 	assert.True(t, check)
 }
 
+// TestGetFeatureTypeList_Available verifies that a freshly-created PostGIS
+// datastore reports its tables under the `available` listing (tables present
+// in the DB but not yet configured as feature types in GeoServer).
+func TestGetFeatureTypeList_Available(t *testing.T) {
+	before()
+	const ws = "ftlist_ws"
+	const ds = "ftlist_pg"
+
+	if _, err := gsCatalog.CreateWorkspace(ws); err != nil && !strings.Contains(err.Error(), "already exists") {
+		t.Fatalf("preconditions: create workspace: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = gsCatalog.DeleteWorkspace(ws, true)
+	})
+
+	conn := DatastoreConnection{
+		Name:   ds,
+		Host:   "postgis",
+		Port:   5432,
+		Type:   "postgis",
+		DBName: "gis",
+		DBUser: "golang",
+		DBPass: "golang",
+	}
+	created, err := gsCatalog.CreateDatastore(conn, ws)
+	if !created || err != nil {
+		t.Fatalf("preconditions: create datastore: created=%v err=%v", created, err)
+	}
+
+	available, err := gsCatalog.GetFeatureTypeList(ws, ds, FeatureTypeListAvailable)
+	assert.NoError(t, err)
+	// The seeded `public.lbldyt` table should be in the available list.
+	found := false
+	for _, n := range available {
+		if n == "lbldyt" {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "expected seeded `lbldyt` in available list, got %v", available)
+
+	// configured should be empty (nothing has been published yet).
+	configured, err := gsCatalog.GetFeatureTypeList(ws, ds, FeatureTypeListConfigured)
+	assert.NoError(t, err)
+	assert.Empty(t, configured)
+}
+
 // TestCreateFeatureType creates a workspace + PostGIS datastore (against the
 // compose-managed PostGIS host `postgis:5432`, DB `gis`) then registers a
 // feature type pointing at the seeded `public.lbldyt` table.

@@ -60,6 +60,14 @@ func (u *CRSType) MarshalJSON() ([]byte, error) {
 // FeatureTypeService define all geoserver featuretype operations
 type FeatureTypeService interface {
 	GetFeatureTypes(workspaceName string, datastoreName string) (featureTypes []*Resource, err error)
+
+	// GetFeatureTypeList lists feature-type names in a datastore filtered
+	// by `kind`: "configured" (default), "available", "available_with_geom",
+	// or "all". The "available" variants are useful for discovering tables
+	// in the underlying datastore that have not yet been published as
+	// GeoServer feature types.
+	GetFeatureTypeList(workspaceName string, datastoreName string, kind FeatureTypeListKind) (names []string, err error)
+
 	GetFeatureType(workspaceName string, datastoreName string, featureTypeName string) (featureType *FeatureType, err error)
 
 	// CreateFeatureType creates a featureType in workspace and datastore.
@@ -73,10 +81,28 @@ type FeatureTypeService interface {
 // FeatureTypeServiceWithContext is the context-aware sibling of [FeatureTypeService].
 type FeatureTypeServiceWithContext interface {
 	GetFeatureTypesContext(ctx context.Context, workspaceName string, datastoreName string) (featureTypes []*Resource, err error)
+	GetFeatureTypeListContext(ctx context.Context, workspaceName string, datastoreName string, kind FeatureTypeListKind) (names []string, err error)
 	GetFeatureTypeContext(ctx context.Context, workspaceName string, datastoreName string, featureTypeName string) (featureType *FeatureType, err error)
 	CreateFeatureTypeContext(ctx context.Context, workspaceName string, datastoreName string, featureType *FeatureType) (created bool, err error)
 	DeleteFeatureTypeContext(ctx context.Context, workspaceName string, datastoreName string, featureTypeName string, recurse bool) (deleted bool, err error)
 }
+
+// FeatureTypeListKind is the GeoServer `?list=` query value for the feature
+// types listing endpoint. It controls which subset of tables / configured
+// types is returned.
+type FeatureTypeListKind string
+
+// Recognized FeatureTypeListKind values. GeoServer's REST API:
+//   - configured (default): only feature types that already have a GeoServer config
+//   - available:            tables in the datastore not yet configured
+//   - available_with_geom:  same as available, but only tables with a geometry column
+//   - all:                  configured ∪ available
+const (
+	FeatureTypeListConfigured        FeatureTypeListKind = "configured"
+	FeatureTypeListAvailable         FeatureTypeListKind = "available"
+	FeatureTypeListAvailableWithGeom FeatureTypeListKind = "available_with_geom"
+	FeatureTypeListAll               FeatureTypeListKind = "all"
+)
 
 // Entry is geoserver Entry
 type Entry struct {
@@ -210,6 +236,47 @@ func (g *GeoServer) featureTypesURL(workspaceName, datastoreName string, extra .
 	parts = append(parts, "featuretypes")
 	parts = append(parts, extra...)
 	return g.ParseURL(parts...)
+}
+
+// featureTypeListResponse models GeoServer's `?list=...` response shape:
+//
+//	{"list":{"string":["table1","table2"]}}
+type featureTypeListResponse struct {
+	List struct {
+		Strings []string `json:"string"`
+	} `json:"list"`
+}
+
+// GetFeatureTypeList lists feature-type names in a datastore using context.Background.
+// See [GeoServer.GetFeatureTypeListContext].
+func (g *GeoServer) GetFeatureTypeList(workspaceName string, datastoreName string, kind FeatureTypeListKind) (names []string, err error) {
+	return g.GetFeatureTypeListContext(context.Background(), workspaceName, datastoreName, kind)
+}
+
+// GetFeatureTypeListContext is the context-aware variant of [GeoServer.GetFeatureTypeList].
+//
+// kind controls the GeoServer `?list=` query parameter; if empty it defaults
+// to [FeatureTypeListAll].
+func (g *GeoServer) GetFeatureTypeListContext(ctx context.Context, workspaceName string, datastoreName string, kind FeatureTypeListKind) (names []string, err error) {
+	if kind == "" {
+		kind = FeatureTypeListAll
+	}
+	targetURL := g.featureTypesURL(workspaceName, datastoreName)
+	httpRequest := HTTPRequest{
+		Method: getMethod,
+		Accept: jsonType,
+		URL:    targetURL,
+		Query:  map[string]string{"list": string(kind)},
+	}
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
+	if responseCode != statusOk {
+		return nil, g.GetError(responseCode, response)
+	}
+	var body featureTypeListResponse
+	if err = g.DeSerializeJSON(response, &body); err != nil {
+		return nil, fmt.Errorf("GetFeatureTypeList: decode: %w", err)
+	}
+	return body.List.Strings, nil
 }
 
 // GetFeatureTypes lists feature types using context.Background.

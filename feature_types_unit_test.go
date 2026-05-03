@@ -63,3 +63,48 @@ func TestFeatureTypes_FeatureTypeServiceImpl(t *testing.T) {
 	var _ FeatureTypeService = (*GeoServer)(nil)
 	var _ FeatureTypeServiceWithContext = (*GeoServer)(nil)
 }
+
+func TestFeatureTypes_GetFeatureTypeList_OK(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/rest/workspaces/topp/datastores/states_pg/featuretypes", r.URL.Path)
+		assert.Equal(t, "available", r.URL.Query().Get("list"))
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"list":{"string":["counties","cities","states"]}}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	gs := newTestCatalog(srv)
+	got, err := gs.GetFeatureTypeListContext(context.Background(), "topp", "states_pg", FeatureTypeListAvailable)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"counties", "cities", "states"}, got)
+}
+
+func TestFeatureTypes_GetFeatureTypeList_DefaultKind(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Empty kind must default to "all".
+		assert.Equal(t, "all", r.URL.Query().Get("list"))
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"list":{"string":[]}}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	gs := newTestCatalog(srv)
+	got, err := gs.GetFeatureTypeListContext(context.Background(), "topp", "states_pg", "")
+	assert.NoError(t, err)
+	assert.Empty(t, got)
+}
+
+func TestFeatureTypes_GetFeatureTypeList_404(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = io.WriteString(w, "no such datastore")
+	}))
+	t.Cleanup(srv.Close)
+
+	gs := newTestCatalog(srv)
+	_, err := gs.GetFeatureTypeListContext(context.Background(), "topp", "missing_ds", FeatureTypeListAll)
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got %v", err)
+	}
+}
