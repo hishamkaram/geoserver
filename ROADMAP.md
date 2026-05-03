@@ -30,13 +30,17 @@ Lives at module path `github.com/hishamkaram/geoserver/v2` (subdir form). Idioma
 **Milestones (checklist; tags applied as each is reached):**
 
 - [x] **Scaffold** — `/v2/` skeleton + `Workspaces` reference resource + transport layer + `internal/transport/` algorithms.
-- [ ] **v2.0.0-alpha.1** — scaffold tag, signals public API direction.
+- [x] **v2.0.0-alpha.1** — scaffold tag, signals public API direction. *Tagged 2026-05-03.*
 - [x] **Resource port (1/3)** — `datastores`, `feature_types`, `coverage_stores`, `coverages`.
 - [x] **Resource port (2/3)** — `layers`, `layergroups`, `styles`.
-- [x] **Resource port (3/3)** — `namespaces`, `settings`, `security`, `acl`, `about`. (`capabilities` deferred to a v2.x point release once `ows/wms/` lands.)
-- [ ] **v2.0.0-beta.1** — REST surface complete, integration matrix on 2.27 + 2.28, public API frozen for review.
-- [ ] **OWS clients** — `ows/wms/`, `ows/wfs/`, `ows/wcs/` subpackages. (May slip to v2.x point release.)
-- [ ] **Migration guide** — `docs/migration-v1-to-v2.md` filled out with concrete mappings.
+- [x] **Resource port (3/3)** — `namespaces`, `settings`, `security`, `acl`, `about`.
+- [x] **System endpoints** — `c.System.Reload` / `c.System.ResetCache` (port of v1's `configuration.go`).
+- [x] **OWS clients (1/3)** — `ows/wms/` (GetCapabilities + workspace scope). `ows/wfs/` and `ows/wcs/` still pending; same wire-shape pattern.
+- [x] **Migration guide** — `docs/migration-v1-to-v2.md` populated with concrete v1 → v2 mappings for every resource.
+- [x] **v1 parity at `master`** — every v1 surface (REST + OWS) has a v2 equivalent.
+- [ ] **v2.0.0-alpha.2** (or later alpha) — re-tag to publish the post-`alpha.1` work (godoc Examples, README refresh, OWS WMS port, system reload/reset). Tag is an explicit user action.
+- [ ] **OWS clients (2/3, 3/3)** — `ows/wfs/`, `ows/wcs/`. Same shape as `ows/wms/` (XML types + `ParseCapabilities` + sub-client method). May slip to a later alpha.
+- [ ] **v2.0.0-beta.1** — REST + OWS surface complete, integration matrix on 2.27 + 2.28, public API frozen for review.
 - [ ] **v2.0.0** — final tag.
 
 ## GeoServer 3.0 support
