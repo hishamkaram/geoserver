@@ -299,6 +299,8 @@ To target the LTS leg locally:
 GEOSERVER_VERSION=2.27.4 make compose-up
 ```
 
+See [`docker/README.md`](docker/README.md) for what's in the image (Importer extension baked in, supported GeoServer versions, env file, PostGIS seed) and how to switch GeoServer versions.
+
 In CI, the integration suite runs on every release tag (`v*.*.*`) and on a weekly schedule (Sun 03:17 UTC) against both **GeoServer 2.27.4 LTS** and **2.28.0 stable** in parallel. Manual dispatch is also available via the GitHub Actions UI.
 
 ## Project status

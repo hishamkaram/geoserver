@@ -30,6 +30,8 @@ make test-integration     # runs tests with -tags=integration
 make compose-down
 ```
 
+See [`docker/README.md`](docker/README.md) for what's in the image (Importer extension baked in, supported GeoServer versions, env file, PostGIS seed).
+
 ## Make targets
 
 | Target | What it does |

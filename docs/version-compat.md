@@ -30,7 +30,7 @@ CI uses `setup-go@v6` with `check-latest: true`, so the unit, vuln, and integrat
 
 The dev / test Docker stack uses **Tomcat 9 + JDK 17 (Temurin)**. Why Tomcat 9 specifically: GeoServer 2.x (including the supported 2.27 / 2.28) is built against the `javax.*` servlet namespace. Tomcat 10+ moved to `jakarta.*` and breaks GeoServer 2.x at WAR-deploy time. GeoServer 3.0 will unblock Tomcat 11 — see roadmap.
 
-This affects only the test stack. Production users build their own GeoServer container or use the official one; this library doesn't dictate runtime.
+This affects only the test stack. Production users build their own GeoServer container or use the official one; this library doesn't dictate runtime. See [`../docker/README.md`](../docker/README.md) for the full dev/test image contents (Importer extension bake-in, env vars, PostGIS seed).
 
 ## PostGIS
 
