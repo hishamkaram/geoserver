@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // Core is the plumbing the sub-client needs from the parent [*Client].
@@ -114,4 +115,72 @@ func ParseCapabilities(r io.Reader) (*Capabilities, error) {
 		return nil, fmt.Errorf("wcs: parse capabilities: %w", err)
 	}
 	return &caps, nil
+}
+
+// DescribeCoverageOptions controls a [Client.DescribeCoverage] call.
+// CoverageIDs is required (the coverage identifiers to describe).
+type DescribeCoverageOptions struct {
+	// CoverageIDs is the list of coverage identifiers to describe
+	// (e.g., []string{"nurc__Arc_Sample"}). Required — WCS rejects
+	// an empty list.
+	CoverageIDs []string
+
+	// Version is the WCS protocol version requested. Default
+	// "2.0.1".
+	Version string
+}
+
+// DescribeCoverage fetches detailed metadata for one or more
+// coverages and parses it into a [*CoverageDescriptions].
+//
+// Returns a *APIError wrapping the appropriate sentinel on a 4xx/5xx
+// response.
+func (c *Client) DescribeCoverage(ctx context.Context, opts DescribeCoverageOptions) (*CoverageDescriptions, error) {
+	const op = "WCS.DescribeCoverage"
+	if len(opts.CoverageIDs) == 0 {
+		return nil, errors.New(op + ": empty CoverageIDs (WCS DescribeCoverage requires at least one)")
+	}
+
+	parts := []string{}
+	if c.workspace != "" {
+		parts = append(parts, c.workspace)
+	}
+	parts = append(parts, "wcs")
+	u, err := c.core.URL(parts...)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	version := opts.Version
+	if version == "" {
+		version = "2.0.1"
+	}
+	// GeoServer's WCS endpoint is case-sensitive on `service` —
+	// see the comment in [Client.GetCapabilities].
+	query := map[string]string{
+		"service":    "WCS",
+		"version":    version,
+		"request":    "DescribeCoverage",
+		"coverageId": strings.Join(opts.CoverageIDs, ","),
+	}
+
+	var descs CoverageDescriptions
+	if err := c.core.DoXML(ctx, op, http.MethodGet, u, query, &descs); err != nil {
+		return nil, err
+	}
+	return &descs, nil
+}
+
+// ParseCoverageDescriptions reads a WCS DescribeCoverage XML document
+// from r and decodes it into a [*CoverageDescriptions]. Useful for
+// parsing a document fetched out-of-band.
+func ParseCoverageDescriptions(r io.Reader) (*CoverageDescriptions, error) {
+	if r == nil {
+		return nil, errors.New("wcs: ParseCoverageDescriptions: nil reader")
+	}
+	var descs CoverageDescriptions
+	if err := xml.NewDecoder(r).Decode(&descs); err != nil {
+		return nil, fmt.Errorf("wcs: parse coverage descriptions: %w", err)
+	}
+	return &descs, nil
 }

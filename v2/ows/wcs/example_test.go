@@ -35,6 +35,25 @@ func ExampleClient_InWorkspace() {
 		wcs.GetCapabilitiesOptions{})
 }
 
+// ExampleClient_DescribeCoverage fetches detailed metadata for a
+// coverage and prints each band's name + unit-of-measure.
+func ExampleClient_DescribeCoverage() {
+	c, _ := geoserver.New("http://localhost:8080/geoserver",
+		geoserver.WithBasicAuth("admin", "geoserver"))
+
+	descs, err := c.WCS.DescribeCoverage(context.Background(),
+		wcs.DescribeCoverageOptions{CoverageIDs: []string{"nurc__Arc_Sample"}})
+	if err != nil {
+		return
+	}
+	for _, d := range descs.CoverageDescription {
+		fmt.Printf("%s @ %s\n", d.CoverageID, d.BoundedBy.Envelope.SrsName)
+		for _, f := range d.RangeType.DataRecord.Field {
+			fmt.Printf("  band %s (%s)\n", f.Name, f.Quantity.Uom.Code)
+		}
+	}
+}
+
 // ExampleParseCapabilities decodes a capabilities document fetched
 // out-of-band.
 func ExampleParseCapabilities() {

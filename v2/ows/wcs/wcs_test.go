@@ -172,6 +172,172 @@ func TestGetCapabilities_NotFound(t *testing.T) {
 	}
 }
 
+const minimalCoverageDescriptionsXML = `<?xml version="1.0" encoding="UTF-8"?>
+<wcs:CoverageDescriptions
+    xmlns:wcs="http://www.opengis.net/wcs/2.0"
+    xmlns:gml="http://www.opengis.net/gml/3.2"
+    xmlns:gmlcov="http://www.opengis.net/gmlcov/1.0"
+    xmlns:swe="http://www.opengis.net/swe/2.0">
+  <wcs:CoverageDescription gml:id="nurc__Arc_Sample">
+    <wcs:CoverageId>nurc__Arc_Sample</wcs:CoverageId>
+    <gml:boundedBy>
+      <gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326"
+                    axisLabels="Lat Long"
+                    uomLabels="deg deg"
+                    srsDimension="2">
+        <gml:lowerCorner>-90.0 -180.0</gml:lowerCorner>
+        <gml:upperCorner>90.0 180.0</gml:upperCorner>
+      </gml:Envelope>
+    </gml:boundedBy>
+    <gml:domainSet>
+      <gml:RectifiedGrid dimension="2" srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+        <gml:limits>
+          <gml:GridEnvelope>
+            <gml:low>0 0</gml:low>
+            <gml:high>1023 511</gml:high>
+          </gml:GridEnvelope>
+        </gml:limits>
+        <gml:axisLabels>i j</gml:axisLabels>
+      </gml:RectifiedGrid>
+    </gml:domainSet>
+    <gmlcov:rangeType>
+      <swe:DataRecord>
+        <swe:field name="GRAY_INDEX">
+          <swe:Quantity>
+            <swe:description>GRAY_INDEX</swe:description>
+            <swe:uom code="W.m-2.Sr-1"/>
+          </swe:Quantity>
+        </swe:field>
+      </swe:DataRecord>
+    </gmlcov:rangeType>
+    <wcs:ServiceParameters>
+      <wcs:CoverageSubtype>RectifiedGridCoverage</wcs:CoverageSubtype>
+      <wcs:nativeFormat>image/tiff</wcs:nativeFormat>
+    </wcs:ServiceParameters>
+  </wcs:CoverageDescription>
+</wcs:CoverageDescriptions>`
+
+func TestParseCoverageDescriptions_OK(t *testing.T) {
+	descs, err := wcs.ParseCoverageDescriptions(strings.NewReader(minimalCoverageDescriptionsXML))
+	if err != nil {
+		t.Fatalf("ParseCoverageDescriptions: %v", err)
+	}
+	if got := len(descs.CoverageDescription); got != 1 {
+		t.Fatalf("CoverageDescription: got %d, want 1", got)
+	}
+	d := descs.CoverageDescription[0]
+	if d.CoverageID != "nurc__Arc_Sample" {
+		t.Errorf("CoverageID = %q", d.CoverageID)
+	}
+	if d.BoundedBy.Envelope.LowerCorner != "-90.0 -180.0" {
+		t.Errorf("LowerCorner = %q", d.BoundedBy.Envelope.LowerCorner)
+	}
+	if d.BoundedBy.Envelope.SrsName != "http://www.opengis.net/def/crs/EPSG/0/4326" {
+		t.Errorf("SrsName = %q", d.BoundedBy.Envelope.SrsName)
+	}
+	if d.DomainSet.RectifiedGrid.Limits.GridEnvelope.High != "1023 511" {
+		t.Errorf("GridEnvelope.High = %q", d.DomainSet.RectifiedGrid.Limits.GridEnvelope.High)
+	}
+	if got := len(d.RangeType.DataRecord.Field); got != 1 {
+		t.Fatalf("Fields: got %d, want 1", got)
+	}
+	field := d.RangeType.DataRecord.Field[0]
+	if field.Name != "GRAY_INDEX" {
+		t.Errorf("Field.Name = %q", field.Name)
+	}
+	if field.Quantity.Uom.Code != "W.m-2.Sr-1" {
+		t.Errorf("Field.Uom.Code = %q", field.Quantity.Uom.Code)
+	}
+	if d.ServiceParameters.CoverageSubtype != "RectifiedGridCoverage" {
+		t.Errorf("CoverageSubtype = %q", d.ServiceParameters.CoverageSubtype)
+	}
+	if d.ServiceParameters.NativeFormat != "image/tiff" {
+		t.Errorf("NativeFormat = %q", d.ServiceParameters.NativeFormat)
+	}
+}
+
+func TestParseCoverageDescriptions_NilReader(t *testing.T) {
+	if _, err := wcs.ParseCoverageDescriptions(nil); err == nil {
+		t.Fatalf("expected error on nil reader")
+	}
+}
+
+func TestParseCoverageDescriptions_Malformed(t *testing.T) {
+	_, err := wcs.ParseCoverageDescriptions(strings.NewReader("<not-wcs/>"))
+	if err == nil {
+		t.Fatalf("expected error on non-WCS XML")
+	}
+	if !strings.Contains(err.Error(), "wcs: parse coverage descriptions") {
+		t.Errorf("error not wrapped: %v", err)
+	}
+}
+
+func TestDescribeCoverage_OK(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		if q.Get("service") != "WCS" {
+			t.Errorf("service = %q (must be uppercase)", q.Get("service"))
+		}
+		if q.Get("request") != "DescribeCoverage" {
+			t.Errorf("request = %q", q.Get("request"))
+		}
+		if q.Get("coverageId") != "nurc__Arc_Sample" {
+			t.Errorf("coverageId = %q", q.Get("coverageId"))
+		}
+		_, _ = io.WriteString(w, minimalCoverageDescriptionsXML)
+	}))
+	defer srv.Close()
+
+	c, _ := geoserver.New(srv.URL, geoserver.WithBasicAuth("u", "p"))
+	descs, err := c.WCS.DescribeCoverage(context.Background(),
+		wcs.DescribeCoverageOptions{CoverageIDs: []string{"nurc__Arc_Sample"}})
+	if err != nil {
+		t.Fatalf("DescribeCoverage: %v", err)
+	}
+	if got := len(descs.CoverageDescription); got != 1 {
+		t.Errorf("CoverageDescription: got %d, want 1", got)
+	}
+}
+
+func TestDescribeCoverage_EmptyIDs(t *testing.T) {
+	c, _ := geoserver.New("http://localhost:8080", geoserver.WithBasicAuth("u", "p"))
+	_, err := c.WCS.DescribeCoverage(context.Background(), wcs.DescribeCoverageOptions{})
+	if err == nil {
+		t.Fatalf("expected error for empty CoverageIDs")
+	}
+	if !strings.Contains(err.Error(), "empty CoverageIDs") {
+		t.Errorf("error message = %q", err.Error())
+	}
+}
+
+func TestDescribeCoverage_MultipleIDs(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("coverageId") != "a,b,c" {
+			t.Errorf("coverageId = %q", r.URL.Query().Get("coverageId"))
+		}
+		_, _ = io.WriteString(w, minimalCoverageDescriptionsXML)
+	}))
+	defer srv.Close()
+
+	c, _ := geoserver.New(srv.URL, geoserver.WithBasicAuth("u", "p"))
+	_, _ = c.WCS.DescribeCoverage(context.Background(),
+		wcs.DescribeCoverageOptions{CoverageIDs: []string{"a", "b", "c"}})
+}
+
+func TestDescribeCoverage_NotFound(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "no such coverage", http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	c, _ := geoserver.New(srv.URL, geoserver.WithBasicAuth("u", "p"))
+	_, err := c.WCS.DescribeCoverage(context.Background(),
+		wcs.DescribeCoverageOptions{CoverageIDs: []string{"missing"}})
+	if !errors.Is(err, geoserver.ErrNotFound) {
+		t.Fatalf("err = %v, want ErrNotFound", err)
+	}
+}
+
 func TestClient_IsGlobal(t *testing.T) {
 	c, _ := geoserver.New("http://localhost:8080", geoserver.WithBasicAuth("u", "p"))
 	if !c.WCS.IsGlobal() {

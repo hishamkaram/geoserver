@@ -109,10 +109,116 @@ type Contents struct {
 }
 
 // CoverageSummary is one published coverage entry. WCS 2.0 minimizes
-// the per-coverage envelope to CoverageId + CoverageSubtype; richer
-// per-coverage detail is fetched via DescribeCoverage (not in this
-// package's scope).
+// the per-coverage envelope to CoverageId + CoverageSubtype; full
+// per-coverage detail is fetched via [Client.DescribeCoverage].
 type CoverageSummary struct {
 	CoverageID      string `xml:"CoverageId"`
 	CoverageSubtype string `xml:"CoverageSubtype"`
+}
+
+// CoverageDescriptions is the root of a WCS DescribeCoverage response
+// (`<wcs:CoverageDescriptions>`), holding one [CoverageDescription]
+// per requested coverage.
+type CoverageDescriptions struct {
+	XMLName             xml.Name              `xml:"CoverageDescriptions"`
+	CoverageDescription []CoverageDescription `xml:"CoverageDescription"`
+}
+
+// CoverageDescription is the per-coverage envelope returned by
+// DescribeCoverage. The native GML/SWE schemas are deep; this type
+// surfaces the common-case fields callers actually use (id, bounding
+// box, range fields). For full XML access, callers can re-parse the
+// response body with [encoding/xml] directly.
+type CoverageDescription struct {
+	CoverageID        string                `xml:"CoverageId"`
+	BoundedBy         BoundedBy             `xml:"boundedBy"`
+	DomainSet         DomainSet             `xml:"domainSet"`
+	RangeType         RangeType             `xml:"rangeType"`
+	ServiceParameters CoverageServiceParams `xml:"ServiceParameters"`
+}
+
+// BoundedBy carries the GML envelope (lower + upper corner) plus the
+// SRS (`srsName`) and dimension count (`srsDimension`) attributes.
+type BoundedBy struct {
+	Envelope Envelope `xml:"Envelope"`
+}
+
+// Envelope is the GML envelope inside [BoundedBy]. LowerCorner /
+// UpperCorner are pre-split strings (e.g., "20.0 -130.0"); kept as
+// strings to preserve the exact wire form (parse with strconv as
+// needed).
+type Envelope struct {
+	SrsName      string `xml:"srsName,attr,omitempty"`
+	AxisLabels   string `xml:"axisLabels,attr,omitempty"`
+	UomLabels    string `xml:"uomLabels,attr,omitempty"`
+	SrsDimension string `xml:"srsDimension,attr,omitempty"`
+	LowerCorner  string `xml:"lowerCorner"`
+	UpperCorner  string `xml:"upperCorner"`
+}
+
+// DomainSet describes the spatial domain of the coverage — typically
+// a [RectifiedGrid] giving the grid's CRS, dimensions, and pixel
+// origin/offset vectors.
+type DomainSet struct {
+	RectifiedGrid RectifiedGrid `xml:"RectifiedGrid"`
+}
+
+// RectifiedGrid is the gml:RectifiedGrid wrapped in DomainSet.
+type RectifiedGrid struct {
+	Dimension    string     `xml:"dimension,attr,omitempty"`
+	SrsName      string     `xml:"srsName,attr,omitempty"`
+	Limits       GridLimits `xml:"limits"`
+	AxisLabels   string     `xml:"axisLabels"`
+	Origin       string     `xml:"origin>Point>pos"`
+	OffsetVector []string   `xml:"offsetVector"`
+}
+
+// GridLimits is the integer pixel-space envelope of the grid.
+type GridLimits struct {
+	GridEnvelope GridEnvelope `xml:"GridEnvelope"`
+}
+
+// GridEnvelope is the pixel-space low/high index pair.
+type GridEnvelope struct {
+	Low  string `xml:"low"`
+	High string `xml:"high"`
+}
+
+// RangeType describes the coverage's per-pixel value structure — a
+// list of [Field] entries (one per band). Encoded as a SWE
+// DataRecord on the wire.
+type RangeType struct {
+	DataRecord DataRecord `xml:"DataRecord"`
+}
+
+// DataRecord is the SWE DataRecord wrapping the range fields.
+type DataRecord struct {
+	Field []Field `xml:"field"`
+}
+
+// Field is one band/component in the coverage's range type.
+// Quantity carries the unit-of-measure (Uom) attribute.
+type Field struct {
+	Name     string   `xml:"name,attr,omitempty"`
+	Quantity Quantity `xml:"Quantity"`
+}
+
+// Quantity is the SWE Quantity inside a [Field].
+type Quantity struct {
+	Description string `xml:"description"`
+	Uom         Uom    `xml:"uom"`
+	Constraint  string `xml:"constraint>AllowedValues>interval"`
+}
+
+// Uom is the unit-of-measure descriptor on a [Quantity].
+type Uom struct {
+	Code string `xml:"code,attr,omitempty"`
+}
+
+// CoverageServiceParams is the WCS service-parameters block per
+// coverage — currently exposes the native CoverageSubtype and
+// supported format(s).
+type CoverageServiceParams struct {
+	CoverageSubtype string `xml:"CoverageSubtype"`
+	NativeFormat    string `xml:"nativeFormat"`
 }

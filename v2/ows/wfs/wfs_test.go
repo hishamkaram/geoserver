@@ -230,6 +230,151 @@ func TestGetCapabilities_NotFound(t *testing.T) {
 	}
 }
 
+const minimalSchemaXML = `<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:gml="http://www.opengis.net/gml/3.2"
+            xmlns:topp="http://www.openplans.org/topp"
+            targetNamespace="http://www.openplans.org/topp"
+            elementFormDefault="qualified">
+  <xsd:import namespace="http://www.opengis.net/gml/3.2"
+              schemaLocation="http://example.com/schemas/gml/3.2.1/gml.xsd"/>
+  <xsd:complexType name="statesType">
+    <xsd:complexContent>
+      <xsd:extension base="gml:AbstractFeatureType">
+        <xsd:sequence>
+          <xsd:element minOccurs="0" name="the_geom" nillable="true" type="gml:MultiSurfacePropertyType"/>
+          <xsd:element minOccurs="0" name="STATE_NAME" nillable="true" type="xsd:string"/>
+          <xsd:element minOccurs="0" name="STATE_FIPS" nillable="true" type="xsd:string"/>
+          <xsd:element minOccurs="0" name="PERSONS" nillable="true" type="xsd:double"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:element name="states" substitutionGroup="gml:AbstractFeature" type="topp:statesType"/>
+</xsd:schema>`
+
+func TestParseFeatureSchema_OK(t *testing.T) {
+	schema, err := wfs.ParseFeatureSchema(strings.NewReader(minimalSchemaXML))
+	if err != nil {
+		t.Fatalf("ParseFeatureSchema: %v", err)
+	}
+	if schema.TargetNamespace != "http://www.openplans.org/topp" {
+		t.Errorf("TargetNamespace = %q", schema.TargetNamespace)
+	}
+	if got := len(schema.Imports); got != 1 {
+		t.Errorf("Imports: got %d, want 1", got)
+	}
+	if got := len(schema.ComplexTypes); got != 1 {
+		t.Fatalf("ComplexTypes: got %d, want 1", got)
+	}
+	if schema.ComplexTypes[0].Name != "statesType" {
+		t.Errorf("ComplexType.Name = %q", schema.ComplexTypes[0].Name)
+	}
+
+	attrs := schema.Attributes("statesType")
+	if got := len(attrs); got != 4 {
+		t.Fatalf("Attributes(statesType): got %d, want 4", got)
+	}
+	if attrs[0].Name != "the_geom" || attrs[0].Type != "gml:MultiSurfacePropertyType" {
+		t.Errorf("attrs[0] = %+v", attrs[0])
+	}
+	if !attrs[0].Nillable {
+		t.Errorf("attrs[0].Nillable should be true")
+	}
+	if attrs[3].Type != "xsd:double" {
+		t.Errorf("attrs[3].Type = %q", attrs[3].Type)
+	}
+
+	// Empty typeName picks the first complex type.
+	if got := len(schema.Attributes("")); got != 4 {
+		t.Errorf("Attributes(\"\"): got %d, want 4", got)
+	}
+
+	// Unknown typeName returns nil.
+	if got := schema.Attributes("unknown"); got != nil {
+		t.Errorf("Attributes(unknown) = %+v, want nil", got)
+	}
+}
+
+func TestParseFeatureSchema_NilReader(t *testing.T) {
+	if _, err := wfs.ParseFeatureSchema(nil); err == nil {
+		t.Fatalf("expected error on nil reader")
+	}
+}
+
+func TestParseFeatureSchema_Malformed(t *testing.T) {
+	_, err := wfs.ParseFeatureSchema(strings.NewReader("<not-xsd/>"))
+	if err == nil {
+		t.Fatalf("expected error on non-XSD XML")
+	}
+	if !strings.Contains(err.Error(), "wfs: parse feature schema") {
+		t.Errorf("error not wrapped: %v", err)
+	}
+}
+
+func TestDescribeFeatureType_OK(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/wfs" {
+			t.Errorf("path = %q", r.URL.Path)
+		}
+		q := r.URL.Query()
+		if q.Get("request") != "DescribeFeatureType" {
+			t.Errorf("request = %q", q.Get("request"))
+		}
+		if q.Get("typeNames") != "topp:states" {
+			t.Errorf("typeNames = %q", q.Get("typeNames"))
+		}
+		if q.Get("typeName") != "topp:states" {
+			t.Errorf("typeName = %q (1.1.0 alias)", q.Get("typeName"))
+		}
+		_, _ = io.WriteString(w, minimalSchemaXML)
+	}))
+	defer srv.Close()
+
+	c, _ := geoserver.New(srv.URL, geoserver.WithBasicAuth("u", "p"))
+
+	schema, err := c.WFS.DescribeFeatureType(context.Background(),
+		wfs.DescribeFeatureTypeOptions{TypeNames: []string{"topp:states"}})
+	if err != nil {
+		t.Fatalf("DescribeFeatureType: %v", err)
+	}
+	if got := len(schema.ComplexTypes); got != 1 {
+		t.Errorf("ComplexTypes: got %d, want 1", got)
+	}
+	attrs := schema.Attributes("statesType")
+	if got := len(attrs); got != 4 {
+		t.Errorf("Attributes: got %d, want 4", got)
+	}
+}
+
+func TestDescribeFeatureType_MultipleTypeNames(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("typeNames") != "topp:states,topp:counties" {
+			t.Errorf("typeNames = %q", r.URL.Query().Get("typeNames"))
+		}
+		_, _ = io.WriteString(w, minimalSchemaXML)
+	}))
+	defer srv.Close()
+
+	c, _ := geoserver.New(srv.URL, geoserver.WithBasicAuth("u", "p"))
+	_, _ = c.WFS.DescribeFeatureType(context.Background(),
+		wfs.DescribeFeatureTypeOptions{TypeNames: []string{"topp:states", "topp:counties"}})
+}
+
+func TestDescribeFeatureType_NotFound(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "no such type", http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	c, _ := geoserver.New(srv.URL, geoserver.WithBasicAuth("u", "p"))
+	_, err := c.WFS.DescribeFeatureType(context.Background(),
+		wfs.DescribeFeatureTypeOptions{TypeNames: []string{"topp:missing"}})
+	if !errors.Is(err, geoserver.ErrNotFound) {
+		t.Fatalf("err = %v, want ErrNotFound", err)
+	}
+}
+
 func TestClient_IsGlobal(t *testing.T) {
 	c, _ := geoserver.New("http://localhost:8080", geoserver.WithBasicAuth("u", "p"))
 	if !c.WFS.IsGlobal() {

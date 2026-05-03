@@ -35,6 +35,22 @@ func ExampleClient_InWorkspace() {
 		wfs.GetCapabilitiesOptions{Version: "1.1.0"})
 }
 
+// ExampleClient_DescribeFeatureType fetches the XSD schema for a
+// published feature type and prints each attribute's name and type.
+func ExampleClient_DescribeFeatureType() {
+	c, _ := geoserver.New("http://localhost:8080/geoserver",
+		geoserver.WithBasicAuth("admin", "geoserver"))
+
+	schema, err := c.WFS.DescribeFeatureType(context.Background(),
+		wfs.DescribeFeatureTypeOptions{TypeNames: []string{"topp:states"}})
+	if err != nil {
+		return
+	}
+	for _, attr := range schema.Attributes("") {
+		fmt.Printf("  %s : %s\n", attr.Name, attr.Type)
+	}
+}
+
 // ExampleParseCapabilities decodes a capabilities document fetched
 // out-of-band — useful for parsing a saved fixture or a body from a
 // custom transport.

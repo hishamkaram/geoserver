@@ -138,3 +138,117 @@ type MetadataURL struct {
 	Format string `xml:"format,attr,omitempty"`
 	Href   string `xml:"http://www.w3.org/1999/xlink href,attr,omitempty"`
 }
+
+// FeatureSchema is the root of a WFS DescribeFeatureType response —
+// an XSD schema document (`<xsd:schema>`) describing the published
+// feature type's attributes.
+//
+// The type tree intentionally models a useful subset of XSD rather
+// than the full schema language; the common WFS-emitted shape is
+// `complexType > complexContent > extension > sequence > element*`,
+// and the [FeatureSchema.Attributes] helper walks that tree to
+// surface a flat list of attributes.
+type FeatureSchema struct {
+	XMLName         xml.Name        `xml:"schema"`
+	TargetNamespace string          `xml:"targetNamespace,attr,omitempty"`
+	Imports         []SchemaImport  `xml:"import"`
+	Elements        []SchemaElement `xml:"element"`
+	ComplexTypes    []ComplexType   `xml:"complexType"`
+}
+
+// SchemaImport is `<xsd:import>` — a reference to another schema
+// (typically GML).
+type SchemaImport struct {
+	Namespace      string `xml:"namespace,attr,omitempty"`
+	SchemaLocation string `xml:"schemaLocation,attr,omitempty"`
+}
+
+// SchemaElement is `<xsd:element>` at the top of a [FeatureSchema] —
+// names the published feature element and points at its
+// [ComplexType].
+type SchemaElement struct {
+	Name              string `xml:"name,attr,omitempty"`
+	Type              string `xml:"type,attr,omitempty"`
+	SubstitutionGroup string `xml:"substitutionGroup,attr,omitempty"`
+}
+
+// ComplexType is `<xsd:complexType>` — names the type and carries
+// either a top-level [Sequence] or, more commonly for WFS, a
+// [ComplexContent] wrapping an extension of `gml:AbstractFeatureType`.
+type ComplexType struct {
+	Name           string          `xml:"name,attr,omitempty"`
+	Sequence       *Sequence       `xml:"sequence,omitempty"`
+	ComplexContent *ComplexContent `xml:"complexContent,omitempty"`
+}
+
+// ComplexContent is `<xsd:complexContent>`. Its [Extension] points at
+// a base type (typically `gml:AbstractFeatureType`) and adds a
+// [Sequence] of attribute elements.
+type ComplexContent struct {
+	Extension Extension `xml:"extension"`
+}
+
+// Extension is `<xsd:extension>` — names the base type and adds a
+// [Sequence] of attribute elements.
+type Extension struct {
+	Base     string   `xml:"base,attr,omitempty"`
+	Sequence Sequence `xml:"sequence"`
+}
+
+// Sequence is `<xsd:sequence>` — the ordered list of attribute
+// elements making up a feature.
+type Sequence struct {
+	Elements []Attribute `xml:"element"`
+}
+
+// Attribute is one feature attribute — `<xsd:element>` inside the
+// sequence under a [ComplexType] (directly or via [Extension]).
+//
+// Type is the xsd:type string (e.g., `xsd:string`, `xsd:int`,
+// `gml:Point`, `gml:MultiSurfacePropertyType`). Nillable defaults
+// to false when the attribute is absent. MinOccurs is "0" for
+// optional attributes (the XSD default for `<xsd:element>` inside
+// a sequence) — kept as string to preserve the exact wire form.
+type Attribute struct {
+	Name      string `xml:"name,attr"`
+	Type      string `xml:"type,attr,omitempty"`
+	Nillable  bool   `xml:"nillable,attr,omitempty"`
+	MinOccurs string `xml:"minOccurs,attr,omitempty"`
+	MaxOccurs string `xml:"maxOccurs,attr,omitempty"`
+}
+
+// Attributes returns the attribute list for the named complex type
+// — the typical WFS shape walks `complexType > complexContent >
+// extension > sequence > element*`. Returns nil if the type is not
+// present in the schema.
+//
+// typeName is the local name (without namespace prefix); pass an
+// empty string to use the first complex type in the schema (the
+// common case where DescribeFeatureType returns one type).
+func (s *FeatureSchema) Attributes(typeName string) []Attribute {
+	if s == nil || len(s.ComplexTypes) == 0 {
+		return nil
+	}
+	var ct *ComplexType
+	if typeName == "" {
+		ct = &s.ComplexTypes[0]
+	} else {
+		for i := range s.ComplexTypes {
+			if s.ComplexTypes[i].Name == typeName {
+				ct = &s.ComplexTypes[i]
+				break
+			}
+		}
+	}
+	if ct == nil {
+		return nil
+	}
+	switch {
+	case ct.Sequence != nil:
+		return ct.Sequence.Elements
+	case ct.ComplexContent != nil:
+		return ct.ComplexContent.Extension.Sequence.Elements
+	default:
+		return nil
+	}
+}
