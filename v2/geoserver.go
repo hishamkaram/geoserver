@@ -18,6 +18,7 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/coveragestores"
 	"github.com/hishamkaram/geoserver/v2/rest/datastores"
 	"github.com/hishamkaram/geoserver/v2/rest/featuretypes"
+	"github.com/hishamkaram/geoserver/v2/rest/gwc"
 	"github.com/hishamkaram/geoserver/v2/rest/layergroups"
 	"github.com/hishamkaram/geoserver/v2/rest/layers"
 	"github.com/hishamkaram/geoserver/v2/rest/namespaces"
@@ -143,6 +144,13 @@ type Client struct {
 	// document.
 	WCS *wcs.Client
 
+	// GWC is the entry point for GeoWebCache REST endpoints —
+	// per-layer cache config, seed/reseed/truncate tasks, and
+	// disk-quota policy. Lives at /gwc/rest/ (outside the /rest/
+	// catalog tree). Reach the typed sub-clients via
+	// `c.GWC.Layers()`, `Seed()`, `DiskQuota()`.
+	GWC *gwc.Client
+
 	// Services is the entry point for per-service OWS configuration
 	// (`/services/{wms,wfs,wcs,wmts}/settings`). Reach the typed
 	// per-service clients via `c.Services.WMS()`, `WFS()`, `WCS()`,
@@ -223,6 +231,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.WFS = wfs.New(adapter)
 	c.WCS = wcs.New(adapter)
 	c.Services = services.New(adapter)
+	c.GWC = gwc.New(adapter)
 	return c, nil
 }
 

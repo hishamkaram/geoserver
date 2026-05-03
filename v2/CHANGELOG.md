@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — GeoWebCache REST client
+
+- **`v2/rest/gwc/` package** — `c.GWC` exposes the GeoWebCache REST endpoints universal to any deployment serving map tiles. URL prefix is `/gwc/rest/` (outside the `/rest/` catalog tree).
+- **`c.GWC.Layers()`** — `List(ctx)` returns layer names; `Get/Put(ctx, name, *LayerConfig)` use XML wire format (`<GeoServerLayer>` with `<mimeFormats>`, `<gridSubsets>`, `<metaWidthHeight>`, `<parameterFilters>`, etc.); `Delete(ctx, name)` removes the cache config.
+- **`c.GWC.Seed()`** — `Submit(ctx, layer, *SeedRequest)` is asynchronous (POST returns immediately); `Status(ctx, layer)` and `StatusAll(ctx)` decode the `{"long-array-array":[[tilesProcessed, totalTiles, remainingSeconds, taskId, taskStatus], ...]}` wire shape into a flat `[]SeedTask`; `KillAll(ctx)` terminates running tasks. Typed `SeedOp` enum (`OpSeed` / `OpReseed` / `OpTruncate`) and `SeedTaskStatus` enum (`StatusAborted` / `StatusPending` / `StatusRunning` / `StatusDone`).
+- **`c.GWC.DiskQuota()`** — `Get/Update(ctx, *DiskQuota)` for global LFU/LRU eviction policy and disk-usage cap.
+
+### Wire-format quirks (gwc package)
+
+Discovered via local integration testing against live GeoServer 2.28.0 — three quirks the docs don't surface:
+
+- **DiskQuota PUT requires XML, not JSON**, and uses `<globalQuota><value>NUMBER</value><units>UNIT</units></globalQuota>` rather than the `<bytes>NUMBER</bytes>` form GET returns. The server-side parser (XStream's `QuotaXSTreamConverter`) is asymmetric between read and write paths. `DiskQuotaClient.Update` translates `Quota.Bytes` to the `value/units` XML form (always serializing as `B` bytes) and PUTs to `/gwc/rest/diskquota.xml`.
+- **GWC returns 500 (not 404) for unknown layers** on `Layers.Get`. Integration test accepts either `ErrServerError` or `ErrNotFound`; unit test verifies the strict 404→`ErrNotFound` mapping.
+- **`/gwc/rest/seed.json`** returns `{"long-array-array":[[...]]}` — a positional 5-element array per running task. `SeedStatus.UnmarshalJSON` decodes this into a typed `[]SeedTask` slice with named fields.
+
 ### Added — per-service OWS settings
 
 - **`v2/rest/services/` package** — per-service OWS configuration for WMS / WFS / WCS / WMTS. The companion to `v2/rest/settings/` (which covers the global `/rest/settings` document). New entry-point `c.Services` exposes `.WMS()` / `.WFS()` / `.WCS()` / `.WMTS()`, each returning a typed client with `Get`/`Update` (global) and `.InWorkspace(ws)` returning a workspace-scoped client with `Get`/`Update`/`Delete` (DELETE removes the per-workspace override and falls back to the global config).
