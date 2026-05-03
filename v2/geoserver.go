@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/hishamkaram/geoserver/v2/internal/transport"
+	"github.com/hishamkaram/geoserver/v2/rest/datastores"
 	"github.com/hishamkaram/geoserver/v2/rest/workspaces"
 )
 
@@ -27,12 +28,17 @@ const (
 // Resource methods live on sub-clients accessed via the public fields:
 //
 //	Workspaces — workspace CRUD
+//	Datastores — datastore CRUD (workspace-scoped via InWorkspace)
 //	(more sub-clients as resources port; see ROADMAP.md)
 type Client struct {
 	core *clientCore
 
 	// Workspaces is the entry point for workspace operations.
 	Workspaces *workspaces.Client
+
+	// Datastores is the entry point for datastore operations. Datastore
+	// operations are workspace-scoped — see [datastores.Client.InWorkspace].
+	Datastores *datastores.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -88,7 +94,9 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	}
 
 	c := &Client{core: core}
-	c.Workspaces = workspaces.New(coreAdapter{core: core})
+	adapter := coreAdapter{core: core}
+	c.Workspaces = workspaces.New(adapter)
+	c.Datastores = datastores.New(adapter)
 	return c, nil
 }
 
@@ -165,10 +173,10 @@ func applyAuth(auth authCredentials) func(*http.Request) {
 	}
 }
 
-// coreAdapter exposes [*clientCore] via the [workspaces.Core] interface
-// without the resource subpackage having to import the root package
-// (which would create an import cycle since the root imports
-// rest/workspaces).
+// coreAdapter exposes [*clientCore] via the per-resource Core interfaces
+// (e.g., [workspaces.Core], [datastores.Core]) without the resource
+// subpackages having to import the root package — that would create
+// an import cycle since the root imports each rest/<resource>.
 type coreAdapter struct {
 	core *clientCore
 }

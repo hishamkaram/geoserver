@@ -1,6 +1,6 @@
 # geoserver/v2
 
-> ⚠️ **In development.** v2 is a clean redesign of `github.com/hishamkaram/geoserver` for 2026-era idiomatic Go. The public API is not yet stable; only the `Workspaces` resource is implemented as a reference. **For production use today, use the v1 line:**
+> ⚠️ **In development.** v2 is a clean redesign of `github.com/hishamkaram/geoserver` for 2026-era idiomatic Go. The public API is not yet stable; `Workspaces` and `Datastores` are implemented today and the rest port in subsequent PRs. **For production use today, use the v1 line:**
 >
 > ```go
 > import "github.com/hishamkaram/geoserver"          // v1 — stable, full surface
@@ -66,12 +66,30 @@ func main() {
 }
 ```
 
+### Workspace-scoped resources
+
+Resources nested under a workspace (datastores, feature types, coverages, …) are accessed via an `InWorkspace` scope:
+
+```go
+import "github.com/hishamkaram/geoserver/v2/rest/datastores"
+
+ds := c.Datastores.InWorkspace("topp")
+
+_ = ds.Create(ctx, datastores.PostGIS{
+    Name: "states", Host: "db", Port: 5432, Database: "gis",
+    User: "u", Password: "p",
+})
+
+stores, _ := ds.List(ctx, datastores.ListOptions{})
+_ = ds.Delete(ctx, "states", datastores.DeleteOptions{Recurse: true})
+```
+
 ## Resource status
 
 | Resource | v1 | v2 |
 |---|---|---|
-| Workspaces | full | **scaffolded** (reference resource) |
-| Datastores | full | not yet ported |
+| Workspaces | full | **ported** (flat reference resource) |
+| Datastores | full | **ported** (workspace-scoped reference; `c.Datastores.InWorkspace(ws)`) |
 | Coverages, coverage stores | full | not yet ported |
 | Feature types | full | not yet ported |
 | Layers, layer groups | full | not yet ported |
