@@ -1,7 +1,9 @@
 package layers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -18,6 +20,13 @@ type Core interface {
 	URL(parts ...string) (string, error)
 	Do(ctx context.Context, op string, method, requestURL string, body any, query map[string]string, out any) error
 	DoStream(ctx context.Context, op string, method, requestURL string, query map[string]string) (io.ReadCloser, int, error)
+	// DoRaw sends a non-JSON-decoded request and lets the caller set
+	// Content-Type and Accept explicitly. Required for [Client.AddStyle]
+	// because GeoServer's POST /layers/{l}/styles returns 201 with an
+	// empty body and refuses callers asking for `Accept: application/json`
+	// (406 Not Acceptable) — same wire-format quirk as the workspace-
+	// scoped POST on /styles. See the comment on [WorkspaceClient.AddStyle].
+	DoRaw(ctx context.Context, op, method, requestURL string, body io.Reader, contentType, accept string, query map[string]string) error
 }
 
 // Client is the v2 layers sub-client.
@@ -143,6 +152,15 @@ func (c *WorkspaceClient) Update(ctx context.Context, name string, layer *Layer)
 //
 // An empty list (no alternatives configured) is the common case and
 // returns nil with no error.
+//
+// Note on the wire URL: GeoServer's layer-style sub-resource lives at
+// the global `/rest/layers/<workspace>:<layer>/styles` path; the
+// workspace-prefixed form (`/rest/workspaces/{ws}/layers/{l}/styles`)
+// returns 404. This client keeps the API workspace-scoped (because
+// callers naturally think in workspace context) and translates to
+// the global qualified-name URL internally. The colon in the
+// qualified name is percent-encoded by the URL builder; GeoServer
+// accepts both raw and encoded forms.
 func (c *WorkspaceClient) ListStyles(ctx context.Context, layer string) ([]Ref, error) {
 	const op = "Layers.ListStyles"
 	if c.workspace == "" {
@@ -151,7 +169,7 @@ func (c *WorkspaceClient) ListStyles(ctx context.Context, layer string) ([]Ref, 
 	if layer == "" {
 		return nil, errors.New(op + ": empty layer name")
 	}
-	u, err := c.core.URL("rest", "workspaces", c.workspace, "layers", layer, "styles")
+	u, err := c.core.URL("rest", "layers", c.workspace+":"+layer, "styles")
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -174,6 +192,14 @@ func (c *WorkspaceClient) ListStyles(ctx context.Context, layer string) ([]Ref, 
 // because the GeoServer docs do not document a DELETE on this
 // sub-resource. Use [WorkspaceClient.Update] with the unwanted
 // reference removed from [Layer.Styles] instead.
+//
+// Wire-format quirks handled here:
+//   - URL: see [WorkspaceClient.ListStyles].
+//   - Accept header: GeoServer returns 201 with an empty body and
+//     refuses callers requesting `Accept: application/json`
+//     (responds 406 Not Acceptable). Send `Accept: */*` instead;
+//     same workaround that [styles.Client.Create] applies to its
+//     workspace-scoped POST.
 func (c *WorkspaceClient) AddStyle(ctx context.Context, layer, styleName string, opts AddStyleOptions) error {
 	const op = "Layers.AddStyle"
 	if c.workspace == "" {
@@ -185,16 +211,23 @@ func (c *WorkspaceClient) AddStyle(ctx context.Context, layer, styleName string,
 	if styleName == "" {
 		return errors.New(op + ": empty styleName")
 	}
-	u, err := c.core.URL("rest", "workspaces", c.workspace, "layers", layer, "styles")
+	u, err := c.core.URL("rest", "layers", c.workspace+":"+layer, "styles")
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
-	body := addStyleRequest{Style: addStylePayload{Name: styleName}}
+	bodyJSON, err := json.Marshal(addStyleRequest{Style: addStylePayload{Name: styleName}})
+	if err != nil {
+		return fmt.Errorf("%s: encode body: %w", op, err)
+	}
 	var query map[string]string
 	if opts.Default {
 		query = map[string]string{"default": "true"}
 	}
-	return c.core.Do(ctx, op, http.MethodPost, u, body, query, nil)
+	return c.core.DoRaw(ctx, op, http.MethodPost, u,
+		bytes.NewReader(bodyJSON),
+		"application/json; charset=utf-8",
+		"*/*",
+		query)
 }
 
 // Delete removes a layer. With opts.Recurse=true, also removes the

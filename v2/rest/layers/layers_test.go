@@ -225,8 +225,8 @@ func TestListStyles_OK(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Errorf("Method = %q, want GET", r.Method)
 		}
-		if r.URL.Path != "/rest/workspaces/topp/layers/states/styles" {
-			t.Errorf("Path = %q", r.URL.Path)
+		if r.URL.Path != "/rest/layers/topp:states/styles" {
+			t.Errorf("Path = %q (expected global form with qualified name)", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = io.WriteString(w, `{"styles":{"style":[
@@ -280,8 +280,8 @@ func TestAddStyle_OK(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Errorf("Method = %q, want POST", r.Method)
 		}
-		if r.URL.Path != "/rest/workspaces/topp/layers/states/styles" {
-			t.Errorf("Path = %q", r.URL.Path)
+		if r.URL.Path != "/rest/layers/topp:states/styles" {
+			t.Errorf("Path = %q (expected global form with qualified name)", r.URL.Path)
 		}
 		// No `default` query when opts.Default=false.
 		if r.URL.Query().Get("default") != "" {
