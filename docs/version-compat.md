@@ -41,7 +41,7 @@ The dev / test Docker stack uses **`postgis/postgis:16-3.4`**. Older PostGIS ver
 | Path | Status |
 |---|---|
 | `github.com/hishamkaram/geoserver` | v1.x — supported |
-| `github.com/hishamkaram/geoserver/v2` | v2.x — in development |
+| `github.com/hishamkaram/geoserver/v2` | v2.x — alpha previews (latest `v2.0.0-alpha.4`); public API may still refine before `v2.0.0` |
 | `gopkg.in/hishamkaram/geoserver.v1` | Legacy alias — deprecated; resolves to the same source. New code should import the canonical path. |
 
 ## When this matrix changes
