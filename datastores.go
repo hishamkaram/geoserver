@@ -3,6 +3,7 @@ package geoserver
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 )
@@ -184,6 +185,10 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []*Resource,
 }
 
 // GetDatastoresContext is the context-aware variant of [GeoServer.GetDatastores].
+//
+// GeoServer 2.28+ returns `{"dataStores":""}` (a bare string) for an empty
+// datastores collection, and `{"dataStores":{"dataStore":[…]}}` when populated.
+// Both shapes are accepted; the empty form returns a nil slice. (See issue #22.)
 func (g *GeoServer) GetDatastoresContext(ctx context.Context, workspaceName string) (datastores []*Resource, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores")
 	httpRequest := HTTPRequest{
@@ -198,16 +203,23 @@ func (g *GeoServer) GetDatastoresContext(ctx context.Context, workspaceName stri
 		err = g.GetError(responseCode, response)
 		return
 	}
-	var query struct {
-		DataStores struct {
-			DataStore []*Resource
-		}
+	var envelope struct {
+		DataStores json.RawMessage `json:"dataStores,omitempty"`
 	}
-	if err = g.DeSerializeJSON(response, &query); err != nil {
-		return nil, err
+	if err = json.Unmarshal(response, &envelope); err != nil {
+		return nil, fmt.Errorf("GetDatastores: decode envelope: %w", err)
 	}
-	datastores = query.DataStores.DataStore
-	return
+	if len(envelope.DataStores) == 0 || string(envelope.DataStores) == "null" || envelope.DataStores[0] == '"' {
+		// Empty-collection wire form: GeoServer returns `{"dataStores":""}`.
+		return nil, nil
+	}
+	var inner struct {
+		DataStore []*Resource `json:"dataStore,omitempty"`
+	}
+	if err = json.Unmarshal(envelope.DataStores, &inner); err != nil {
+		return nil, fmt.Errorf("GetDatastores: decode list: %w", err)
+	}
+	return inner.DataStore, nil
 }
 
 // GetDatastoreDetails returns the full datastore document using context.Background.

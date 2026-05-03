@@ -164,3 +164,35 @@ func TestDatastores_CreateDatastore_AppliesDBSchemaDefault(t *testing.T) {
 	assert.True(t, created)
 	assert.Contains(t, captured, `"$":"public"`)
 }
+
+// Regression for issue #22: GeoServer 2.28+ returns `{"dataStores":""}` (a
+// bare string) for an empty datastore collection, which was failing to
+// unmarshal into the `{"dataStores":{"dataStore":[…]}}` struct shape.
+func TestDatastores_GetDatastores_EmptyCollection(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/rest/workspaces/empty/datastores", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"dataStores":""}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	gs := newTestCatalog(srv)
+	got, err := gs.GetDatastoresContext(context.Background(), "empty")
+	assert.NoError(t, err)
+	assert.Empty(t, got)
+}
+
+func TestDatastores_GetDatastores_Populated(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"dataStores":{"dataStore":[{"name":"states_pg","href":"http://x/states_pg.json"},{"name":"taz_shapes"}]}}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	gs := newTestCatalog(srv)
+	got, err := gs.GetDatastoresContext(context.Background(), "topp")
+	assert.NoError(t, err)
+	assert.Len(t, got, 2)
+	assert.Equal(t, "states_pg", got[0].Name)
+}

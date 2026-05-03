@@ -2,6 +2,7 @@ package datastores
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -68,6 +69,11 @@ func (c *WorkspaceClient) Workspace() string { return c.workspace }
 //
 // Returns a *APIError wrapping ErrNotFound if the workspace itself does
 // not exist.
+//
+// Handles GeoServer's empty-collection wire quirk: an empty datastore
+// list comes back as `{"dataStores":""}` (a bare string) rather than
+// `{"dataStores":{"dataStore":[]}}`. Both shapes are accepted; the
+// empty form returns a nil slice.
 func (c *WorkspaceClient) List(ctx context.Context, _ ListOptions) ([]Datastore, error) {
 	const op = "Datastores.List"
 	if c.workspace == "" {
@@ -77,11 +83,23 @@ func (c *WorkspaceClient) List(ctx context.Context, _ ListOptions) ([]Datastore,
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
-	var resp listResponse
-	if err := c.core.Do(ctx, op, http.MethodGet, u, nil, nil, &resp); err != nil {
+	var envelope struct {
+		DataStores json.RawMessage `json:"dataStores"`
+	}
+	if err := c.core.Do(ctx, op, http.MethodGet, u, nil, nil, &envelope); err != nil {
 		return nil, err
 	}
-	return resp.DataStores.DataStore, nil
+	if len(envelope.DataStores) == 0 || string(envelope.DataStores) == "null" || envelope.DataStores[0] == '"' {
+		// Empty-collection: GeoServer returns `{"dataStores":""}`.
+		return nil, nil
+	}
+	var inner struct {
+		DataStore []Datastore `json:"dataStore"`
+	}
+	if err := json.Unmarshal(envelope.DataStores, &inner); err != nil {
+		return nil, fmt.Errorf("%s: decode datastores list: %w", op, err)
+	}
+	return inner.DataStore, nil
 }
 
 // Iter returns a [iter.Seq2] over the datastore list. Useful when

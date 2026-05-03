@@ -160,13 +160,6 @@ type rawConnector struct{ d Datastore }
 // Datastore returns the wrapped Datastore as-is.
 func (r rawConnector) Datastore() Datastore { return r.d }
 
-// listResponse mirrors GeoServer's `{"dataStores":{"dataStore":[…]}}` shape.
-type listResponse struct {
-	DataStores struct {
-		DataStore []Datastore `json:"dataStore"`
-	} `json:"dataStores"`
-}
-
 // detailResponse mirrors GeoServer's `{"dataStore":{…}}` shape.
 type detailResponse struct {
 	DataStore Datastore `json:"dataStore"`
