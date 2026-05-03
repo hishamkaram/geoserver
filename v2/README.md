@@ -149,38 +149,51 @@ Run any with `go run ./v2/examples/<name>` against a `make compose-up` stack, or
 
 | Resource | v1 | v2 |
 |---|---|---|
-| Workspaces | full | **ported** (flat reference resource) |
-| Datastores | full | **ported** (workspace-scoped reference; `c.Datastores.InWorkspace(ws)`) |
-| Feature types | full | **ported** (2-level hierarchy reference; `c.FeatureTypes.InWorkspace(ws).InDatastore(ds)`) |
+| Workspaces | full | **ported** (flat; `c.Workspaces`) |
+| Datastores | full | **ported** (workspace-scoped; `c.Datastores.InWorkspace(ws)`) |
+| Feature types | full | **ported** (2-level hierarchy; `c.FeatureTypes.InWorkspace(ws).InDatastore(ds)`) |
 | Coverage stores | full | **ported** (workspace-scoped; `c.CoverageStores.InWorkspace(ws)`) |
 | Coverages | full | **ported** (2-level hierarchy; `c.Coverages.InWorkspace(ws).InCoverageStore(cs)`) |
-| Layers | full | **ported** (workspace-scoped; `c.Layers.InWorkspace(ws)`) |
-| Layer groups | full | **ported** (workspace-scoped; `c.LayerGroups.InWorkspace(ws)`) |
-| Styles | full | **ported** (global by default; `c.Styles.InWorkspace(ws)` for workspace scope; `UploadSLD` for body upload) |
-| Namespaces | full | **ported** (flat global; `c.Namespaces`) |
-| Settings | full | **ported** (singleton; `c.Settings.Get` / `Update`) |
+| Layers | full | **ported** + new add-style sub-resource (`c.Layers.InWorkspace(ws).AddStyle/ListStyles`) |
+| Layer groups | full | **ported** (`c.LayerGroups.InWorkspace(ws)`) |
+| Styles | full | **ported** (global + workspace scope; `UploadSLD` for body upload) |
+| Namespaces | full | **ported** (`c.Namespaces`) |
+| Global settings | full | **ported** (`c.Settings.Get` / `Update`) |
+| Per-service OWS settings | (none) | **new** in v2 (`c.Services.WMS()` / `WFS()` / `WCS()` / `WMTS()` — global + per-workspace overrides) |
+| System (reload + cache reset) | full | **ported** (`c.System.Reload`, `ResetCache`) |
 | About | full | **ported** (`c.About.Ping`, `c.About.Version`) |
-| Security (users, groups, roles) | full | **ported** (`c.Security.Users()`, `c.Security.Groups()`, `c.Security.Roles`) |
-| ACL (layer rules) | full | **ported** (`c.ACL.Layers()`) |
-| WMS GetCapabilities | partial (XML) | not yet ported (deferred to v2.x; needs `ows/wms/`) |
-| Namespaces | full | not yet ported |
-| Settings | full | not yet ported |
-| Security (users, groups, roles) | full | not yet ported |
-| ACL | full | not yet ported |
-| About, capabilities | full | not yet ported |
-| WMS / WFS / WCS (OWS) | partial (WMS XML) | not yet ported |
+| Security (users, groups, roles) | full | **ported** (`c.Security.Users()`, `Groups()`, `Roles`) |
+| ACL — layer rules | full | **ported** (`c.ACL.Layers()`) |
+| ACL — service / REST / catalog rules | partial | not yet ported (tier-2; PR welcome) |
+| File-upload publishing on stores | (none) | **new** in v2 (`c.Datastores.UploadFile`, `c.CoverageStores.UploadFile` / `HarvestGranule`) |
+| GeoWebCache (cache config + seed + diskquota) | (none) | **new** in v2 (`c.GWC.Layers()`, `Seed()`, `DiskQuota()`) |
+| Importer extension (batch ingest) | (none) | **new** in v2 (`c.Imports`; dev/test docker image bakes the plugin in) |
+| WMS GetCapabilities | full | **ported** (`c.WMS.GetCapabilities` + `InWorkspace`) |
+| WFS GetCapabilities + DescribeFeatureType | (none — WMS only) | **new** in v2 (`c.WFS.GetCapabilities`, `DescribeFeatureType`) |
+| WCS GetCapabilities + DescribeCoverage | (none — WMS only) | **new** in v2 (`c.WCS.GetCapabilities`, `DescribeCoverage`) |
 
-See [`../ROADMAP.md`](../ROADMAP.md) for the milestone checklist.
+See [`../ROADMAP.md`](../ROADMAP.md) for the milestone checklist; `~/.claude/plans/v2-top5-rest-api-gaps.md` for the gap-analysis tier-2 list (mosaic granules, Resource API, FTL templates, auth providers, URL checks, cascaded WMS/WMTS, XSLT transforms, manifests, runtime logging) — each tractable as its own follow-up PR.
 
 ## Contributing to v2
 
-Each resource port is its own PR. Use `rest/workspaces/` as the reference pattern:
+The "everyone needs it" surface is closed; remaining work is the tier-2 list above plus wire-quirk fixes when adopters report them.
 
-1. Define `types.go` — wire-format request/response structs, public option types.
-2. Define `<resource>.go` — `type Client struct{ core Core }`, `func New(core Core)`, methods (`List`, `Get`, `Create`, `Update`, `Delete`, optional `Iter`).
-3. Define `<resource>_test.go` — `httptest.Server`-based unit tests for 2xx + each relevant 4xx/5xx mapping.
-4. Wire into `*Client` in `../geoserver.go`.
+To add a new sub-client:
+
+1. Pick a reference pattern that matches the shape:
+   - **Flat CRUD**: `rest/workspaces/`, `rest/namespaces/`.
+   - **Workspace-scoped**: `rest/datastores/`, `rest/coveragestores/`, `rest/layers/`.
+   - **2-level hierarchy**: `rest/featuretypes/`, `rest/coverages/`.
+   - **Generic-typed dispatch**: `rest/services/` (per-service WMS/WFS/WCS/WMTS).
+   - **Out-of-`/rest/` URL prefix**: `rest/gwc/` (paths under `/gwc/rest/`).
+   - **XML wire format**: `ows/wms/`, `ows/wfs/`, `ows/wcs/`.
+2. Define `types.go` — wire-format request/response structs, public option types, custom `(Un)MarshalJSON` for any wire quirks.
+3. Define `<resource>.go` — `type Client struct{ core Core }`, `func New(core Core)`, methods. Each subpackage's `Core` interface declares only the transport methods it actually uses (`Do` / `DoXML` / `DoRaw` / `DoStream`); add only what's needed.
+4. Define `<resource>_test.go` (httptest unit tests) and `<resource>_integration_test.go` with the `//go:build integration` tag.
+5. Wire into `*Client` in `../geoserver.go`.
+
+**Run integration tests locally before push.** `make compose-up && cd v2 && go test -tags=integration ./rest/<resource>/`. CI's wire-format coverage runs on real GeoServer 2.27.4 LTS + 2.28.0 stable, but local-first catches quirks faster.
 
 The `Core` interface in each subpackage is the abstraction over the parent `*Client`'s plumbing — it lets sub-clients issue requests without importing the root package (which would create an import cycle).
 
-See [`../CONTRIBUTING.md`](../CONTRIBUTING.md) for the general PR workflow.
+See [`../CONTRIBUTING.md`](../CONTRIBUTING.md) for the general PR workflow and [`../docs/migration-v1-to-v2.md`](../docs/migration-v1-to-v2.md) for the v1 → v2 migration guide.
