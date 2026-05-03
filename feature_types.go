@@ -12,17 +12,26 @@ type CRSType struct {
 	Value string `json:"$,omitempty"`
 }
 
-// UnmarshalJSON custom deserialization to handle published layers of group
+// UnmarshalJSON custom deserialization for the GeoServer CRS response, which
+// can be either a JSON object ({"@class":"...","$":"..."}) or a bare string.
+//
+// In v1.0.x, type assertions on missing keys panicked; v1.1+ uses ok-checked
+// assertions and reports a clear error if the payload shape is unexpected.
 func (u *CRSType) UnmarshalJSON(data []byte) error {
 	var raw interface{}
-	err := json.Unmarshal(data, &raw)
-	if err != nil {
+	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
 	switch raw := raw.(type) {
 	case map[string]interface{}:
-		*u = CRSType{Class: raw["@class"].(string), Value: raw["$"].(string)}
-	case interface{}:
+		class, _ := raw["@class"].(string)
+		value, _ := raw["$"].(string)
+		if class == "" && value == "" {
+			return fmt.Errorf("feature_types: unrecognized CRS payload: %v", raw)
+		}
+		*u = CRSType{Class: class, Value: value}
+	default:
+		// Treat any non-object shape as a bare CRS string identifier.
 		*u = CRSType{Class: "string", Value: string(data)}
 	}
 	return nil
@@ -170,15 +179,26 @@ type FeatureTypesRequestBody struct {
 	FeatureType *FeatureType `json:"featureTypes,omitempty"`
 }
 
+// featureTypesURL builds /rest[/workspaces/{ws}/datastores/{ds}]/featuretypes[/{name}]
+// with proper escaping. workspaceName and datastoreName may be empty
+// (returns the global endpoint), but if datastoreName is provided then
+// workspaceName must also be provided.
+func (g *GeoServer) featureTypesURL(workspaceName, datastoreName string, extra ...string) string {
+	parts := []string{"rest"}
+	if workspaceName != "" {
+		parts = append(parts, "workspaces", workspaceName)
+		if datastoreName != "" {
+			parts = append(parts, "datastores", datastoreName)
+		}
+	}
+	parts = append(parts, "featuretypes")
+	parts = append(parts, extra...)
+	return g.ParseURL(parts...)
+}
+
 // GetFeatureTypes return all featureTypes in workspace and datastore if error occurred err will be return and nil for featrueTypes
 func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) (featureTypes []*Resource, err error) {
-	if workspaceName != "" {
-		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
-	}
-	if datastoreName != "" {
-		datastoreName = fmt.Sprintf("datastores/%s/featuretypes", datastoreName)
-	}
-	targetURL := g.ParseURL("rest", workspaceName, datastoreName)
+	targetURL := g.featureTypesURL(workspaceName, datastoreName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
 		Accept: jsonType,
@@ -191,8 +211,10 @@ func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) 
 		err = g.GetError(responseCode, response)
 		return
 	}
-	featureTypesResponse := &FeatureTypesResponseBody{FeatureTypes: &FeatureTypes{FeatureType: make([]*Resource, 0, 0)}}
-	g.DeSerializeJSON(response, featureTypesResponse)
+	featureTypesResponse := &FeatureTypesResponseBody{FeatureTypes: &FeatureTypes{FeatureType: make([]*Resource, 0)}}
+	if err = g.DeSerializeJSON(response, featureTypesResponse); err != nil {
+		return nil, err
+	}
 	featureTypes = featureTypesResponse.FeatureTypes.FeatureType
 	return
 }
@@ -201,13 +223,7 @@ func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) 
 // if featuretype deleted successfully will return true and nil for err
 // if error occurred will return false and error for err
 func (g *GeoServer) DeleteFeatureType(workspaceName string, datastoreName string, featureTypeName string, recurse bool) (deleted bool, err error) {
-	if workspaceName != "" {
-		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
-	}
-	if datastoreName != "" {
-		datastoreName = fmt.Sprintf("datastores/%s/", datastoreName)
-	}
-	targetURL := g.ParseURL("rest", workspaceName, datastoreName, "featuretypes", featureTypeName)
+	targetURL := g.featureTypesURL(workspaceName, datastoreName, featureTypeName)
 	httpRequest := HTTPRequest{
 		Method: deleteMethod,
 		Accept: jsonType,
@@ -227,13 +243,7 @@ func (g *GeoServer) DeleteFeatureType(workspaceName string, datastoreName string
 // GetFeatureType it return geoserver FeatureType and nil err
 // if success else nil for fetureType error for err
 func (g *GeoServer) GetFeatureType(workspaceName string, datastoreName string, featureTypeName string) (featureType *FeatureType, err error) {
-	if workspaceName != "" {
-		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
-	}
-	if datastoreName != "" {
-		datastoreName = fmt.Sprintf("datastores/%s/featuretypes", datastoreName)
-	}
-	targetURL := g.ParseURL("rest", workspaceName, datastoreName, featureTypeName)
+	targetURL := g.featureTypesURL(workspaceName, datastoreName, featureTypeName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
 		Accept: jsonType,
@@ -249,7 +259,9 @@ func (g *GeoServer) GetFeatureType(workspaceName string, datastoreName string, f
 	var featureTypeResponse struct {
 		FeatureType *FeatureType `json:"featureType,omitempty"`
 	}
-	g.DeSerializeJSON(response, &featureTypeResponse)
+	if err = g.DeSerializeJSON(response, &featureTypeResponse); err != nil {
+		return nil, err
+	}
 	featureType = featureTypeResponse.FeatureType
 	return
 }

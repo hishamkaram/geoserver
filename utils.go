@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
 	"path/filepath"
 	"reflect"
+	"strings"
 )
 
 // HTTPRequest is an http request object
@@ -31,14 +31,24 @@ type UtilsInterface interface {
 	ParseURL(urlParts ...string) (parsedURL string)
 }
 
-// DoRequest Send request and return result and statusCode
+// DoRequest sends an HTTP request to GeoServer and returns the response body
+// and HTTP status code. On any failure (transport error, unsupported method,
+// nil request) it returns (nil, 0); errors are surfaced via the logger and
+// callers should treat statusCode == 0 as a transport-level failure.
+//
+// Backward-compatibility note: prior versions of this method panicked on
+// transport errors. Panics are now translated to (nil, 0) returns.
 func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusCode int) {
 	defer func() {
+		// Belt-and-suspenders: in case any code path below still panics,
+		// translate to the historical (string-of-panic, 0) contract that
+		// callers may depend on.
 		if r := recover(); r != nil {
 			responseText = []byte(fmt.Sprintf("%s", r))
 			statusCode = 0
 		}
 	}()
+
 	var req *http.Request
 	switch request.Method {
 	case getMethod, deleteMethod:
@@ -46,8 +56,14 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 	case postMethod, putMethod:
 		req = g.GetGeoserverRequest(request.URL, request.Method, request.Accept, request.Data, request.DataType)
 	default:
-		panic("unrecognized http request Method")
+		g.logger.Errorf("DoRequest: unsupported HTTP method %q", request.Method)
+		return nil, 0
 	}
+	if req == nil {
+		g.logger.Errorf("DoRequest: failed to construct request for %s %s", request.Method, request.URL)
+		return nil, 0
+	}
+
 	if len(request.Query) != 0 {
 		q := req.URL.Query()
 		for k, v := range request.Query {
@@ -55,21 +71,31 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 		}
 		req.URL.RawQuery = q.Encode()
 	}
+
 	response, responseErr := g.HttpClient.Do(req)
 	if responseErr != nil {
-		panic(responseErr)
+		g.logger.Errorf("DoRequest: %s %s: %v", req.Method, req.URL, responseErr)
+		return nil, 0
 	}
-	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
+	defer func() { _ = response.Body.Close() }()
+
+	body, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		g.logger.Errorf("DoRequest: read body for %s %s: %v", req.Method, req.URL, readErr)
+		return nil, response.StatusCode
+	}
 	g.logger.Infof("url:%s  Status=%s", req.URL, response.Status)
 	return body, response.StatusCode
 }
 
-// GetError this return the proper error message
+// GetError returns a string-formatted error for the given GeoServer HTTP
+// response. The returned error preserves the historical
+// "abstract:%s\ndetails:%s\n" format for backward compatibility; in v1.1+
+// it is also matchable against typed sentinels via errors.Is — see errors.go.
 func (g *GeoServer) GetError(statusCode int, text []byte) (err error) {
 	geoserverErr, ok := statusErrorMapping[statusCode]
 	if !ok {
-		geoserverErr = fmt.Errorf("Unexpected Error with status code %d", statusCode)
+		geoserverErr = fmt.Errorf("unexpected error with status code %d", statusCode)
 	}
 	errDetails := string(text)
 	fullMSG := fmt.Sprintf("abstract:%s\ndetails:%s\n", geoserverErr, errDetails)
@@ -114,29 +140,48 @@ func (g *GeoServer) DeSerializeJSON(response []byte, structObj interface{}) (err
 	}
 	return nil
 }
-func (g *GeoServer) getGoGeoserverPackageDir() string {
-	dir, err := filepath.Abs("./")
-	if err != nil {
-		panic(err)
-	}
-	return dir
+
+// getGoGeoserverPackageDir returns the absolute path to the package working
+// directory. Used by tests; library callers should not rely on it.
+func (g *GeoServer) getGoGeoserverPackageDir() (string, error) {
+	return filepath.Abs("./")
 }
 
-// ParseURL this function join urlParts with geoserver url
+// ParseURL joins urlParts with the GeoServer base URL, applying url.PathEscape
+// to each user-provided segment. Empty segments are dropped. On a malformed
+// base URL, it returns the empty string and logs at Error.
+//
+// Behavior change in v1.1.0: each path segment is now PathEscape'd, so
+// workspace/layer names containing spaces, slashes, or non-ASCII characters
+// produce correct URLs instead of malformed ones. Previously such inputs
+// silently produced bad URLs.
 func (g *GeoServer) ParseURL(urlParts ...string) (parsedURL string) {
 	defer func() {
 		if r := recover(); r != nil {
 			parsedURL = ""
 		}
 	}()
+
 	geoserverURL, err := url.Parse(g.ServerURL)
 	if err != nil {
-		g.logger.Error(err)
-		panic(err)
+		g.logger.Errorf("ParseURL: invalid base URL %q: %v", g.ServerURL, err)
+		return ""
 	}
-	urlArr := append([]string{geoserverURL.Path}, urlParts...)
-	geoserverURL.Path = path.Join(urlArr...)
-	parsedURL = geoserverURL.String()
-	return
 
+	// Preserve the base path (e.g. "/geoserver/"), then escape each
+	// caller-provided segment individually. Empty segments are skipped so
+	// callers can pass conditional values without producing "//".
+	basePath := strings.TrimRight(geoserverURL.Path, "/")
+	escaped := make([]string, 0, len(urlParts)+1)
+	if basePath != "" {
+		escaped = append(escaped, basePath)
+	}
+	for _, p := range urlParts {
+		if p == "" {
+			continue
+		}
+		escaped = append(escaped, url.PathEscape(p))
+	}
+	geoserverURL.Path = path.Join(escaped...)
+	return geoserverURL.String()
 }

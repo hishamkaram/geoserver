@@ -37,7 +37,7 @@ func TestGetFeatrueType(t *testing.T) {
 }
 func TestDeleteFeatureType(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
-	zippedShapefile := filepath.Join(gsCatalog.getGoGeoserverPackageDir(), "testdata", "museum_nyc.zip")
+	zippedShapefile := filepath.Join(mustPkgDir(t, gsCatalog), "testdata", "museum_nyc.zip")
 	uploaded, err := gsCatalog.UploadShapeFile(zippedShapefile, "featureTypeWorkspace", "")
 	assert.True(t, uploaded)
 	assert.Nil(t, err)

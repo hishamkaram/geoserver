@@ -2,25 +2,26 @@ package geoserver
 
 import (
 	"bytes"
+	"fmt"
 )
 
 // NamespaceService define all geoserver namespace operations
 type NamespaceService interface {
 
 	// NamespaceExists check if Namespace in geoserver or not else return error
-	NamespaceExists(Prefix string) (exists bool, err error)
+	NamespaceExists(prefix string) (exists bool, err error)
 
 	// GetNamespaces get geoserver Namespaces else return error
 	GetNamespaces() (namespaces []*Namespace, err error)
 
 	// GetNamespace get geoserver Namespaces else return error
-	GetNamespace(Prefix string) (namespace Namespace, err error)
+	GetNamespace(prefix string) (namespace Namespace, err error)
 
 	// CreateNamespace creates a Namespace else return error
-	CreateNamespace(Prefix string, URI string) (created bool, err error)
+	CreateNamespace(prefix string, uri string) (created bool, err error)
 
 	// DeleteNamespace delete geoserver Namespace and its reources else return error
-	DeleteNamespace(Prefix string) (deleted bool, err error)
+	DeleteNamespace(prefix string) (deleted bool, err error)
 }
 
 // Namespace is the Namespace Object
@@ -37,10 +38,13 @@ type NamespaceRequestBody struct {
 }
 
 // CreateNamespace creates a Namespace and return if created or not else return error
-func (g *GeoServer) CreateNamespace(Prefix string, URI string) (created bool, err error) {
+func (g *GeoServer) CreateNamespace(prefix string, uri string) (created bool, err error) {
 	//TODO: check if Namespace exist before creating it
-	var Namespace = Namespace{Prefix: Prefix, URI: URI}
-	serializedNamespace, _ := g.SerializeStruct(NamespaceRequestBody{Namespace: &Namespace})
+	Namespace := Namespace{Prefix: prefix, URI: uri}
+	serializedNamespace, serErr := g.SerializeStruct(NamespaceRequestBody{Namespace: &Namespace})
+	if serErr != nil {
+		return false, fmt.Errorf("CreateNamespace: serialize namespace: %w", serErr)
+	}
 	targetURL := g.ParseURL("rest", "namespaces")
 	data := bytes.NewBuffer(serializedNamespace)
 	httpRequest := HTTPRequest{
@@ -63,8 +67,8 @@ func (g *GeoServer) CreateNamespace(Prefix string, URI string) (created bool, er
 }
 
 // NamespaceExists check if Namespace in geoserver or not else return error
-func (g *GeoServer) NamespaceExists(Prefix string) (exists bool, err error) {
-	_, NamespaceErr := g.GetNamespace(Prefix)
+func (g *GeoServer) NamespaceExists(prefix string) (exists bool, err error) {
+	_, NamespaceErr := g.GetNamespace(prefix)
 	if NamespaceErr != nil {
 		exists = false
 		err = NamespaceErr
@@ -75,8 +79,8 @@ func (g *GeoServer) NamespaceExists(Prefix string) (exists bool, err error) {
 }
 
 // DeleteNamespace delete geoserver Namespace and its reources else return error
-func (g *GeoServer) DeleteNamespace(Prefix string) (deleted bool, err error) {
-	url := g.ParseURL("rest", "namespaces", Prefix)
+func (g *GeoServer) DeleteNamespace(prefix string) (deleted bool, err error) {
+	url := g.ParseURL("rest", "namespaces", prefix)
 	httpRequest := HTTPRequest{
 		Method: deleteMethod,
 		Accept: jsonType,
@@ -114,14 +118,16 @@ func (g *GeoServer) GetNamespaces() (namespaces []*Namespace, err error) {
 			Namespace []*Namespace
 		}
 	}
-	g.DeSerializeJSON(response, &NamespaceResponse)
+	if err = g.DeSerializeJSON(response, &NamespaceResponse); err != nil {
+		return nil, err
+	}
 	namespaces = NamespaceResponse.Namespaces.Namespace
 	return
 }
 
 // GetNamespace get geoserver Namespace else return error
-func (g *GeoServer) GetNamespace(Prefix string) (namespace Namespace, err error) {
-	url := g.ParseURL("rest", "namespaces", Prefix)
+func (g *GeoServer) GetNamespace(prefix string) (namespace Namespace, err error) {
+	url := g.ParseURL("rest", "namespaces", prefix)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
 		Accept: jsonType,
@@ -137,7 +143,9 @@ func (g *GeoServer) GetNamespace(Prefix string) (namespace Namespace, err error)
 	NamespaceResponse := NamespaceRequestBody{
 		Namespace: &Namespace{},
 	}
-	g.DeSerializeJSON(response, &NamespaceResponse)
+	if err = g.DeSerializeJSON(response, &NamespaceResponse); err != nil {
+		return Namespace{}, err
+	}
 	namespace = *NamespaceResponse.Namespace
 	return
 }

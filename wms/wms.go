@@ -1,7 +1,10 @@
+// Package wms provides Go types for the WMS GetCapabilities XML document and
+// a parser for that document.
 package wms
 
 import (
 	"encoding/xml"
+	"fmt"
 	"log"
 )
 
@@ -205,12 +208,27 @@ type Capabilities struct {
 	Capability     Capability `xml:"Capability"`
 }
 
-// ParseCapabilities read wms capabilities
+// ParseCapabilities parses a WMS GetCapabilities XML document. On parse
+// failure it logs at Error and returns nil — it never panics or kills the
+// host process.
+//
+// Deprecated: use [ParseCapabilitiesE] instead so that parse failures can be
+// handled by the caller. Will be removed in v2.
 func ParseCapabilities(xmlByte []byte) *Capabilities {
-	var cap Capabilities
-	err := xml.Unmarshal(xmlByte, &cap)
+	caps, err := ParseCapabilitiesE(xmlByte)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("wms.ParseCapabilities: %v", err)
+		return nil
 	}
-	return &cap
+	return caps
+}
+
+// ParseCapabilitiesE parses a WMS GetCapabilities XML document and returns
+// any parse error to the caller.
+func ParseCapabilitiesE(xmlByte []byte) (*Capabilities, error) {
+	var caps Capabilities
+	if err := xml.Unmarshal(xmlByte, &caps); err != nil {
+		return nil, fmt.Errorf("wms: parse capabilities: %w", err)
+	}
+	return &caps, nil
 }

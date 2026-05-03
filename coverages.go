@@ -8,6 +8,21 @@ import (
 	"strings"
 )
 
+// CoverageService is the interface that bundles GeoServer coverage (raster
+// layer) operations on a *GeoServer.
+//
+// In v1.0 these methods existed on *GeoServer but were not exposed through
+// any service interface; v1.1 makes them addressable through the Catalog.
+type CoverageService interface {
+	GetCoverages(workspaceName string) (coverages []*Resource, err error)
+	GetStoreCoverages(workspaceName string, coverageStore string) (coverages []string, err error)
+	GetCoverage(workspaceName string, coverageName string) (coverage *Coverage, err error)
+	DeleteCoverage(workspaceName string, layerName string, recurse bool) (deleted bool, err error)
+	UpdateCoverage(workspaceName string, coverage *Coverage) (modified bool, err error)
+	PublishCoverage(workspaceName string, coverageStoreName string, coverageName string, publishName string) (published bool, err error)
+	PublishGeoTiffLayer(workspaceName string, coverageStoreName string, publishName string, fileName string) (published bool, err error)
+}
+
 // Coverage is geoserver Coverage (raster layer) data struct
 type Coverage struct {
 	Name                 string             `json:"name,omitempty"`
@@ -29,7 +44,7 @@ type Coverage struct {
 	CqlFilter            string             `json:"cqlFilter,omitempty"`
 	OverridingServiceSRS bool               `json:"overridingServiceSRS,omitempty"`
 	// Metadata               *Metadata          `json:"metadata,omitempty"`  //need to fix the implementation due to json parse error
-	//SupportedFormats       []string			  `json:"supportedFormats,omitempty"`  //need to fix the implementation due to json parse error
+	// SupportedFormats       []string			  `json:"supportedFormats,omitempty"`  //need to fix the implementation due to json parse error
 }
 
 type publishedCoverageDescr struct {
@@ -71,9 +86,8 @@ func (g *GeoServer) GetCoverages(workspaceName string) (coverages []*Resource, e
 	if err = json.Unmarshal(response, &coveragesResponse); err != nil {
 		if err = g.DeSerializeJSON(response, &coveragesEmptyResponse); err != nil {
 			return nil, fmt.Errorf("can't parse the coverage data, %w", err)
-		} else {
-			return []*Resource{}, nil
 		}
+		return []*Resource{}, nil
 	}
 
 	return coveragesResponse.Coverages.Coverage, nil
@@ -146,10 +160,12 @@ func (g *GeoServer) DeleteCoverage(workspaceName string, layerName string, recur
 
 // UpdateCoverage updates geoserver coverage (raster layer), else returns error,
 func (g *GeoServer) UpdateCoverage(workspaceName string, coverage *Coverage) (modified bool, err error) {
-
+	if coverage == nil || coverage.Store == nil {
+		return false, errors.New("UpdateCoverage: coverage and coverage.Store must be non-nil")
+	}
 	items := strings.Split(coverage.Store.Name, ":")
 	if len(items) != 2 {
-		return false, errors.New("internal error during coverage update, can't build store name")
+		return false, fmt.Errorf("UpdateCoverage: store name %q is not in the form workspace:store", coverage.Store.Name)
 	}
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", items[1], "coverages", coverage.Name)
 
@@ -159,7 +175,10 @@ func (g *GeoServer) UpdateCoverage(workspaceName string, coverage *Coverage) (mo
 
 	data := coverageUpdateRequestBody{Coverage: *coverage}
 
-	serializedLayer, _ := g.SerializeStruct(data)
+	serializedLayer, serErr := g.SerializeStruct(data)
+	if serErr != nil {
+		return false, fmt.Errorf("UpdateCoverage: serialize coverage: %w", serErr)
+	}
 	httpRequest := HTTPRequest{
 		Method:   putMethod,
 		Accept:   jsonType,
@@ -181,7 +200,6 @@ func (g *GeoServer) UpdateCoverage(workspaceName string, coverage *Coverage) (mo
 // PublishCoverage publishes coverage from coverageStore
 // coverageName - the name of the layer in the coverageStore (use GetStoreCoverages to get them), publishName - the name it was presented at geoserver
 func (g *GeoServer) PublishCoverage(workspaceName string, coverageStoreName string, coverageName string, publishName string) (published bool, err error) {
-
 	if publishName == "" {
 		publishName = coverageName
 	}
@@ -195,15 +213,20 @@ func (g *GeoServer) PublishCoverage(workspaceName string, coverageStoreName stri
 	return g.publishCoverage(workspaceName, coverageStoreName, publishRequest)
 }
 
-// publishCoverage publishes coverage
-func (g *GeoServer) publishCoverage(workspaceName string, coverageStoreName string, publishCoverageRequest publishCoverageRequest) (published bool, err error) {
-
-	if workspaceName != "" {
-		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
+// publishCoverage publishes coverage to the given workspace's coverage store.
+// If workspaceName is empty, the global /rest/coveragestores endpoint is used.
+func (g *GeoServer) publishCoverage(workspaceName string, coverageStoreName string, request publishCoverageRequest) (published bool, err error) {
+	var targetURL string
+	if workspaceName == "" {
+		targetURL = g.ParseURL("rest", "coveragestores", coverageStoreName, "coverages")
+	} else {
+		targetURL = g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", coverageStoreName, "coverages")
 	}
-	targetURL := g.ParseURL("rest", workspaceName, "coveragestores", coverageStoreName, "/coverages")
 
-	serializedLayer, _ := g.SerializeStruct(publishCoverageRequest)
+	serializedLayer, serErr := g.SerializeStruct(request)
+	if serErr != nil {
+		return false, fmt.Errorf("publishCoverage: serialize request: %w", serErr)
+	}
 
 	httpRequest := HTTPRequest{
 		Method:   postMethod,
@@ -226,9 +249,9 @@ func (g *GeoServer) publishCoverage(workspaceName string, coverageStoreName stri
 // PublishGeoTiffLayer publishes geotiff to geoserver
 func (g *GeoServer) PublishGeoTiffLayer(workspaceName string, coverageStoreName string, publishName string, fileName string) (published bool, err error) {
 	// it was moved from layers.go because this is the better place for raster layers functions (coverages)
-	//I tried to maintain the original behavior for backward compatibilities,
-	//but it didn't seem to be working as expected from scratch
-	//there were no tests for this function and I couldn't reproduce the working case
+	// I tried to maintain the original behavior for backward compatibilities,
+	// but it didn't seem to be working as expected from scratch
+	// there were no tests for this function and I couldn't reproduce the working case
 	publishRequest := publishCoverageRequest{
 		&publishedCoverageDescr{
 			Name:               publishName,

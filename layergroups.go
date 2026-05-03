@@ -26,21 +26,35 @@ type Publishables struct {
 	Published PublishedGroupLayers `json:"published" xml:"published"`
 }
 
-// UnmarshalJSON custom deserialization to handle published layers of group
+// UnmarshalJSON custom deserialization to handle published layers of group.
+//
+// GeoServer's REST API serializes a single published layer as an object and
+// multiple as an array — JSON shape that does not naturally unmarshal into a
+// slice. This implementation handles both shapes safely; in v1.0.x, type
+// assertions on missing fields would panic.
 func (u *PublishedGroupLayers) UnmarshalJSON(data []byte) error {
 	var raw interface{}
-	err := json.Unmarshal(data, &raw)
-	if err != nil {
+	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
 	switch raw := raw.(type) {
 	case map[string]interface{}:
-		var layers PublishedGroupLayers
-		*u = append(layers, &GroupPublishableItem{Name: raw["name"].(string), Href: raw["href"].(string), Type: raw["@type"].(string)})
+		name, _ := raw["name"].(string)
+		href, _ := raw["href"].(string)
+		typ, _ := raw["@type"].(string)
+		if name == "" && href == "" && typ == "" {
+			return fmt.Errorf("layergroups: unrecognized published-layer payload: %v", raw)
+		}
+		*u = make(PublishedGroupLayers, 0, 1)
+		*u = append(*u, &GroupPublishableItem{Name: name, Href: href, Type: typ})
 	case []interface{}:
 		var publishedGroupLayers []*GroupPublishableItem
-		json.Unmarshal(data, &publishedGroupLayers)
+		if err := json.Unmarshal(data, &publishedGroupLayers); err != nil {
+			return fmt.Errorf("layergroups: decode published-layer array: %w", err)
+		}
 		*u = publishedGroupLayers
+	default:
+		return fmt.Errorf("layergroups: unexpected published-layer JSON shape (%T)", raw)
 	}
 	return nil
 }
@@ -80,13 +94,21 @@ type LayerGroupService interface {
 	DeleteLayerGroup(workspaceName string, layerGroupName string) (deleted bool, err error)
 }
 
+// layerGroupsURL builds /rest[/workspaces/{ws}]/layergroups[/{name}].
+func (g *GeoServer) layerGroupsURL(workspaceName string, extra ...string) string {
+	parts := []string{"rest"}
+	if workspaceName != "" {
+		parts = append(parts, "workspaces", workspaceName)
+	}
+	parts = append(parts, "layergroups")
+	parts = append(parts, extra...)
+	return g.ParseURL(parts...)
+}
+
 // GetLayerGroups  get all layergroups from workspace in geoserver else return error,
 // if workspace is "" the it will return all public layers in geoserver
 func (g *GeoServer) GetLayerGroups(workspaceName string) (layerGroups []*Resource, err error) {
-	if workspaceName != "" {
-		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
-	}
-	targetURL := g.ParseURL("rest", workspaceName, "layergroups")
+	targetURL := g.layerGroupsURL(workspaceName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
 		Accept: jsonType,
@@ -101,7 +123,9 @@ func (g *GeoServer) GetLayerGroups(workspaceName string) (layerGroups []*Resourc
 		return
 	}
 	var layerGroupList layerGroupResponse
-	g.DeSerializeJSON(response, &layerGroupList)
+	if err = g.DeSerializeJSON(response, &layerGroupList); err != nil {
+		return nil, err
+	}
 	layerGroups = layerGroupList.LayerGroups.LayerGroup
 	return
 }
@@ -109,10 +133,7 @@ func (g *GeoServer) GetLayerGroups(workspaceName string) (layerGroups []*Resourc
 // GetLayerGroup get specific LayerGroup in a workspace from geoserver else return error,
 // if workspace is "" the it will return geoserver public layer with ${layerName}
 func (g *GeoServer) GetLayerGroup(workspaceName string, layerGroupName string) (layerGroup *LayerGroup, err error) {
-	if workspaceName != "" {
-		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
-	}
-	targetURL := g.ParseURL("rest", workspaceName, "layergroups", layerGroupName)
+	targetURL := g.layerGroupsURL(workspaceName, layerGroupName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
 		Accept: jsonType,
@@ -126,21 +147,23 @@ func (g *GeoServer) GetLayerGroup(workspaceName string, layerGroupName string) (
 		err = g.GetError(responseCode, response)
 		return
 	}
-	var layerGroupResponse layerGroupDetailsResponse
-	g.DeSerializeJSON(response, &layerGroupResponse)
-	layerGroup = layerGroupResponse.LayerGroup
+	var layerGroupResp layerGroupDetailsResponse
+	if err = g.DeSerializeJSON(response, &layerGroupResp); err != nil {
+		return nil, err
+	}
+	layerGroup = layerGroupResp.LayerGroup
 	return
 }
 
 // CreateLayerGroup create specific LayerGroup in geoserver return created=true else created=false and the error,
 // if workspace is "" the it will return geoserver public layer with ${layerName}
 func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGroup) (created bool, err error) {
-	if workspaceName != "" {
-		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
-	}
 	group := layerGroupDetailsResponse{LayerGroup: layerGroup}
-	serializedGroup, _ := g.SerializeStruct(group)
-	targetURL := g.ParseURL("rest", workspaceName, "layergroups")
+	serializedGroup, serErr := g.SerializeStruct(group)
+	if serErr != nil {
+		return false, fmt.Errorf("CreateLayerGroup: serialize layer group: %w", serErr)
+	}
+	targetURL := g.layerGroupsURL(workspaceName)
 	data := bytes.NewBuffer(serializedGroup)
 
 	httpRequest := HTTPRequest{
@@ -165,10 +188,7 @@ func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGrou
 // DeleteLayerGroup delete geoserver layergroup else return error,
 // if workspace is "" will delete public layergroup with name ${layerGroupName} if exists
 func (g *GeoServer) DeleteLayerGroup(workspaceName string, layerGroupName string) (deleted bool, err error) {
-	if workspaceName != "" {
-		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
-	}
-	targetURL := g.ParseURL("rest", workspaceName, "layergroups", layerGroupName)
+	targetURL := g.layerGroupsURL(workspaceName, layerGroupName)
 	httpRequest := HTTPRequest{
 		Method: deleteMethod,
 		Accept: jsonType,
