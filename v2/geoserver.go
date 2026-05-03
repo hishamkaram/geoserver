@@ -22,6 +22,7 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/layers"
 	"github.com/hishamkaram/geoserver/v2/rest/namespaces"
 	"github.com/hishamkaram/geoserver/v2/rest/security"
+	"github.com/hishamkaram/geoserver/v2/rest/services"
 	"github.com/hishamkaram/geoserver/v2/rest/settings"
 	"github.com/hishamkaram/geoserver/v2/rest/styles"
 	"github.com/hishamkaram/geoserver/v2/rest/system"
@@ -141,6 +142,13 @@ type Client struct {
 	// [wcs.Client.InWorkspace] for a workspace-scoped capabilities
 	// document.
 	WCS *wcs.Client
+
+	// Services is the entry point for per-service OWS configuration
+	// (`/services/{wms,wfs,wcs,wmts}/settings`). Reach the typed
+	// per-service clients via `c.Services.WMS()`, `WFS()`, `WCS()`,
+	// `WMTS()`. Each exposes `Get`/`Update` for global settings and
+	// `.InWorkspace(ws)` for per-workspace overrides (`Get`/`Update`/`Delete`).
+	Services *services.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -214,6 +222,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.WMS = wms.New(adapter)
 	c.WFS = wfs.New(adapter)
 	c.WCS = wcs.New(adapter)
+	c.Services = services.New(adapter)
 	return c, nil
 }
 
