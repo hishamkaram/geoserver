@@ -312,15 +312,19 @@ The library was dormant for ~3 years (Feb 2023 → May 2026) before being revive
 ## Roadmap
 
 - **v1.1.x** — security fixes, integration test maintenance, additive Dependabot updates.
-- **v2** — tracked separately. Planned themes:
-  - Resource sub-clients (`client.Workspaces.Get(ctx, name)` style).
-  - Immutable `Client` with `RoundTripper`-based auth (concurrency-safe by construction).
-  - GeoServer 3.0 support (Java 17 / Tomcat 11 / Jakarta EE 6.1 / new ImageN raster engine).
-  - Streaming uploads (`io.Reader` instead of `[]byte`).
-  - Range-over-func iterators for paginated endpoints (`iter.Seq2`).
-  - Drop deprecated v1 surface; mandatory `context.Context`.
+- **v2** — pre-alpha at `github.com/hishamkaram/geoserver/v2`. The full catalog (workspaces, datastores, feature types, coverage stores, coverages, layers, layer groups, styles, namespaces) plus security, ACL, settings, and about have been ported and unit-tested; only WMS GetCapabilities remains pending (deferred to a v2.x point release after the `ows/wms/` XML subpackage lands).
 
-  v2 will live at `github.com/hishamkaram/geoserver/v2`. v1 stays maintained for security fixes.
+  Design themes (now realized in code):
+  - Resource sub-clients (`c.Workspaces.Get(ctx, name)`, `c.Datastores.InWorkspace(ws).Get(...)`, `c.FeatureTypes.InWorkspace(ws).InDatastore(ds).Get(...)`).
+  - Immutable `Client` with `RoundTripper`-based auth (concurrency-safe by construction).
+  - Mandatory `context.Context`, no `Background` shims.
+  - Range-over-func iterators (`iter.Seq2`) on every list endpoint.
+  - Single error type (`*APIError`) with the same sentinel set as v1 (`ErrNotFound`, `ErrConflict`, …).
+  - Zero runtime third-party deps — stdlib only.
+  - Raw-body uploads (`UploadSLD`) with the workspace-scoped Accept-quirk handled automatically.
+
+  Tagging is held until soak / API review; until then v2 is preview-quality. **For production code today, use v1.x.** See [v2/README.md](v2/README.md), [v2/examples/](v2/examples/), and [docs/migration-v1-to-v2.md](docs/migration-v1-to-v2.md).
+- **GeoServer 3.0 support** — tracked as a v2.x point release once Tomcat 11 / Jakarta EE / ImageN settle. See [ROADMAP.md](ROADMAP.md).
 
 ## Documentation
 
@@ -328,7 +332,9 @@ The library was dormant for ~3 years (Feb 2023 → May 2026) before being revive
 - **Architecture** — [docs/architecture.md](docs/architecture.md): package shape, the *Context twin pattern, error model, logging, concurrency, transport organization
 - **GeoServer REST quirks** — [docs/geoserver-rest-quirks.md](docs/geoserver-rest-quirks.md): version-specific REST API quirks the client works around
 - **Version compatibility** — [docs/version-compat.md](docs/version-compat.md): supported Go × GeoServer matrix with rationale
-- **v1 → v2 migration** — [docs/migration-v1-to-v2.md](docs/migration-v1-to-v2.md): in-progress; v2 lives at `github.com/hishamkaram/geoserver/v2`
+- **v1 → v2 migration** — [docs/migration-v1-to-v2.md](docs/migration-v1-to-v2.md): per-resource v1-method → v2-sub-client mapping tables, side-by-side workflow example. v2 lives at `github.com/hishamkaram/geoserver/v2`.
+- **v2 README** — [v2/README.md](v2/README.md): design tenets, quick start for global / workspace-scoped / 2-level-scoped resources, resource status table.
+- **v2 runnable examples** — [v2/examples/](v2/examples/): workspaces, publish-postgis, style-upload, error-handling. Run with `go run ./v2/examples/<name>` or compile-check via `make examples-v2`.
 - **Roadmap** — [ROADMAP.md](ROADMAP.md): v1.x maintenance, v2.x design, GeoServer 3.0 timeline
 - **Runnable examples** — [examples/](examples/): workspaces, publish-postgis, style-upload, error-handling. Run with `go run ./examples/<name>` against a `make compose-up` stack.
 - **Reference flows in tests** — the integration suite (`*_test.go` under build tag `integration`) exercises the full surface end-to-end against GeoServer 2.27 LTS and 2.28 stable.
