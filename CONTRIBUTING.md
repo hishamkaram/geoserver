@@ -62,11 +62,21 @@ make compose-down
 .
 ├── *.go                       # v1 public API (one file per resource)
 ├── wms/                       # WMS XML types (parser)
-├── docker/                    # Dockerfile for the dev GeoServer
+├── internal/transport/        # v1.1.x algorithm package (URL building, request execution)
+├── v2/                        # v2 SDK — separate Go module (own go.mod)
+│   ├── *.go, doc.go           # v2 root client and package doc
+│   ├── rest/                  # one subpackage per resource (workspaces, datastores, services, gwc, imports, …)
+│   ├── ows/                   # OWS clients (wms, wfs, wcs)
+│   ├── internal/transport/    # v2 transport helpers (DoJSON, DoXML, DoRaw, DoStream)
+│   └── examples/              # runnable v2 reference flows
+├── docs/                      # Architecture, REST quirks, version compat, migration, tier-2 gap backlog
+├── examples/                  # Runnable v1 reference flows
+├── docker/                    # Dockerfile for the dev/test GeoServer (Importer plugin baked in)
 ├── docker-compose.yml         # Default dev stack (GeoServer 2.28 + PostGIS 16)
 ├── docker-compose.test.yml    # Integration test stack with 2.27 LTS leg
 ├── testdata/                  # Test fixtures (SLDs, shapefiles, JSON responses)
-└── scripts/                   # Test helper scripts
+├── scripts/                   # Test helper scripts
+└── .github/                   # Issue / PR templates, CODEOWNERS, Dependabot, workflows
 ```
 
 ## Reporting bugs / asking questions
