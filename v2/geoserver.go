@@ -24,7 +24,10 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/security"
 	"github.com/hishamkaram/geoserver/v2/rest/settings"
 	"github.com/hishamkaram/geoserver/v2/rest/styles"
+	"github.com/hishamkaram/geoserver/v2/rest/system"
 	"github.com/hishamkaram/geoserver/v2/rest/workspaces"
+
+	"github.com/hishamkaram/geoserver/v2/ows/wms"
 )
 
 const (
@@ -113,6 +116,17 @@ type Client struct {
 	// [acl.Client.Layers]; service-level and catalog-level ACL
 	// endpoints can be added in follow-up PRs.
 	ACL *acl.Client
+
+	// System is the entry point for server-management operations —
+	// Reload (catalog + configuration from disk) and ResetCache
+	// (store / raster / schema caches). Both require admin auth.
+	System *system.Client
+
+	// WMS is the entry point for WMS service operations — currently
+	// GetCapabilities (XML, decoded into [wms.Capabilities]). Use
+	// [wms.Client.InWorkspace] for a workspace-scoped capabilities
+	// document. WFS / WCS land alongside under v2/ows/ in follow-ups.
+	WMS *wms.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -182,6 +196,8 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.About = about.New(adapter)
 	c.Security = security.New(adapter)
 	c.ACL = acl.New(adapter)
+	c.System = system.New(adapter)
+	c.WMS = wms.New(adapter)
 	return c, nil
 }
 
@@ -299,6 +315,27 @@ func (a coreAdapter) Do(ctx context.Context, op string, method, requestURL strin
 func (a coreAdapter) DoStream(ctx context.Context, op string, method, requestURL string, query map[string]string) (io.ReadCloser, int, error) {
 	// Placeholder; expand when the first streaming resource ports.
 	return nil, 0, errors.New("geoserver: DoStream not yet implemented")
+}
+
+// DoXML issues a GET-style request and decodes the response as XML.
+// Used by the OWS sub-clients (WMS / WFS / WCS) for GetCapabilities
+// and similar XML endpoints. Response body cap is 32 MiB to handle
+// large capabilities documents; the JSON 8 KiB cap on [Do] would
+// truncate them.
+func (a coreAdapter) DoXML(ctx context.Context, op, method, requestURL string, query map[string]string, out any) error {
+	_, err := transport.DoXML(ctx, a.core.httpClient, a.core.logger, op, transport.Request{
+		Method: method,
+		URL:    requestURL,
+		Query:  query,
+	}, out)
+	if err == nil {
+		return nil
+	}
+	var tErr *transport.Error
+	if errors.As(err, &tErr) {
+		return newAPIError(tErr.Op, tErr.Method, tErr.URL, tErr.StatusCode, tErr.Body)
+	}
+	return err
 }
 
 // DoRaw issues a request with an arbitrary-Reader body and explicit

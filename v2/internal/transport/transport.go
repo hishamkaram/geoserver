@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"log/slog"
@@ -62,6 +63,63 @@ type JSON any
 // On transport error: status is 0; err is the wrapped transport error.
 func DoJSON(ctx context.Context, doer Doer, logger *slog.Logger, op string, req Request, out JSON) (status int, err error) {
 	return doRequest(ctx, doer, logger, op, req, out)
+}
+
+// DoXML sends a request and decodes the response body as XML. Use
+// this for the OWS endpoints (WMS / WFS / WCS GetCapabilities) where
+// the response is XML rather than JSON. Request body, if any, is sent
+// as RawBody — typical OWS calls are GET with no body.
+//
+// On success: out (if non-nil) is xml.Unmarshal'd from the response
+// body; the body cap is [xmlBodyReadCap] (32 MiB) since capabilities
+// documents are often well above the [bodyReadCap] used by [DoJSON].
+//
+// On non-2xx: returns a structured Error wrapping the response body
+// (truncated to [bodyReadCap]) so the caller can inspect what came back.
+//
+// On transport error: status is 0; err is the wrapped transport error.
+func DoXML(ctx context.Context, doer Doer, logger *slog.Logger, op string, req Request, out any) (status int, err error) {
+	if req.Accept == "" {
+		req.Accept = "application/xml"
+	}
+	httpReq, err := buildHTTPRequest(ctx, req)
+	if err != nil {
+		return 0, fmt.Errorf("%s: build request: %w", op, err)
+	}
+
+	resp, err := doer.Do(httpReq)
+	if err != nil {
+		logDebug(logger, "request failed", "op", op, "method", req.Method, "url", req.URL, "err", err)
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, bodyReadCap))
+		logDebug(logger, "request done", "op", op, "method", req.Method, "url", req.URL, "status", resp.StatusCode, "body_bytes", len(body))
+		return resp.StatusCode, &Error{
+			Op:         op,
+			Method:     req.Method,
+			URL:        req.URL,
+			StatusCode: resp.StatusCode,
+			Body:       body,
+		}
+	}
+
+	body, readErr := io.ReadAll(io.LimitReader(resp.Body, xmlBodyReadCap))
+	if readErr != nil {
+		logDebug(logger, "body read failed", "op", op, "method", req.Method, "url", req.URL, "status", resp.StatusCode, "err", readErr)
+		return resp.StatusCode, fmt.Errorf("%s: read body: %w", op, readErr)
+	}
+	logDebug(logger, "request done", "op", op, "method", req.Method, "url", req.URL, "status", resp.StatusCode, "body_bytes", len(body))
+
+	if out == nil || len(body) == 0 {
+		return resp.StatusCode, nil
+	}
+	if xmlErr := xml.Unmarshal(body, out); xmlErr != nil {
+		return resp.StatusCode, fmt.Errorf("%s: decode response: %w", op, xmlErr)
+	}
+	return resp.StatusCode, nil
 }
 
 // DoRaw sends a request with an arbitrary-Reader body and explicit
@@ -150,6 +208,13 @@ func (e *Error) Error() string {
 // Read body cap matches the public *APIError.Body cap so the wrapper
 // doesn't have to re-truncate.
 const bodyReadCap = 8 << 10 // 8 KiB
+
+// xmlBodyReadCap is the larger cap used by [DoXML] on the success path.
+// WMS / WFS / WCS GetCapabilities documents are commonly tens to
+// hundreds of KiB on real installations; the JSON 8 KiB cap is too
+// small. The error path still uses [bodyReadCap] so an oversized error
+// body doesn't blow up.
+const xmlBodyReadCap = 32 << 20 // 32 MiB
 
 // buildHTTPRequest constructs the http.Request with body / query /
 // Accept set. Auth and User-Agent are applied by the transport

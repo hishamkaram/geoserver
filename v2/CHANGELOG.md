@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **`v2/ows/wms/` package** — port of v1's `wms/` package. Same XML type tree (Capabilities, Service, Capability, Layer, Style, BoundingBox, …) so callers move with no shape changes. New free function `wms.ParseCapabilities(io.Reader)` (v2 idiom — `io.Reader` instead of `[]byte`; the deprecated v1 `ParseCapabilities` no-`E` variant that swallowed errors is gone). New sub-client `c.WMS` with `GetCapabilities(ctx, opts)` — global by default, `c.WMS.InWorkspace(ws)` for a workspace-scoped capabilities view. `GetCapabilitiesOptions` carries Version (default "1.1.1") and an optional UpdateSequence cache token.
+- **`v2/rest/system/` package** — port of v1's `configuration.go`. New sub-client `c.System` with `Reload(ctx)` (`POST /rest/reload`) and `ResetCache(ctx)` (`POST /rest/reset`). The v1 typo'd method names (`ReloadConfigration` / `RestConfigrationCache`) are dropped; v2 uses the corrected spelling.
+- **`internal/transport.DoXML`** — XML-decoding equivalent of `DoJSON` with a 32 MiB body cap (`DoJSON`'s 8 KiB cap is too small for real WMS capabilities documents). The error path still uses the 8 KiB cap so an oversized error body can't blow up.
+
+### Added (tests)
+
+- `v2/ows/wms/wms_test.go` — fixture-based parse tests, httptest tests for global + workspace scope, version + updatesequence query handling, and 404 / 500 → sentinel mapping.
+- `v2/ows/wms/wms_integration_test.go` — real GeoServer assertions (capabilities document is non-empty for the global scope and a fresh empty workspace).
+- `v2/rest/system/system_test.go` — httptest tests for Reload + ResetCache happy path, plus 401 / 403 / 500 → sentinel mapping.
+- `v2/rest/system/system_integration_test.go` — real GeoServer Reload + ResetCache (idempotent, safe to repeat).
+- Godoc `Example_*` for both new packages.
+
 ### Added (godoc)
 
 - Godoc `Example_*` functions for the remaining 10 sub-clients (layers, layergroups, featuretypes, coverages, coveragestores, namespaces, settings, security, acl, about) so every public sub-client renders an inline usage demo on `pkg.go.dev`. Examples without `// Output:` comments compile-check via `go test` but don't execute, so they stay green without a live GeoServer (PR #62, post-`v2.0.0-alpha.1`).
