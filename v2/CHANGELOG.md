@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added (godoc)
+
+- Godoc `Example_*` functions for the remaining 10 sub-clients (layers, layergroups, featuretypes, coverages, coveragestores, namespaces, settings, security, acl, about) so every public sub-client renders an inline usage demo on `pkg.go.dev`. Examples without `// Output:` comments compile-check via `go test` but don't execute, so they stay green without a live GeoServer (PR #62, post-`v2.0.0-alpha.1`).
+
+### Changed (docs)
+
+- `v2/README.md` banner: "v2 in development" → "`v2.0.0-alpha.1` is published" with a `go get` install one-liner and prerelease disclaimer (PR #61, post-`v2.0.0-alpha.1`).
+
 ## [2.0.0-alpha.1] — 2026-05-03
 
 First public preview of v2. Surface is wide (workspaces, datastores, feature types, coverage stores, coverages, layers, layer groups, styles, namespaces, settings, about, security, ACL) and exercised by both unit and real-GeoServer integration suites on 2.27.4 LTS and 2.28.0 stable. Public API may still change before `v2.0.0` based on early-adopter feedback. No production guarantees.
