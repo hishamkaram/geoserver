@@ -80,8 +80,13 @@ func (c *Client) GetCapabilities(ctx context.Context, opts GetCapabilitiesOption
 	if version == "" {
 		version = "2.0.1"
 	}
+	// Note: GeoServer's WCS endpoint is case-sensitive on the
+	// `service` parameter — `wcs` (lowercase) returns 400
+	// "Error in service name, expected value: WCS". WMS and WFS
+	// accept lowercase. Send the uppercase form here to keep the
+	// happy-path query working across versions.
 	query := map[string]string{
-		"service": "wcs",
+		"service": "WCS",
 		"version": version,
 		"request": "GetCapabilities",
 	}

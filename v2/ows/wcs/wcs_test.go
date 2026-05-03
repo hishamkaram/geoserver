@@ -122,8 +122,8 @@ func TestGetCapabilities_GlobalDefaultVersion(t *testing.T) {
 			t.Errorf("path = %q, want /wcs", r.URL.Path)
 		}
 		q := r.URL.Query()
-		if q.Get("service") != "wcs" {
-			t.Errorf("service = %q", q.Get("service"))
+		if q.Get("service") != "WCS" {
+			t.Errorf("service = %q (GeoServer WCS endpoint requires uppercase)", q.Get("service"))
 		}
 		if q.Get("version") != "2.0.1" {
 			t.Errorf("version = %q, want 2.0.1 (default)", q.Get("version"))
