@@ -18,6 +18,7 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/featuretypes"
 	"github.com/hishamkaram/geoserver/v2/rest/layergroups"
 	"github.com/hishamkaram/geoserver/v2/rest/layers"
+	"github.com/hishamkaram/geoserver/v2/rest/styles"
 	"github.com/hishamkaram/geoserver/v2/rest/workspaces"
 )
 
@@ -39,6 +40,7 @@ const (
 //	Coverages      — coverage CRUD (workspace+coverage-store-scoped via InWorkspace().InCoverageStore())
 //	Layers         — layer CRUD (workspace-scoped via InWorkspace)
 //	LayerGroups    — layer-group CRUD (workspace-scoped via InWorkspace)
+//	Styles         — style metadata + SLD body upload (global by default; .InWorkspace(ws) for workspace-scoped)
 //	(more sub-clients as resources port; see ROADMAP.md)
 type Client struct {
 	core *clientCore
@@ -73,6 +75,11 @@ type Client struct {
 	// Layer-group operations are workspace-scoped — see
 	// [layergroups.Client.InWorkspace].
 	LayerGroups *layergroups.Client
+
+	// Styles is the entry point for style operations. The client
+	// operates against the global /rest/styles endpoint by default;
+	// use [styles.Client.InWorkspace] for a workspace-scoped client.
+	Styles *styles.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -136,6 +143,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.Coverages = coverages.New(adapter)
 	c.Layers = layers.New(adapter)
 	c.LayerGroups = layergroups.New(adapter)
+	c.Styles = styles.New(adapter)
 	return c, nil
 }
 
@@ -253,4 +261,24 @@ func (a coreAdapter) Do(ctx context.Context, op string, method, requestURL strin
 func (a coreAdapter) DoStream(ctx context.Context, op string, method, requestURL string, query map[string]string) (io.ReadCloser, int, error) {
 	// Placeholder; expand when the first streaming resource ports.
 	return nil, 0, errors.New("geoserver: DoStream not yet implemented")
+}
+
+// DoRaw issues a request with an arbitrary-Reader body and explicit
+// Content-Type / Accept. Used by sub-clients that need to send non-JSON
+// payloads (SLD XML, shapefile zip, GeoTIFF) while keeping JSON-style
+// status-to-sentinel error mapping on the response.
+//
+// If body is nil the request is sent with no payload. If contentType
+// is empty "application/octet-stream" is used. If accept is empty
+// "application/json" is used.
+func (a coreAdapter) DoRaw(ctx context.Context, op, method, requestURL string, body io.Reader, contentType, accept string, query map[string]string) error {
+	_, err := transport.DoRaw(ctx, a.core.httpClient, a.core.logger, op, method, requestURL, body, contentType, accept, query, nil)
+	if err == nil {
+		return nil
+	}
+	var tErr *transport.Error
+	if errors.As(err, &tErr) {
+		return newAPIError(tErr.Op, tErr.Method, tErr.URL, tErr.StatusCode, tErr.Body)
+	}
+	return err
 }
