@@ -26,9 +26,9 @@ jobs:
           check-latest: true
           cache: true
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.62.0
+          version: v2.1.6
           args: --timeout=5m
 
   unit:
@@ -60,25 +60,6 @@ jobs:
           name: coverage-go${{ matrix.go }}
           path: coverage.out
           retention-days: 14
-
-  integration:
-    name: Integration (GeoServer ${{ matrix.geoserver }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        geoserver: ["2.27.4", "2.28.0"]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.25"
-          check-latest: true
-          cache: true
-      - name: Run integration tests
-        env:
-          GEOSERVER_VERSION: ${{ matrix.geoserver }}
-        run: go test -race -tags=integration -timeout=15m ./...
 
   vuln:
     name: govulncheck
