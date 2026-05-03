@@ -12,12 +12,15 @@ import (
 	"time"
 
 	"github.com/hishamkaram/geoserver/v2/internal/transport"
+	"github.com/hishamkaram/geoserver/v2/rest/about"
 	"github.com/hishamkaram/geoserver/v2/rest/coverages"
 	"github.com/hishamkaram/geoserver/v2/rest/coveragestores"
 	"github.com/hishamkaram/geoserver/v2/rest/datastores"
 	"github.com/hishamkaram/geoserver/v2/rest/featuretypes"
 	"github.com/hishamkaram/geoserver/v2/rest/layergroups"
 	"github.com/hishamkaram/geoserver/v2/rest/layers"
+	"github.com/hishamkaram/geoserver/v2/rest/namespaces"
+	"github.com/hishamkaram/geoserver/v2/rest/settings"
 	"github.com/hishamkaram/geoserver/v2/rest/styles"
 	"github.com/hishamkaram/geoserver/v2/rest/workspaces"
 )
@@ -41,6 +44,9 @@ const (
 //	Layers         — layer CRUD (workspace-scoped via InWorkspace)
 //	LayerGroups    — layer-group CRUD (workspace-scoped via InWorkspace)
 //	Styles         — style metadata + SLD body upload (global by default; .InWorkspace(ws) for workspace-scoped)
+//	Namespaces     — namespace CRUD (flat global)
+//	Settings       — singleton global settings document (Get / Update)
+//	About          — health check + version info (Ping / Version)
 //	(more sub-clients as resources port; see ROADMAP.md)
 type Client struct {
 	core *clientCore
@@ -80,6 +86,18 @@ type Client struct {
 	// operates against the global /rest/styles endpoint by default;
 	// use [styles.Client.InWorkspace] for a workspace-scoped client.
 	Styles *styles.Client
+
+	// Namespaces is the entry point for namespace operations.
+	// Namespaces are flat under /rest/namespaces.
+	Namespaces *namespaces.Client
+
+	// Settings is the entry point for the singleton global-settings
+	// document — Get / Update against /rest/settings.
+	Settings *settings.Client
+
+	// About is the entry point for server health and version info —
+	// Ping (liveness check) and Version (full component versions).
+	About *about.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -144,6 +162,9 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.Layers = layers.New(adapter)
 	c.LayerGroups = layergroups.New(adapter)
 	c.Styles = styles.New(adapter)
+	c.Namespaces = namespaces.New(adapter)
+	c.Settings = settings.New(adapter)
+	c.About = about.New(adapter)
 	return c, nil
 }
 
