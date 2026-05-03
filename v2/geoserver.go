@@ -16,6 +16,8 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/coveragestores"
 	"github.com/hishamkaram/geoserver/v2/rest/datastores"
 	"github.com/hishamkaram/geoserver/v2/rest/featuretypes"
+	"github.com/hishamkaram/geoserver/v2/rest/layergroups"
+	"github.com/hishamkaram/geoserver/v2/rest/layers"
 	"github.com/hishamkaram/geoserver/v2/rest/workspaces"
 )
 
@@ -35,6 +37,8 @@ const (
 //	FeatureTypes   — feature-type CRUD (workspace+datastore-scoped via InWorkspace().InDatastore())
 //	CoverageStores — coverage-store CRUD (workspace-scoped via InWorkspace)
 //	Coverages      — coverage CRUD (workspace+coverage-store-scoped via InWorkspace().InCoverageStore())
+//	Layers         — layer CRUD (workspace-scoped via InWorkspace)
+//	LayerGroups    — layer-group CRUD (workspace-scoped via InWorkspace)
 //	(more sub-clients as resources port; see ROADMAP.md)
 type Client struct {
 	core *clientCore
@@ -60,6 +64,15 @@ type Client struct {
 	// operations are 2-level scoped — see [coverages.Client.InWorkspace]
 	// and [coverages.WorkspaceClient.InCoverageStore].
 	Coverages *coverages.Client
+
+	// Layers is the entry point for layer operations. Layer operations
+	// are workspace-scoped — see [layers.Client.InWorkspace].
+	Layers *layers.Client
+
+	// LayerGroups is the entry point for layer-group operations.
+	// Layer-group operations are workspace-scoped — see
+	// [layergroups.Client.InWorkspace].
+	LayerGroups *layergroups.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -121,6 +134,8 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.FeatureTypes = featuretypes.New(adapter)
 	c.CoverageStores = coveragestores.New(adapter)
 	c.Coverages = coverages.New(adapter)
+	c.Layers = layers.New(adapter)
+	c.LayerGroups = layergroups.New(adapter)
 	return c, nil
 }
 
