@@ -5,9 +5,23 @@
 // CRUD lives on the resulting client.
 package featuretypes
 
-import (
-	"encoding/json"
-	"fmt"
+import "github.com/hishamkaram/geoserver/v2/internal/wire"
+
+// Shared GIS wire-format types. These are aliases for the canonical
+// definitions in v2/internal/wire — the same underlying types used by
+// the coverages sub-package, so values can flow between packages
+// without conversion.
+type (
+	// CRS — see [wire.CRS] for marshal/unmarshal semantics.
+	CRS = wire.CRS
+	// BoundingBox — see [wire.BoundingBox].
+	BoundingBox = wire.BoundingBox
+	// NativeBoundingBox — see [wire.NativeBoundingBox].
+	NativeBoundingBox = wire.NativeBoundingBox
+	// LatLonBoundingBox — see [wire.LatLonBoundingBox].
+	LatLonBoundingBox = wire.LatLonBoundingBox
+	// Keywords — see [wire.Keywords].
+	Keywords = wire.Keywords
 )
 
 // FeatureType is the GeoServer feature-type document. The same shape is
@@ -52,86 +66,6 @@ type FeatureType struct {
 type Ref struct {
 	Name string `json:"name,omitempty"`
 	Href string `json:"href,omitempty"`
-}
-
-// CRS models the GeoServer coordinate-reference-system field, which on
-// the wire is either a JSON object ({"@class":"projected","$":"EPSG:4326"})
-// or a bare string identifier. The custom Marshal / Unmarshal preserves
-// this asymmetry so reads round-trip correctly.
-//
-// When constructing for write, set Class="" and Value="EPSG:xxxx" for
-// the bare-string form; set Class="projected" / "geographic" / "string"
-// (and Value to the SRS) for the object form.
-type CRS struct {
-	Class string `json:"@class,omitempty"`
-	Value string `json:"$,omitempty"`
-}
-
-// UnmarshalJSON accepts both shapes returned by GeoServer:
-//
-//   - object: {"@class":"projected","$":"EPSG:4326"}
-//   - bare string: "EPSG:4326"
-func (c *CRS) UnmarshalJSON(data []byte) error {
-	var raw any
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	switch v := raw.(type) {
-	case map[string]any:
-		class, _ := v["@class"].(string)
-		value, _ := v["$"].(string)
-		if class == "" && value == "" {
-			return fmt.Errorf("featuretypes: unrecognized CRS payload: %v", v)
-		}
-		*c = CRS{Class: class, Value: value}
-	case string:
-		*c = CRS{Class: "string", Value: v}
-	default:
-		return fmt.Errorf("featuretypes: unrecognized CRS payload type: %T", v)
-	}
-	return nil
-}
-
-// MarshalJSON emits either a bare string (when Class=="string") or the
-// object form. An empty CRS marshals to an empty string to match the
-// wire shape GeoServer accepts on write.
-func (c *CRS) MarshalJSON() ([]byte, error) {
-	if c == nil || (c.Class == "" && c.Value == "") {
-		return json.Marshal("")
-	}
-	if c.Class == "string" {
-		return json.Marshal(c.Value)
-	}
-	return json.Marshal(struct {
-		Class string `json:"@class,omitempty"`
-		Value string `json:"$,omitempty"`
-	}{Class: c.Class, Value: c.Value})
-}
-
-// BoundingBox is the geographic extent shared by [NativeBoundingBox]
-// and [LatLonBoundingBox].
-type BoundingBox struct {
-	MinX float64 `json:"minx"`
-	MaxX float64 `json:"maxx"`
-	MinY float64 `json:"miny"`
-	MaxY float64 `json:"maxy"`
-}
-
-// NativeBoundingBox is the feature-type extent in the native CRS.
-type NativeBoundingBox struct {
-	BoundingBox
-	CRS *CRS `json:"crs,omitempty"`
-}
-
-// LatLonBoundingBox is the feature-type extent in WGS84 lat/lon.
-type LatLonBoundingBox struct {
-	BoundingBox
-	CRS *CRS `json:"crs,omitempty"`
-}
-
-// Keywords is the keywords block on a feature-type document.
-type Keywords struct {
-	String []string `json:"string,omitempty"`
 }
 
 // Metadata is the loose key/value bag GeoServer uses for assorted
