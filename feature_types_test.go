@@ -6,6 +6,7 @@ package geoserver
 import (
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -90,4 +91,49 @@ func TestGeoserverImplemetFeatureTypeService(t *testing.T) {
 	FeatureTypeServiceType := reflect.TypeOf((*FeatureTypeService)(nil)).Elem()
 	check := gsCatalog.Implements(FeatureTypeServiceType)
 	assert.True(t, check)
+}
+
+// TestCreateFeatureType creates a workspace + PostGIS datastore (against the
+// compose-managed PostGIS host `postgis:5432`, DB `gis`) then registers a
+// feature type pointing at the seeded `public.lbldyt` table.
+func TestCreateFeatureType(t *testing.T) {
+	before()
+	const ws = "ft_create_ws"
+	const ds = "ft_create_pg"
+	const ftName = "lbldyt"
+
+	if _, err := gsCatalog.CreateWorkspace(ws); err != nil && !strings.Contains(err.Error(), "already exists") {
+		t.Fatalf("preconditions: create workspace: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = gsCatalog.DeleteWorkspace(ws, true)
+	})
+
+	conn := DatastoreConnection{
+		Name:   ds,
+		Host:   "postgis",
+		Port:   5432,
+		Type:   "postgis",
+		DBName: "gis",
+		DBUser: "golang",
+		DBPass: "golang",
+	}
+	created, err := gsCatalog.CreateDatastore(conn, ws)
+	if !created || err != nil {
+		t.Fatalf("preconditions: create postgis datastore: created=%v err=%v", created, err)
+	}
+
+	ft := &FeatureType{
+		Name:       ftName,
+		NativeName: ftName,
+		Title:      "lbldyt sample",
+		Srs:        "EPSG:4326",
+	}
+	created, err = gsCatalog.CreateFeatureType(ws, ds, ft)
+	assert.NoError(t, err)
+	assert.True(t, created)
+
+	got, err := gsCatalog.GetFeatureType(ws, ds, ftName)
+	assert.NoError(t, err)
+	assert.NotNil(t, got)
 }

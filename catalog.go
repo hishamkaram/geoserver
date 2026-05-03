@@ -25,6 +25,8 @@ type Catalog interface {
 	CoverageService
 	FeatureTypeService
 	SettingsService
+	SecurityService
+	ACLService
 	UtilsInterface
 }
 

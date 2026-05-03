@@ -1,6 +1,7 @@
 package geoserver
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -60,6 +61,12 @@ func (u *CRSType) MarshalJSON() ([]byte, error) {
 type FeatureTypeService interface {
 	GetFeatureTypes(workspaceName string, datastoreName string) (featureTypes []*Resource, err error)
 	GetFeatureType(workspaceName string, datastoreName string, featureTypeName string) (featureType *FeatureType, err error)
+
+	// CreateFeatureType creates a featureType in workspace and datastore.
+	// Only valid for database-backed datastores (PostGIS, etc.) — for
+	// shapefile/geopackage stores use UploadShapeFile or PublishPostgisLayer.
+	CreateFeatureType(workspaceName string, datastoreName string, featureType *FeatureType) (created bool, err error)
+
 	DeleteFeatureType(workspaceName string, datastoreName string, featureTypeName string, recurse bool) (deleted bool, err error)
 }
 
@@ -67,6 +74,7 @@ type FeatureTypeService interface {
 type FeatureTypeServiceWithContext interface {
 	GetFeatureTypesContext(ctx context.Context, workspaceName string, datastoreName string) (featureTypes []*Resource, err error)
 	GetFeatureTypeContext(ctx context.Context, workspaceName string, datastoreName string, featureTypeName string) (featureType *FeatureType, err error)
+	CreateFeatureTypeContext(ctx context.Context, workspaceName string, datastoreName string, featureType *FeatureType) (created bool, err error)
 	DeleteFeatureTypeContext(ctx context.Context, workspaceName string, datastoreName string, featureTypeName string, recurse bool) (deleted bool, err error)
 }
 
@@ -230,6 +238,41 @@ func (g *GeoServer) GetFeatureTypesContext(ctx context.Context, workspaceName st
 	}
 	featureTypes = featureTypesResponse.FeatureTypes.FeatureType
 	return
+}
+
+// CreateFeatureType creates a featureType in workspace and datastore using context.Background.
+//
+// Only valid for database-backed datastores (PostGIS, Oracle, etc.). For
+// shapefile-based stores, prefer [GeoServer.UploadShapeFile] which creates
+// the underlying datastore and feature type in one step.
+func (g *GeoServer) CreateFeatureType(workspaceName string, datastoreName string, featureType *FeatureType) (created bool, err error) {
+	return g.CreateFeatureTypeContext(context.Background(), workspaceName, datastoreName, featureType)
+}
+
+// CreateFeatureTypeContext is the context-aware variant of [GeoServer.CreateFeatureType].
+func (g *GeoServer) CreateFeatureTypeContext(ctx context.Context, workspaceName string, datastoreName string, featureType *FeatureType) (created bool, err error) {
+	targetURL := g.featureTypesURL(workspaceName, datastoreName)
+	body := struct {
+		FeatureType *FeatureType `json:"featureType"`
+	}{featureType}
+	data, serErr := g.SerializeStruct(body)
+	if serErr != nil {
+		return false, fmt.Errorf("CreateFeatureType: serialize feature type: %w", serErr)
+	}
+	httpRequest := HTTPRequest{
+		Method:   postMethod,
+		Accept:   jsonType,
+		Data:     bytes.NewBuffer(data),
+		DataType: jsonType,
+		URL:      targetURL,
+		Query:    nil,
+	}
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
+	if responseCode != statusCreated {
+		g.logger.Warn(string(response))
+		return false, g.GetError(responseCode, response)
+	}
+	return true, nil
 }
 
 // DeleteFeatureType deletes a feature type using context.Background.

@@ -99,14 +99,13 @@ func TestWorkspaces_DeleteWorkspace_recurseQuery(t *testing.T) {
 
 // TestWorkspaces_URLEscaping verifies the v1.1 PathEscape fix: workspace
 // names with spaces / non-ASCII chars produce correctly-escaped URLs rather
-// than malformed ones.
+// than malformed ones, AND the encoding is single (not double) — see the
+// ParseURL RawPath fix.
 func TestWorkspaces_URLEscaping(t *testing.T) {
-	var captured string
+	var capturedRequestURI, capturedEscaped string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		captured = r.URL.RawPath
-		if captured == "" {
-			captured = r.URL.Path
-		}
+		capturedRequestURI = r.RequestURI     // raw bytes from the wire
+		capturedEscaped = r.URL.EscapedPath() // canonical encoded form
 		w.WriteHeader(http.StatusOK)
 		_, _ = io.WriteString(w, `{"workspace":{"name":"my workspace"}}`)
 	}))
@@ -115,8 +114,15 @@ func TestWorkspaces_URLEscaping(t *testing.T) {
 	gs := newTestCatalog(srv)
 	_, err := gs.GetWorkspaceContext(context.Background(), "my workspace")
 	assert.NoError(t, err)
-	if !strings.Contains(captured, "my%20workspace") {
-		t.Fatalf("expected URL to contain percent-encoded space, got %q", captured)
+	if !strings.Contains(capturedRequestURI, "my%20workspace") {
+		t.Fatalf("expected wire URI to contain percent-encoded space, got %q", capturedRequestURI)
+	}
+	if !strings.Contains(capturedEscaped, "my%20workspace") {
+		t.Fatalf("expected EscapedPath to contain percent-encoded space, got %q", capturedEscaped)
+	}
+	// Regression guard: must NOT be double-encoded (would yield "%2520").
+	if strings.Contains(capturedRequestURI, "%2520") {
+		t.Fatalf("URL is double-encoded: %q", capturedRequestURI)
 	}
 }
 

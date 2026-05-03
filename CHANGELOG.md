@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — security, ACL, JNDI datastore, CreateFeatureType (port of PR #15)
+
+These features were originally proposed in PR #15 (Nov 2021) but landed only on a fork branch. They have been refactored to fit the v1.1 idiom (every method comes with a `*Context` sibling, typed-error sentinels via `errors.Is`, the `*Logger` wrapper, parallel `*Service` and `*ServiceWithContext` interfaces) and are now available on `master`.
+
+- **Security (users / groups / roles)** — new `security.go` and `SecurityService` / `SecurityServiceWithContext` interfaces:
+  - `GetUsers`, `CreateUser`, `DeleteUser` (under a named user-group service; empty service resolves to `"default"`)
+  - `GetGroups`, `CreateGroup`, `DeleteGroup`
+  - `GetRoles`, `GetUserRoles`, `CreateRole`, `DeleteRole`
+  - `AddUserRole`, `DeleteUserRole` (associate / disassociate role from user)
+  - All have `…Context` siblings.
+- **Layer ACL rules** — new `acl.go` and `ACLService` / `ACLServiceWithContext` interfaces:
+  - `ACLRule` type with `ACLOpRead` / `ACLOpWrite` / `ACLOpAdmin` operation constants
+  - `GetLayersACLRules`, `AddLayersACLRule`, `DeleteLayersACLRule` (+ `*Context` siblings)
+  - `ACLRule.ToStrings` and `StringToACLRule` round-trip helpers
+- **JNDI-backed datastores** — new `DatastoreJNDIConnection` struct + `CreateJNDIDatastore` / `CreateJNDIDatastoreContext`. Use when GeoServer is configured to look up its JDBC connection pool via JNDI (typically Tomcat-managed).
+- **`DatastoreConnector` interface** — `*DatastoreConnection` and `DatastoreJNDIConnection` both satisfy it. New methods `CreateDatastoreFromConnector` / `CreateDatastoreFromConnectorContext` accept any connector. Useful for callers that want a single code path or for plugging in custom connector types.
+- **`DatastoreConnection.Options []Entry`** — additional connection parameters (e.g., `"max connections"`, `"Expose primary keys"`). Field is appended at the end of the struct so v1.0 callers using positional struct literals continue to compile.
+- **`CreateFeatureType` / `CreateFeatureTypeContext`** — register a feature type against a database-backed datastore (PostGIS, Oracle, etc.) without going through `UploadShapeFile`.
+- `Catalog` interface now embeds `SecurityService` and `ACLService`.
+- httptest unit tests for every new method (`acl_unit_test.go`, `security_unit_test.go`, `datastores_unit_test.go`, `feature_types_unit_test.go`).
+- Integration tests covering ACL, security, datastore Options, JNDI request shape, and CreateFeatureType end-to-end against the docker-compose PostGIS + GeoServer stack (`acl_test.go`, `security_test.go`, additions to `datastores_test.go` and `feature_types_test.go`).
+- `utils_unit_test.go` `TestParseURL_NoDoubleEncoding` — regression guard for the URL builder fix described below.
+
+### Fixed
+
+- `ParseURL` no longer double-encodes path segments containing characters that `url.PathEscape` percent-encodes (e.g., `"*"` → `"%2A"` → previously `"%252A"`). The encoded path is now preserved through `url.URL.String()` by setting `RawPath` alongside `Path`. GeoServer's StrictHttpFirewall rejected the previously-emitted double-encoded URLs as "potentially malicious"; the new ACL `DELETE` path (where rule strings carry literal `*` wildcards) was the trigger that surfaced the bug.
+
+### Notes
+
+- `GetRoles`, `GetUserRoles`, and `GetGroups` decode both the GeoServer 2.28+ response keys (`roles`, `groups`) and the older 2.x keys (`roleNames`, `groupNames`) so they work across the supported version matrix.
+
 ## [1.1.0] — 2026-05-03
 
 This release modernizes the build, fixes long-standing bugs, and adds an idiomatic Go API surface alongside the existing one. Existing v1.0.x callers do not need source changes to upgrade.
