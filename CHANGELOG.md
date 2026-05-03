@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — feature-type discovery (port of PR #17)
+
+- `GetFeatureTypeList` / `GetFeatureTypeListContext` — calls GeoServer's `?list=` discovery endpoint at `/rest/workspaces/{ws}/datastores/{ds}/featuretypes`. Returns the flat list of feature-type names filtered by `FeatureTypeListKind`:
+  - `FeatureTypeListConfigured` — only feature types already configured in GeoServer.
+  - `FeatureTypeListAvailable` — tables in the underlying datastore not yet published.
+  - `FeatureTypeListAvailableWithGeom` — like `available` but only tables carrying a geometry column.
+  - `FeatureTypeListAll` (default for empty kind) — configured ∪ available.
+- Added to the `FeatureTypeService` and `FeatureTypeServiceWithContext` interfaces.
+- httptest unit tests + integration test that creates a PostGIS datastore against the compose stack, asserts the seeded `public.lbldyt` table appears under `available`, and that `configured` is empty until something is published.
+
+This was originally proposed in #17 (Wichert Akkerman / Woven Planet, Feb 2022) but the PR was closed without merge. Refactored to fit the v1.1 idiom (`*Context` twin, typed `FeatureTypeListKind` enum, parallel `*WithContext` interface entry) before landing.
+
 ### Added — security, ACL, JNDI datastore, CreateFeatureType (port of PR #15)
 
 These features were originally proposed in PR #15 (Nov 2021) but landed only on a fork branch. They have been refactored to fit the v1.1 idiom (every method comes with a `*Context` sibling, typed-error sentinels via `errors.Is`, the `*Logger` wrapper, parallel `*Service` and `*ServiceWithContext` interfaces) and are now available on `master`.
