@@ -12,7 +12,7 @@ import (
 // LayerService define  geoserver layers operations
 type LayerService interface {
 
-	//GetLayers  get all layers from workspace in geoserver else return error
+	// GetLayers  get all layers from workspace in geoserver else return error
 	GetLayers(workspaceName string) (layers []*Resource, err error)
 
 	// GetshpFiledsName datastore name from shapefile name
@@ -21,13 +21,13 @@ type LayerService interface {
 	// UploadShapeFile upload shapefile to geoserver
 	UploadShapeFile(fileURI string, workspaceName string, datastoreName string) (uploaded bool, err error)
 
-	//GetLayer get specific Layer from geoserver else return error
+	// GetLayer get specific Layer from geoserver else return error
 	GetLayer(workspaceName string, layerName string) (layer *Layer, err error)
 
-	//UpdateLayer partial update geoserver layer else return error
+	// UpdateLayer partial update geoserver layer else return error
 	UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, err error)
 
-	//DeleteLayer delete geoserver layer and its reources else return error
+	// DeleteLayer delete geoserver layer and its reources else return error
 	DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, err error)
 
 	PublishPostgisLayer(workspaceName string, datastoreName string, publishName string, tableName string) (published bool, err error)
@@ -35,14 +35,14 @@ type LayerService interface {
 	PublishGeoTiffLayer(workspaceName string, coveragestoreName string, publishName string, fileName string) (published bool, err error)
 }
 
-//Resource geoserver resource
+// Resource geoserver resource
 type Resource struct {
 	Class string `json:"@class,omitempty"`
 	Name  string `json:"name,omitempty"`
 	Href  string `json:"href,omitempty"`
 }
 
-//Attribution of resource
+// Attribution of resource
 type Attribution struct {
 	Title      string `json:"title,omitempty"`
 	Href       string `json:"href,omitempty"`
@@ -52,7 +52,7 @@ type Attribution struct {
 	LogoHeight int    `json:"logoHeight,omitempty"`
 }
 
-//Layer geoserver layers
+// Layer geoserver layers
 type Layer struct {
 	Name         string    `json:"name,omitempty"`
 	Path         string    `json:"path,omitempty"`
@@ -68,12 +68,12 @@ type Layer struct {
 	Attribution *Attribution `json:"attribution,omitempty"`
 }
 
-//LayerRequestBody api json
+// LayerRequestBody api json
 type LayerRequestBody struct {
 	Layer Layer `json:"layer,omitempty"`
 }
 
-//PublishPostgisLayerRequest is the api body
+// PublishPostgisLayerRequest is the api body
 type PublishPostgisLayerRequest struct {
 	FeatureType *FeatureType `json:"featureType,omitempty"`
 }
@@ -122,8 +122,8 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 
 }
 
-//GetLayers  get all layers from workspace in geoserver else return error,
-//if workspace is "" the it will return all public layers in geoserver
+// GetLayers  get all layers from workspace in geoserver else return error,
+// if workspace is "" the it will return all public layers in geoserver
 func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -152,8 +152,8 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err err
 	return
 }
 
-//GetLayer get specific Layer in a workspace from geoserver else return error,
-//if workspace is "" the it will return geoserver public layer with ${layerName}
+// GetLayer get specific Layer in a workspace from geoserver else return error,
+// if workspace is "" the it will return geoserver public layer with ${layerName}
 func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Layer, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -180,8 +180,8 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Lay
 	return
 }
 
-//UpdateLayer partial update geoserver layer else return error,
-//if workspace is "" the it will update  public layer with name ${layerName} in geoserver
+// UpdateLayer partial update geoserver layer else return error,
+// if workspace is "" the it will update  public layer with name ${layerName} in geoserver
 func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -209,7 +209,7 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 	return
 }
 
-//PublishPostgisLayer publish postgis table to geoserver
+// PublishPostgisLayer publish postgis table to geoserver
 func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName string, publishName string, tableName string) (published bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -239,8 +239,8 @@ func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName stri
 	return
 }
 
-//DeleteLayer delete geoserver layer and its reources else return error,
-//if workspace is "" will delete public layer with name ${layerName} if exists
+// DeleteLayer delete geoserver layer and its reources else return error,
+// if workspace is "" will delete public layer with name ${layerName} if exists
 func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)

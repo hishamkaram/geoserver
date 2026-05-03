@@ -1,0 +1,39 @@
+name: Feature request
+description: Suggest a new feature or API for the geoserver client library
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! For larger or breaking changes, please discuss before implementing — those generally land in v2.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What are you trying to accomplish that the current API makes hard?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: API sketch, signatures, example call site if possible.
+      render: go
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Target version
+      description: v1.x is non-breaking. Breaking changes go to v2.
+      options:
+        - v1.x (additive / non-breaking)
+        - v2.x (breaking change OK)
+        - Not sure
+    validations:
+      required: true

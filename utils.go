@@ -13,7 +13,7 @@ import (
 	"reflect"
 )
 
-//HTTPRequest is an http request object
+// HTTPRequest is an http request object
 type HTTPRequest struct {
 	URL      string
 	Accept   string
@@ -23,7 +23,7 @@ type HTTPRequest struct {
 	Method   string
 }
 
-//UtilsInterface contians common function used to help you deal with data and geoserver api
+// UtilsInterface contains common function used to help you deal with data and geoserver api
 type UtilsInterface interface {
 	DoRequest(request HTTPRequest) (responseText []byte, statusCode int)
 	SerializeStruct(structObj interface{}) ([]byte, error)
@@ -31,7 +31,7 @@ type UtilsInterface interface {
 	ParseURL(urlParts ...string) (parsedURL string)
 }
 
-//DoRequest Send request and return result and statusCode
+// DoRequest Send request and return result and statusCode
 func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusCode int) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -65,7 +65,7 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 	return body, response.StatusCode
 }
 
-//GetError this return the proper error message
+// GetError this return the proper error message
 func (g *GeoServer) GetError(statusCode int, text []byte) (err error) {
 	geoserverErr, ok := statusErrorMapping[statusCode]
 	if !ok {
@@ -78,11 +78,12 @@ func (g *GeoServer) GetError(statusCode int, text []byte) (err error) {
 
 // IsEmpty helper function to check if obj/struct is nil/empty
 func IsEmpty(object interface{}) bool {
-	if object == nil {
+	switch object {
+	case nil:
 		return true
-	} else if object == "" {
+	case "":
 		return true
-	} else if object == false {
+	case false:
 		return true
 	}
 	if reflect.ValueOf(object).Kind() == reflect.Struct {
@@ -94,7 +95,7 @@ func IsEmpty(object interface{}) bool {
 	return false
 }
 
-//SerializeStruct convert struct to json
+// SerializeStruct convert struct to json
 func (g *GeoServer) SerializeStruct(structObj interface{}) ([]byte, error) {
 	serializedStruct, err := json.Marshal(&structObj)
 	if err != nil {
@@ -104,7 +105,7 @@ func (g *GeoServer) SerializeStruct(structObj interface{}) ([]byte, error) {
 	return serializedStruct, nil
 }
 
-//DeSerializeJSON json struct to struct
+// DeSerializeJSON json struct to struct
 func (g *GeoServer) DeSerializeJSON(response []byte, structObj interface{}) (err error) {
 	err = json.Unmarshal(response, &structObj)
 	if err != nil {
@@ -121,7 +122,7 @@ func (g *GeoServer) getGoGeoserverPackageDir() string {
 	return dir
 }
 
-//ParseURL this function join urlParts with geoserver url
+// ParseURL this function join urlParts with geoserver url
 func (g *GeoServer) ParseURL(urlParts ...string) (parsedURL string) {
 	defer func() {
 		if r := recover(); r != nil {

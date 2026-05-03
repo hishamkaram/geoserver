@@ -5,52 +5,52 @@ import (
 	"log"
 )
 
-//OnlineResource tag
+// OnlineResource tag
 type OnlineResource struct {
 	XMLName xml.Name `xml:"OnlineResource"`
 	Type    string   `xml:"http://www.w3.org/1999/xlink type,attr,omitempty"`
 	Href    string   `xml:"http://www.w3.org/1999/xlink href,attr,omitempty"`
 }
 
-//KeywordList tag
+// KeywordList tag
 type KeywordList struct {
 	XMLName xml.Name  `xml:"KeywordList,omitempty"`
 	Keyword []*string `xml:"Keyword,omitempty"`
 }
 
-//Get tag
+// Get tag
 type Get struct {
 	XMLName        xml.Name       `xml:"Get"`
 	OnlineResource OnlineResource `xml:"OnlineResource"`
 }
 
-//Post tag
+// Post tag
 type Post struct {
 	XMLName        xml.Name       `xml:"Post"`
 	OnlineResource OnlineResource `xml:"OnlineResource"`
 }
 
-//HTTP tag
+// HTTP tag
 type HTTP struct {
 	XMLName xml.Name `xml:"HTTP"`
 	Get     *Get     `xml:"Get,omitempty"`
 	Post    *Post    `xml:"Post,omitempty"`
 }
 
-//DCPType tag
+// DCPType tag
 type DCPType struct {
 	XMLName xml.Name `xml:"DCPType,omitempty"`
 	HTTP    HTTP     `xml:"HTTP,omitempty"`
 }
 
-//RequestEntry tag
+// RequestEntry tag
 type RequestEntry struct {
 	XMLName xml.Name
 	Format  []*string `xml:"Format,omitempty"`
 	DCPType DCPType   `xml:"DCPType,omitempty"`
 }
 
-//Request tag
+// Request tag
 type Request struct {
 	XMLName          xml.Name     `xml:"Request"`
 	GetCapabilities  RequestEntry `xml:"GetCapabilities"`
@@ -61,7 +61,7 @@ type Request struct {
 	GetStyles        RequestEntry `xml:"GetStyles"`
 }
 
-//UserDefinedSymbolization tag
+// UserDefinedSymbolization tag
 type UserDefinedSymbolization struct {
 	XMLName    xml.Name `xml:"UserDefinedSymbolization"`
 	SupportSLD string   `xml:"SupportSLD,attr"`
@@ -70,20 +70,20 @@ type UserDefinedSymbolization struct {
 	RemoteWFS  string   `xml:"RemoteWFS,attr"`
 }
 
-//Exception tag
+// Exception tag
 type Exception struct {
 	XMLName xml.Name  `xml:"Exception"`
 	Format  []*string `xml:"Format"`
 }
 
-//AuthorityURL tag
+// AuthorityURL tag
 type AuthorityURL struct {
 	XMLName        xml.Name       `xml:"AuthorityURL"`
 	Name           string         `xml:"name,attr"`
 	OnlineResource OnlineResource `xml:"OnlineResource"`
 }
 
-//LatLonBoundingBox tag
+// LatLonBoundingBox tag
 type LatLonBoundingBox struct {
 	XMLName xml.Name `xml:"LatLonBoundingBox"`
 	MinX    float64  `xml:"minx,attr"`
@@ -92,7 +92,7 @@ type LatLonBoundingBox struct {
 	MaxY    float64  `xml:"maxy,attr"`
 }
 
-//BoundingBox tag
+// BoundingBox tag
 type BoundingBox struct {
 	XMLName xml.Name `xml:"BoundingBox"`
 	MinX    float64  `xml:"minx,attr"`
@@ -102,7 +102,7 @@ type BoundingBox struct {
 	SRS     string   `xml:"SRS,attr,omitempty"`
 }
 
-//LegendURL tag
+// LegendURL tag
 type LegendURL struct {
 	XMLName        xml.Name       `xml:"LegendURL"`
 	Height         float64        `xml:"height,attr"`
@@ -111,7 +111,7 @@ type LegendURL struct {
 	OnlineResource OnlineResource `xml:"OnlineResource"`
 }
 
-//Style tag
+// Style tag
 type Style struct {
 	XMLName   xml.Name  `xml:"Style"`
 	Name      string    `xml:"Name"`
@@ -119,7 +119,7 @@ type Style struct {
 	LegendURL LegendURL `xml:"LegendURL"`
 }
 
-//MetadataURL tag
+// MetadataURL tag
 type MetadataURL struct {
 	XMLName        xml.Name       `xml:"MetadataURL"`
 	Type           string         `xml:"type,attr"`
@@ -127,7 +127,7 @@ type MetadataURL struct {
 	OnlineResource OnlineResource `xml:"OnlineResource"`
 }
 
-//LogoURL tag
+// LogoURL tag
 type LogoURL struct {
 	XMLName        xml.Name       `xml:"LogoURL"`
 	Width          float32        `xml:"width,attr"`
@@ -136,21 +136,21 @@ type LogoURL struct {
 	OnlineResource OnlineResource `xml:"OnlineResource"`
 }
 
-//Dimension tag
+// Dimension tag
 type Dimension struct {
 	XMLName xml.Name `xml:"Dimension"`
 	Name    string   `xml:"name,attr,omitempty"`
 	Units   string   `xml:"units,attr,omitempty"`
 }
 
-//Extent tag
+// Extent tag
 type Extent struct {
 	XMLName xml.Name `xml:"Extent"`
 	Name    string   `xml:"name,attr,omitempty"`
 	Default string   `xml:"default,attr,omitempty"`
 }
 
-//Attribution tag
+// Attribution tag
 type Attribution struct {
 	XMLName        xml.Name       `xml:"Attribution"`
 	Title          string         `xml:"Title,omitempty"`
@@ -158,7 +158,7 @@ type Attribution struct {
 	LogoURL        LogoURL        `xml:"LogoURL,omitempty"`
 }
 
-//Layer tag
+// Layer tag
 type Layer struct {
 	XMLName           xml.Name          `xml:"Layer"`
 	Title             string            `xml:"Title"`
@@ -176,7 +176,7 @@ type Layer struct {
 	Attribution       Attribution       `xml:"Attribution,omitempty"`
 }
 
-//Capability tag
+// Capability tag
 type Capability struct {
 	XMLName                  xml.Name                 `xml:"Capability"`
 	Request                  Request                  `xml:"Request"`
@@ -185,7 +185,7 @@ type Capability struct {
 	Layer                    Layer                    `xml:"Layer"`
 }
 
-//Service tag
+// Service tag
 type Service struct {
 	XMLName           xml.Name       `xml:"Service"`
 	Name              string         `xml:"Name"`
@@ -196,7 +196,7 @@ type Service struct {
 	AccessConstraints string         `xml:"AccessConstraints"`
 }
 
-//Capabilities parent tag
+// Capabilities parent tag
 type Capabilities struct {
 	XMLName        xml.Name   `xml:"WMT_MS_Capabilities"`
 	Version        string     `xml:"version,attr,omitempty"`
@@ -205,7 +205,7 @@ type Capabilities struct {
 	Capability     Capability `xml:"Capability"`
 }
 
-//ParseCapabilities read wms capabilities
+// ParseCapabilities read wms capabilities
 func ParseCapabilities(xmlByte []byte) *Capabilities {
 	var cap Capabilities
 	err := xml.Unmarshal(xmlByte, &cap)

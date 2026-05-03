@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
-//GeoServer is the configuration Object
+// GeoServer is the configuration Object
 type GeoServer struct {
 	WorkspaceName string `yaml:"workspace"`
 	ServerURL     string `yaml:"geoserver_url"`
@@ -19,7 +19,7 @@ type GeoServer struct {
 	logger        *logrus.Logger
 }
 
-//LoadConfig load geoserver config from yaml file
+// LoadConfig load geoserver config from yaml file
 func (g *GeoServer) LoadConfig(configFile string) (geoserver *GeoServer, err error) {
 
 	yamlFile, err := ioutil.ReadFile(configFile)

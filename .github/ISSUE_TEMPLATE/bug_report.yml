@@ -1,0 +1,67 @@
+name: Bug report
+description: Report a bug in the geoserver client library
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report! Please fill out the form below.
+
+        For security issues, **do not open a public issue** — see [SECURITY.md](https://github.com/hishamkaram/geoserver/blob/master/SECURITY.md).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of what the bug is.
+      placeholder: When I call `gsCatalog.CreateWorkspace("foo")`, it returns ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: A short Go program (or test) that reproduces the issue. Smaller is better.
+      render: go
+    validations:
+      required: true
+  - type: input
+    id: lib-version
+    attributes:
+      label: Library version
+      description: The `github.com/hishamkaram/geoserver` version (`go list -m github.com/hishamkaram/geoserver`)
+      placeholder: v1.1.0
+    validations:
+      required: true
+  - type: input
+    id: go-version
+    attributes:
+      label: Go version
+      placeholder: go1.25.0
+    validations:
+      required: true
+  - type: input
+    id: geoserver-version
+    attributes:
+      label: GeoServer server version
+      description: From the `/rest/about/version` endpoint
+      placeholder: 2.28.0
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: Linux 6.8.0 / macOS 14 / Windows 11
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / output
+      description: Paste any error output. Redact credentials and PII.
+      render: shell

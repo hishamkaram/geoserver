@@ -14,7 +14,7 @@ type CoverageStoresService interface {
 	DeleteCoverageStore(workspaceName string, coverageStore string, recurse bool) (deleted bool, err error)
 }
 
-//CoverageStore geoserver coverage store
+// CoverageStore geoserver coverage store
 type CoverageStore struct {
 	Name        string    `json:"name,omitempty"`
 	URL         string    `json:"url,omitempty"`
@@ -26,7 +26,7 @@ type CoverageStore struct {
 	Coverages   string    `json:"coverages,omitempty"`
 }
 
-//CoverageStoreRequestBody geoserver coverage store to send to api
+// CoverageStoreRequestBody geoserver coverage store to send to api
 type CoverageStoreRequestBody struct {
 	CoverageStore *CoverageStore `json:"coverageStore,omitempty"`
 }
