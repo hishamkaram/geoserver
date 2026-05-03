@@ -344,7 +344,7 @@ The library was dormant for ~3 years (Feb 2023 → May 2026) before being revive
 ## Roadmap
 
 - **v1.1.x** — security fixes, integration test maintenance, additive Dependabot updates.
-- **v2** — `v2.0.0-alpha.4` published at `github.com/hishamkaram/geoserver/v2` (`go get github.com/hishamkaram/geoserver/v2@v2.0.0-alpha.4`). v2 closes the planned "everyone needs it" surface: catalog (workspaces, datastores, feature types, coverage stores, coverages, layers + add-style sub-resource, layer groups, styles, namespaces), settings (global + per-service WMS/WFS/WCS/WMTS with per-workspace overrides), system (reload + cache reset), about, security (users/groups/roles + layer ACL), **file-upload publishing on stores** (Shapefile, GeoTIFF, image-mosaic granule harvest), **GeoWebCache** (layers + seed/reseed/truncate + diskquota), the **Importer extension** for batch ingest (dev/test docker image bakes the plugin in), and the OWS read-only trio (WMS/WFS/WCS GetCapabilities + WFS DescribeFeatureType + WCS DescribeCoverage). Exercised by both unit and real-GeoServer integration suites on 2.27.4 LTS and 2.28.0 stable. Public API may still refine before `v2.0.0` — no production guarantees yet.
+- **v2** — `v2.0.0-beta.1` published at `github.com/hishamkaram/geoserver/v2` (`go get github.com/hishamkaram/geoserver/v2@v2.0.0-beta.1`). Public API now **frozen for review** — breaking changes will not land in subsequent betas without a strong reason. v2 covers the planned "everyone needs it" surface plus the security and Resource-API tier-2 closures: catalog (workspaces, datastores, feature types, coverage stores, coverages, layers + add-style sub-resource, layer groups, styles, namespaces), settings (global + per-service WMS/WFS/WCS/WMTS with per-workspace overrides), system (reload + cache reset), about, **full ACL surface** (`c.ACL.Layers()`/`Services()`/`REST()`/`Catalog()`), security (users/groups/roles), **Resource API** (`c.Resources` Get/List/Stat/Exists/Put/Move/Copy/Delete against `/rest/resource/{path}`), **file-upload publishing on stores** (Shapefile, GeoTIFF, image-mosaic granule harvest), **GeoWebCache** (layers + seed/reseed/truncate + diskquota), the **Importer extension** for batch ingest (dev/test docker image bakes the plugin in), and the OWS read-only trio (WMS/WFS/WCS GetCapabilities + WFS DescribeFeatureType + WCS DescribeCoverage). Exercised by both unit and real-GeoServer integration suites on 2.27.4 LTS and 2.28.0 stable. Until `v2.0.0` final ships, **for production code today, use v1.x.**
 
   Design themes (now realized in code):
   - Resource sub-clients (`c.Workspaces.Get(ctx, name)`, `c.Datastores.InWorkspace(ws).Get(...)`, `c.FeatureTypes.InWorkspace(ws).InDatastore(ds).Get(...)`).
@@ -355,7 +355,7 @@ The library was dormant for ~3 years (Feb 2023 → May 2026) before being revive
   - Zero runtime third-party deps — stdlib only.
   - Raw-body uploads (`UploadSLD`) with the workspace-scoped Accept-quirk handled automatically.
 
-  Tagging is held until soak / API review; until then v2 is preview-quality. **For production code today, use v1.x.** See [v2/README.md](v2/README.md), [v2/examples/](v2/examples/), and [docs/migration-v1-to-v2.md](docs/migration-v1-to-v2.md).
+  See [v2/README.md](v2/README.md), [v2/examples/](v2/examples/), and [docs/migration-v1-to-v2.md](docs/migration-v1-to-v2.md).
 - **GeoServer 3.0 support** — tracked as a v2.x point release once Tomcat 11 / Jakarta EE / ImageN settle. See [ROADMAP.md](ROADMAP.md).
 
 ## Documentation

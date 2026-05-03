@@ -6,18 +6,19 @@
 [![License: MIT](https://img.shields.io/github/license/hishamkaram/geoserver.svg)](../LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/hishamkaram/geoserver?include_prereleases&sort=semver)](https://github.com/hishamkaram/geoserver/releases)
 
-> 🧪 **`v2.0.0-alpha.4` is published.** v2 closes the gap-analysis plan's "everyone needs it" surface. Coverage at `master`:
+> 🧪 **`v2.0.0-beta.1` is published — public API now frozen for review.** v2 closes the gap-analysis plan's "everyone needs it" surface plus the security and Resource-API tier-2 items. Coverage at `master`:
 >
 > - **Catalog**: workspaces, datastores, feature types, coverage stores, coverages, layers (incl. add-style sub-resource), layer groups, styles, namespaces.
 > - **Settings**: global `c.Settings` + per-service `c.Services.WMS()`/`WFS()`/`WCS()`/`WMTS()` (global + per-workspace overrides).
 > - **System**: `c.System.Reload` and `ResetCache`. **About**: ping + version.
-> - **Security**: users, groups, roles, role-user assignment + layer ACL rules.
+> - **Security**: users, groups, roles, role-user assignment + ACL `Layers()`/`Services()`/`REST()`/`Catalog()`.
+> - **Resources**: `c.Resources` Get / List / Stat / Exists / Put / Move / Copy / Delete against `/rest/resource/{path}` — read or write any file in the data dir.
 > - **File-upload publishing**: `c.Datastores.UploadFile` (Shapefile / GeoPackage / external) and `c.CoverageStores.UploadFile` + `HarvestGranule` (GeoTIFF / ImageMosaic / mosaic granules).
 > - **GeoWebCache**: `c.GWC.Layers()` (cache config), `Seed()` (seed/reseed/truncate), `DiskQuota()`.
 > - **Importer extension**: `c.Imports` (sessions + tasks). The dev/test docker image bakes the plugin in for CI integration coverage.
 > - **OWS**: `c.WMS` / `c.WFS` / `c.WCS` GetCapabilities; WFS `DescribeFeatureType`; WCS `DescribeCoverage`.
 >
-> Public API may still change before `v2.0.0` based on early-adopter feedback — no production guarantees yet. **For stable production use, stay on the [v1 line](../README.md).**
+> Surface is locked — breaking changes will not land in subsequent betas without a strong reason. v1.x remains the recommended import for production code. The remaining tier-2 endpoints tracked in [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md) can be added in subsequent betas without breaking shape.
 
 This module ships with its own `go.mod` at `/v2/`; v1 and v2 release independently (`v1.x.y` / `v2.x.y` tags).
 
@@ -34,7 +35,7 @@ This module ships with its own `go.mod` at `/v2/`; v1 and v2 release independent
 ## Install
 
 ```bash
-go get github.com/hishamkaram/geoserver/v2@v2.0.0-alpha.4
+go get github.com/hishamkaram/geoserver/v2@v2.0.0-beta.1
 ```
 
 ```go
@@ -53,7 +54,7 @@ If you're starting a new integration today, v2 is the better foundation. It give
 - **Immutable client; concurrency-safe by construction.** All fields private; configured via functional options at construction; no post-construction mutation. Auth is layered on as an `http.RoundTripper` so OpenTelemetry, Vault-rotated creds, and retry libs compose naturally.
 - **Mandatory `context.Context` first arg on every method.** No `Background()` shims, no twin pairs.
 - **`iter.Seq2` pagination** on every `List` endpoint. `for ws, err := range c.Workspaces.Iter(ctx, opts) { ... }`.
-- **Surfaces v1 doesn't have** — per-service OWS settings (`c.Services.WMS()`/`WFS()`/`WCS()`/`WMTS()`), file-upload publishing on stores (`c.Datastores.UploadFile`, `c.CoverageStores.UploadFile`/`HarvestGranule`), GeoWebCache (`c.GWC.Layers()`/`Seed()`/`DiskQuota()`), the Importer extension (`c.Imports`), WFS `DescribeFeatureType`, and WCS `DescribeCoverage`.
+- **Surfaces v1 doesn't have** — per-service OWS settings (`c.Services.WMS()`/`WFS()`/`WCS()`/`WMTS()`), file-upload publishing on stores (`c.Datastores.UploadFile`, `c.CoverageStores.UploadFile`/`HarvestGranule`), GeoWebCache (`c.GWC.Layers()`/`Seed()`/`DiskQuota()`), the Importer extension (`c.Imports`), the Resource API (`c.Resources`), the full ACL surface (`c.ACL.Layers()`/`Services()`/`REST()`/`Catalog()`), WFS `DescribeFeatureType`, and WCS `DescribeCoverage`.
 
 If you're already on v1 and don't need any of the above, there is no rush — v1.x is non-breaking and continues to receive security and bug-fix patches. See [`../docs/migration-v1-to-v2.md`](../docs/migration-v1-to-v2.md) for the per-resource migration mapping.
 
@@ -196,7 +197,8 @@ Run any with `go run ./v2/examples/<name>` against a `make compose-up` stack, or
 | About | full | **ported** (`c.About.Ping`, `c.About.Version`) |
 | Security (users, groups, roles) | full | **ported** (`c.Security.Users()`, `Groups()`, `Roles`) |
 | ACL — layer rules | full | **ported** (`c.ACL.Layers()`) |
-| ACL — service / REST / catalog rules | partial | not yet ported (tier-2; PR welcome) |
+| ACL — service / REST / catalog rules | partial | **ported** in v2 (`c.ACL.Services()`, `c.ACL.REST()`, `c.ACL.Catalog()`) — REST DELETE has documented firewall caveat |
+| Resource API (data-dir byte-stream access) | (none) | **new** in v2 (`c.Resources` Get/List/Stat/Exists/Put/Move/Copy/Delete) |
 | File-upload publishing on stores | (none) | **new** in v2 (`c.Datastores.UploadFile`, `c.CoverageStores.UploadFile` / `HarvestGranule`) |
 | GeoWebCache (cache config + seed + diskquota) | (none) | **new** in v2 (`c.GWC.Layers()`, `Seed()`, `DiskQuota()`) |
 | Importer extension (batch ingest) | (none) | **new** in v2 (`c.Imports`; dev/test docker image bakes the plugin in) |

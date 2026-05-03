@@ -42,9 +42,11 @@ Lives at module path `github.com/hishamkaram/geoserver/v2` (subdir form). Idioma
 - [x] **v2.0.0-alpha.3** — adds WFS + WCS GetCapabilities (closes the OWS GetCapabilities trio) plus WFS `DescribeFeatureType` and WCS `DescribeCoverage`. *Tagged 2026-05-03.*
 - [x] **Top-5 gap-analysis surface** — closes the planned "everyone needs it" gaps: layer–style associations (`c.Layers.AddStyle`/`ListStyles`), file-upload publishing on stores (`c.Datastores.UploadFile` + `c.CoverageStores.UploadFile`/`HarvestGranule`), per-service OWS settings (`c.Services.WMS()`/`WFS()`/`WCS()`/`WMTS()`), GeoWebCache (`c.GWC.Layers()`/`Seed()`/`DiskQuota()`), and Importer extension (`c.Imports`). Dev/test docker image bakes in the importer plugin so CI exercises it without skipping. Tier-2 backlog (narrower-audience endpoints) is tracked in [`docs/v2-tier2-gaps.md`](docs/v2-tier2-gaps.md).
 - [x] **v2.0.0-alpha.4** — bundles the top-5 gap closures + docs refresh. *Tagged 2026-05-03.*
-- [ ] **Tier-2 also-rans** — narrower-audience endpoints from the gap-analysis tier-2 list: mosaic granules, Resource API, FTL templates, auth providers + filter chains, ACL services/REST/catalog, URL checks, cascaded WMS/WMTS stores, XSLT transforms, manifests, runtime logging config. Each is tractable as its own follow-up PR.
-- [ ] **v2.0.0-beta.1** — public API frozen for review. Surface freeze comes after enough early-adopter feedback on `alpha.4` to lock in shapes.
-- [ ] **v2.0.0** — final tag.
+- [x] **Tier-2: ACL services / REST / catalog rules** — closes the security tier-2 item (`c.ACL.Services()`, `c.ACL.REST()`, `c.ACL.Catalog()`).
+- [x] **Tier-2: Resource API** — closes the data-dir tier-2 item (`c.Resources` Get/List/Stat/Exists/Put/Move/Copy/Delete against `/rest/resource/{path}`).
+- [ ] **Tier-2 remaining** — narrower-audience endpoints from the gap-analysis tier-2 list: mosaic granules, FTL templates, auth providers + filter chains, URL checks, cascaded WMS/WMTS stores, XSLT transforms, manifests, runtime logging config. Each is tractable as its own follow-up PR. See [`docs/v2-tier2-gaps.md`](docs/v2-tier2-gaps.md).
+- [x] **v2.0.0-beta.1** — public API frozen for review. *Tagged 2026-05-03.*
+- [ ] **v2.0.0** — final tag. Ships once the beta period absorbs early-adopter feedback (wire-quirk fixes, godoc polish) without surface changes.
 
 ## GeoServer 3.0 support
 

@@ -7,7 +7,7 @@
 | 1.1.x   | ✅ Active development and security fixes |
 | 1.0.x   | ⚠️ Security fixes only |
 | < 1.0   | ❌ No support |
-| 2.x     | 🧪 Alpha previews at `github.com/hishamkaram/geoserver/v2` (latest `v2.0.0-alpha.4`); security fixes accepted, but the public API may still refine before `v2.0.0` |
+| 2.x     | 🧪 Beta at `github.com/hishamkaram/geoserver/v2` (latest `v2.0.0-beta.1`); security fixes accepted; public API frozen for review until `v2.0.0` final |
 
 ## Reporting a vulnerability
 
