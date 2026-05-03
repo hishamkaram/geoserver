@@ -33,6 +33,8 @@ services:
       POSTGRES_PASSWORD: golang
     ports:
       - "5436:5432"
+    volumes:
+      - ./docker/postgis/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U golang -d gis"]
       interval: 5s

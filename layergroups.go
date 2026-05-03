@@ -65,6 +65,54 @@ type LayerGroupStyles struct {
 	Style []*Resource `json:"style,omitempty" xml:"style"`
 }
 
+// UnmarshalJSON tolerates GeoServer's mixed-shape `style` array. For an
+// unstyled layer in the group, GeoServer emits a bare string literal (often
+// "") instead of an object; for a styled layer it emits an object with
+// name/href fields. Without this the standard JSON decoder errors with
+// json: cannot unmarshal string into Go struct field LayerGroupStyles.style
+// when the layer group has any default-styled members. String entries are
+// preserved as a [Resource] with [Resource.Name] set to the string value.
+func (s *LayerGroupStyles) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || string(data) == "null" {
+		return nil
+	}
+
+	// Decode into the looser intermediate type that accepts either shape.
+	type rawWrapper struct {
+		Style []json.RawMessage `json:"style,omitempty"`
+	}
+	var raw rawWrapper
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return fmt.Errorf("layergroups: decode styles wrapper: %w", err)
+	}
+
+	out := make([]*Resource, 0, len(raw.Style))
+	for i, elem := range raw.Style {
+		if len(elem) == 0 || string(elem) == "null" {
+			out = append(out, nil)
+			continue
+		}
+		switch elem[0] {
+		case '"':
+			var name string
+			if err := json.Unmarshal(elem, &name); err != nil {
+				return fmt.Errorf("layergroups: decode style[%d] string: %w", i, err)
+			}
+			out = append(out, &Resource{Name: name})
+		case '{':
+			var r Resource
+			if err := json.Unmarshal(elem, &r); err != nil {
+				return fmt.Errorf("layergroups: decode style[%d] object: %w", i, err)
+			}
+			out = append(out, &r)
+		default:
+			return fmt.Errorf("layergroups: unexpected style[%d] JSON shape: %s", i, string(elem))
+		}
+	}
+	s.Style = out
+	return nil
+}
+
 // LayerGroup geoserver layergroup details
 type LayerGroup struct {
 	Name          string             `json:"name,omitempty" xml:"name"`
