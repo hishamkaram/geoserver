@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-05-03
+
 This release modernizes the build, fixes long-standing bugs, and adds an idiomatic Go API surface alongside the existing one. Existing v1.0.x callers do not need source changes to upgrade.
 
 ### Added
