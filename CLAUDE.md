@@ -11,7 +11,7 @@ This file is auto-loaded by Claude Code at the start of every session in this re
 ## Versioning regime
 
 - **v1.1.x is non-breaking.** No removed exports. No signature changes to existing public APIs. Deprecate via `// Deprecated:` and add a sibling that delegates to the replacement. **Why:** v1.0 callers must be able to upgrade with only a `go.mod` bump.
-- **v2 lives at module path `github.com/hishamkaram/geoserver/v2`** under a `/v2/` subdirectory once it begins. v2 will fix the v1 wounds that cannot be healed without breaking changes (exported mutable fields, four-positional-arg `PublishPostgisLayer`, etc.).
+- **v2 lives at module path `github.com/hishamkaram/geoserver/v2`** under the `/v2/` subdirectory (its own `go.mod`). Currently in development with the `Workspaces` resource as a reference; other resources port in subsequent PRs. Run `make test-v2-unit` for v2 tests (separate from `make test-unit`, which is v1 only). v2 fixes the v1 wounds that cannot be healed without breaking changes (exported mutable fields, four-positional-arg `PublishPostgisLayer`, etc.).
 - **Don't auto-tag releases.** Tagging is an explicit user action — never run `git tag` or push tags from a Claude session without explicit user authorization.
 
 ## Test split

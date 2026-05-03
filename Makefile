@@ -111,6 +111,14 @@ compose-test-down: ## tear down integration-test compose
 examples: ## compile-check every example under examples/
 	$(GO) build -o /dev/null ./examples/...
 
+.PHONY: test-v2-unit
+test-v2-unit: ## v2 module unit tests (no Docker)
+	cd v2 && $(GO) test -race -short -timeout=60s ./...
+
+.PHONY: build-v2
+build-v2: ## v2 module build + vet
+	cd v2 && $(GO) build ./... && $(GO) vet ./...
+
 .PHONY: docs-check
 docs-check: ## sanity-check that README and docs/ cross-reference each other
 	@grep -q 'docs/architecture.md' README.md || { echo "README.md should link to docs/architecture.md"; exit 1; }
