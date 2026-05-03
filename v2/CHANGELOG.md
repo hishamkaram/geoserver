@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — Resource API client
+
+Closes the Resource API tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Generic byte-stream access to files in the GeoServer data directory — FreeMarker templates, SLD includes, external graphic icons, and arbitrary descendants of the data dir.
+
+- **`v2/rest/resources/` package** — `c.Resources` exposes the `/rest/resource/{path}` endpoint:
+  - **`Get(ctx, path) (io.ReadCloser, error)`** — stream file content.
+  - **`Stat(ctx, path) (*Metadata, error)`** — bare metadata (no children listed).
+  - **`List(ctx, path) (*Directory, error)`** — directory listing with children.
+  - **`Exists(ctx, path) (bool, Type, error)`** — combined existence + type check.
+  - **`Put(ctx, path, body, contentType) error`** — upload / overwrite a regular-file resource. Intermediate directories are created on the fly.
+  - **`Move(ctx, srcPath, dstPath) error`** — relocate a resource via the upstream `?operation=move` form.
+  - **`Copy(ctx, srcPath, dstPath) error`** — duplicate a resource via `?operation=copy`. Per upstream, copy is not supported on directories.
+  - **`Delete(ctx, path) error`** — recursive delete (per upstream).
+- **Typed enums and structs** — `Type` (`TypeResource` / `TypeDirectory` / `TypeUndefined`), `Metadata`, `Directory`, `Child`.
+- **`coreAdapter.DoStream`** — previously unimplemented; now wired so any sub-client can stream a response body.
+- **`coreAdapter.SynthesizeError`** — sub-clients can surface package-sentinel errors (e.g. `ErrNotFound`) for wire responses that are technically 2xx but semantically failures.
+
+### Wire-format quirks (resources package)
+
+Discovered via local integration testing against live GeoServer 2.28.0:
+
+- **`operation=metadata` returns 200 with `type:"undefined"` for missing paths**, instead of 404. `Stat` translates that into an `ErrNotFound`-bearing error so callers can match with `errors.Is(err, geoserver.ErrNotFound)`.
+- **`children.child` is a "may be array, single object, or empty string" field.** A directory with no children may serialize as `"child":""`. A directory with one child may collapse to `"child":{...}` (no array). `Children` field's custom `UnmarshalJSON` accepts all three shapes.
+
 ### Added — ACL services / REST / catalog
 
 Closes the security tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). The v2 ACL sub-client previously covered only `c.ACL.Layers()`; this round adds the three sibling surfaces under `/rest/security/acl/`.

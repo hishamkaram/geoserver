@@ -22,15 +22,14 @@ func TestACL_Services_CRUD_Integration(t *testing.T) {
 	// service is "*" with a non-"*" operation (error message:
 	// "when namespace is * then also layer must be *"), and rejects
 	// rules referencing operations that don't exist in any real
-	// service. Pin to (wfs, GetCapabilities) — a canonical operation
-	// that's vanishingly unlikely to have a custom rule already on a
-	// fresh GeoServer install. Uniqueness is provided by the role
-	// name; the rule itself is removed on cleanup.
+	// service. Pin to (wfs, Transaction) — a real WFS-T operation
+	// that no other v2 integration test exercises, avoiding races
+	// against parallel test packages running anonymous requests.
 	roleName := testenv.UniqueName(t, "ROLE")
 
 	rule := acl.ServiceRule{
 		Service:   "wfs",
-		Operation: "GetCapabilities",
+		Operation: "Transaction",
 		Roles:     []string{roleName},
 	}
 
@@ -48,7 +47,7 @@ func TestACL_Services_CRUD_Integration(t *testing.T) {
 	}
 	found := false
 	for _, r := range rules {
-		if r.Service == "wfs" && r.Operation == "GetCapabilities" {
+		if r.Service == "wfs" && r.Operation == "Transaction" {
 			if len(r.Roles) == 1 && r.Roles[0] == roleName {
 				found = true
 				break
@@ -56,7 +55,7 @@ func TestACL_Services_CRUD_Integration(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Fatalf("rule for wfs.GetCapabilities with role %q not found in List", roleName)
+		t.Fatalf("rule for wfs.Transaction with role %q not found in List", roleName)
 	}
 
 	// Update: change the role list.
@@ -74,7 +73,7 @@ func TestACL_Services_CRUD_Integration(t *testing.T) {
 	}
 	gotRoles := []string(nil)
 	for _, r := range rules {
-		if r.Service == "wfs" && r.Operation == "GetCapabilities" {
+		if r.Service == "wfs" && r.Operation == "Transaction" {
 			gotRoles = r.Roles
 			break
 		}
@@ -93,7 +92,7 @@ func TestACL_Services_CRUD_Integration(t *testing.T) {
 		t.Fatalf("List after Delete: %v", err)
 	}
 	for _, r := range rules {
-		if r.Service == "wfs" && r.Operation == "GetCapabilities" {
+		if r.Service == "wfs" && r.Operation == "Transaction" {
 			t.Fatalf("rule still present after Delete: %+v", r)
 		}
 	}

@@ -95,6 +95,13 @@ func (e *APIError) Unwrap() error {
 	return nil
 }
 
+// HTTPStatusCode returns the HTTP status code that produced the
+// error. A stable accessor (in addition to the [APIError.StatusCode]
+// field) so sub-clients in v2/rest/* can branch on the status without
+// importing the root package — that would create an import cycle
+// since the root imports each rest/<resource>.
+func (e *APIError) HTTPStatusCode() int { return e.StatusCode }
+
 // Is reports whether target matches the sentinel for this APIError's
 // status code. Lets callers use errors.Is(err, ErrNotFound) directly on
 // an *APIError.
