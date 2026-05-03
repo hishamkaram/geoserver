@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [2.0.0-alpha.4] — 2026-05-03
 
-Fourth alpha. **Closes the planned scope of the gap-analysis plan** — every "everyone needs it" REST API surface identified in `docs/v2-top5-rest-api-gaps.md` is now covered. Five focused PRs landed in sequence: layer–style associations, file-upload publishing on stores, per-service OWS settings (WMS/WFS/WCS/WMTS), GeoWebCache (layers + seed + diskquota), and the Importer extension. Dev/test docker image now bakes the importer plugin in. Public API may still refine before `v2.0.0` based on early-adopter feedback — no production guarantees yet.
+Fourth alpha. **Closes the planned "everyone needs it" REST API surface.** The narrower tier-2 backlog continues in [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Five focused PRs landed in sequence: layer–style associations, file-upload publishing on stores, per-service OWS settings (WMS/WFS/WCS/WMTS), GeoWebCache (layers + seed + diskquota), and the Importer extension. Dev/test docker image now bakes the importer plugin in. Public API may still refine before `v2.0.0` based on early-adopter feedback — no production guarantees yet.
 
 ### Added — Importer extension client
 

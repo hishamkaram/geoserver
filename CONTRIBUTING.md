@@ -97,4 +97,4 @@ Available helpers:
 | Subagent | `integration-runner` | Boots the stack, runs integration tests, diagnoses failures from container logs. |
 | Subagent | `breaking-change-checker` | Computes the exported-API diff against `master` / `v1.0.0` and classifies each change. |
 
-Personal per-machine settings live in `.claude/settings.local.json` (gitignored). The team baseline (permissions, attribution, hooks) is intentionally **not** committed yet — see `~/.claude/plans/tranquil-hatching-rabin.md` for the design if we decide to add it later.
+Personal per-machine settings live in `.claude/settings.local.json` (gitignored). The team baseline (permissions, attribution, hooks) is intentionally **not** committed; revisit if the project grows enough contributors to warrant it.

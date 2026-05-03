@@ -172,7 +172,7 @@ Run any with `go run ./v2/examples/<name>` against a `make compose-up` stack, or
 | WFS GetCapabilities + DescribeFeatureType | (none — WMS only) | **new** in v2 (`c.WFS.GetCapabilities`, `DescribeFeatureType`) |
 | WCS GetCapabilities + DescribeCoverage | (none — WMS only) | **new** in v2 (`c.WCS.GetCapabilities`, `DescribeCoverage`) |
 
-See [`../ROADMAP.md`](../ROADMAP.md) for the milestone checklist; `~/.claude/plans/v2-top5-rest-api-gaps.md` for the gap-analysis tier-2 list (mosaic granules, Resource API, FTL templates, auth providers, URL checks, cascaded WMS/WMTS, XSLT transforms, manifests, runtime logging) — each tractable as its own follow-up PR.
+See [`../ROADMAP.md`](../ROADMAP.md) for the milestone checklist and [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md) for the tier-2 gap-analysis backlog (mosaic granules, Resource API, FTL templates, auth providers, ACL services/REST/catalog, URL checks, cascaded WMS/WMTS, XSLT transforms, manifests, runtime logging) — each tractable as its own follow-up PR.
 
 ## Contributing to v2
 
