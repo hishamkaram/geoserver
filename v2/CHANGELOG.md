@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — OWS describe operations
+
+- **`v2/ows/wfs.Client.DescribeFeatureType(ctx, opts)`** — fetches the XSD schema describing one or more published feature types and decodes it into a `*FeatureSchema`. The schema's `Attributes(typeName)` helper walks the typical `complexType > complexContent > extension > sequence > element*` shape and surfaces a flat `[]Attribute` list. Send multiple type names in `DescribeFeatureTypeOptions.TypeNames` (comma-joined for the WFS 2.0 `typeNames` query plus the WFS 1.1.0 `typeName` alias for cross-version compatibility). Companion free function `wfs.ParseFeatureSchema(io.Reader)` for out-of-band parsing.
+- **`v2/ows/wcs.Client.DescribeCoverage(ctx, opts)`** — fetches detailed metadata for one or more coverages and decodes it into `*CoverageDescriptions` (CoverageId + BoundedBy envelope + DomainSet/RectifiedGrid + RangeType/DataRecord/Field). Useful for knowing the bands, units of measure, CRS, and pixel-space dimensions of a coverage before issuing a GetCoverage. Companion free function `wcs.ParseCoverageDescriptions(io.Reader)`.
+
+### Added (tests)
+
+- httptest unit tests for both Describe operations: parse fixtures with realistic GeoServer XML namespace declarations, query-parameter assertions (including the `typeNames` / `typeName` cross-version aliases for WFS), multi-id requests, empty-id rejection, and 404 → `ErrNotFound` sentinel.
+- Integration tests for both — WFS DescribeFeatureType against `sf:archsites` (default-install feature type), and WCS DescribeCoverage against the first coverage discovered via `c.WCS.GetCapabilities`.
+- Godoc `Example_*` for both new methods.
+
 ## [2.0.0-alpha.3] — 2026-05-03
 
 Third alpha. Closes the OWS GetCapabilities trio with WFS + WCS, taking v2's surface beyond v1's. No breaking changes from `alpha.2`; existing callers can `go get @v2.0.0-alpha.3` and recompile. Public API may still refine before `v2.0.0` — no production guarantees yet.

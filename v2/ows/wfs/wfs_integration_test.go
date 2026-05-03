@@ -48,6 +48,30 @@ func TestWFS_GetCapabilities_Workspace_Integration(t *testing.T) {
 	}
 }
 
+func TestWFS_DescribeFeatureType_Integration(t *testing.T) {
+	c := testenv.NewClient(t)
+	ctx := testenv.Context(t)
+
+	// Use one of GeoServer's default-install feature types
+	// (sf:archsites is shipped by default with the workshop data).
+	schema, err := c.WFS.DescribeFeatureType(ctx, wfs.DescribeFeatureTypeOptions{
+		TypeNames: []string{"sf:archsites"},
+	})
+	if err != nil {
+		t.Fatalf("DescribeFeatureType: %v", err)
+	}
+	if schema.TargetNamespace == "" {
+		t.Errorf("TargetNamespace is empty: %+v", schema)
+	}
+	if got := len(schema.ComplexTypes); got == 0 {
+		t.Fatalf("ComplexTypes empty — schema didn't decode")
+	}
+	attrs := schema.Attributes("")
+	if len(attrs) == 0 {
+		t.Errorf("Attributes empty — sf:archsites should have at least geometry + cat + str1")
+	}
+}
+
 func TestWFS_GetCapabilities_Version110_Integration(t *testing.T) {
 	c := testenv.NewClient(t)
 	ctx := testenv.Context(t)

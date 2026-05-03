@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // Core is the plumbing the sub-client needs from the parent [*Client].
@@ -109,4 +110,77 @@ func ParseCapabilities(r io.Reader) (*Capabilities, error) {
 		return nil, fmt.Errorf("wfs: parse capabilities: %w", err)
 	}
 	return &caps, nil
+}
+
+// DescribeFeatureTypeOptions controls a [Client.DescribeFeatureType]
+// call. TypeNames is required (the prefixed feature-type names to
+// describe); a single call may request multiple types.
+type DescribeFeatureTypeOptions struct {
+	// TypeNames is the list of prefixed feature-type names to
+	// describe (e.g., []string{"topp:states"}).
+	TypeNames []string
+
+	// Version is the WFS protocol version requested. Default
+	// "2.0.0". The XSD response shape is broadly compatible across
+	// versions; the type tree decodes both 1.1.0 and 2.0.0 output.
+	Version string
+}
+
+// DescribeFeatureType fetches the XSD schema describing one or more
+// published feature types and parses it into a [*FeatureSchema].
+// Use [FeatureSchema.Attributes] for the flat attribute list.
+//
+// Returns a *APIError wrapping the appropriate sentinel on a 4xx/5xx
+// response. An empty TypeNames list returns the schema for every
+// published feature type — that response can be large.
+func (c *Client) DescribeFeatureType(ctx context.Context, opts DescribeFeatureTypeOptions) (*FeatureSchema, error) {
+	const op = "WFS.DescribeFeatureType"
+
+	parts := []string{}
+	if c.workspace != "" {
+		parts = append(parts, c.workspace)
+	}
+	parts = append(parts, "wfs")
+	u, err := c.core.URL(parts...)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	version := opts.Version
+	if version == "" {
+		version = "2.0.0"
+	}
+	query := map[string]string{
+		"service": "wfs",
+		"version": version,
+		"request": "DescribeFeatureType",
+	}
+	if len(opts.TypeNames) > 0 {
+		// WFS 2.0 expects "typeNames" (plural, comma-separated);
+		// 1.1.0 expects "typeName". Send both to keep callers
+		// version-agnostic — GeoServer ignores the irrelevant one.
+		joined := strings.Join(opts.TypeNames, ",")
+		query["typeNames"] = joined
+		query["typeName"] = joined
+	}
+
+	var schema FeatureSchema
+	if err := c.core.DoXML(ctx, op, http.MethodGet, u, query, &schema); err != nil {
+		return nil, err
+	}
+	return &schema, nil
+}
+
+// ParseFeatureSchema reads a WFS DescribeFeatureType XSD document
+// from r and decodes it into a [*FeatureSchema]. Useful for parsing
+// a document fetched out-of-band.
+func ParseFeatureSchema(r io.Reader) (*FeatureSchema, error) {
+	if r == nil {
+		return nil, errors.New("wfs: ParseFeatureSchema: nil reader")
+	}
+	var schema FeatureSchema
+	if err := xml.NewDecoder(r).Decode(&schema); err != nil {
+		return nil, fmt.Errorf("wfs: parse feature schema: %w", err)
+	}
+	return &schema, nil
 }
