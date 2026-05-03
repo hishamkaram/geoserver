@@ -11,8 +11,8 @@ import (
 
 func TestErrorIsSentinel(t *testing.T) {
 	cases := []struct {
-		name        string
-		status      int
+		name         string
+		status       int
 		wantSentinel error
 	}{
 		{"400 BadRequest", http.StatusBadRequest, ErrBadRequest},

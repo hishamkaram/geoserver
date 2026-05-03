@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"strconv"
@@ -20,6 +21,16 @@ type StyleService interface {
 	GetStyle(workspaceName string, styleName string) (style *Style, err error)
 
 	StyleExists(workspaceName string, styleName string) (exists bool, err error)
+}
+
+// StyleServiceWithContext is the context-aware sibling of [StyleService].
+type StyleServiceWithContext interface {
+	GetStylesContext(ctx context.Context, workspaceName string) (styles []*Resource, err error)
+	CreateStyleContext(ctx context.Context, workspaceName string, styleName string) (created bool, err error)
+	UploadStyleContext(ctx context.Context, data io.Reader, workspaceName string, styleName string, overwrite bool) (success bool, err error)
+	DeleteStyleContext(ctx context.Context, workspaceName string, styleName string, purge bool) (deleted bool, err error)
+	GetStyleContext(ctx context.Context, workspaceName string, styleName string) (style *Style, err error)
+	StyleExistsContext(ctx context.Context, workspaceName string, styleName string) (exists bool, err error)
 }
 
 // LanguageVersion style version
@@ -57,9 +68,13 @@ func (g *GeoServer) stylesURL(workspaceName string, extra ...string) string {
 	return g.ParseURL(parts...)
 }
 
-// GetStyles return list of geoserver styles and err if error occurred,
-// if workspace is "" will return non-workspce styles
+// GetStyles lists styles using context.Background.
 func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err error) {
+	return g.GetStylesContext(context.Background(), workspaceName)
+}
+
+// GetStylesContext is the context-aware variant of [GeoServer.GetStyles].
+func (g *GeoServer) GetStylesContext(ctx context.Context, workspaceName string) (styles []*Resource, err error) {
 	targetURL := g.stylesURL(workspaceName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -67,7 +82,7 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err err
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		styles = nil
@@ -86,9 +101,13 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err err
 	return
 }
 
-// GetStyle return specific of geoserver style,
-// if workspace is "" will return non-workspce styles
+// GetStyle fetches a style using context.Background.
 func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Style, err error) {
+	return g.GetStyleContext(context.Background(), workspaceName, styleName)
+}
+
+// GetStyleContext is the context-aware variant of [GeoServer.GetStyle].
+func (g *GeoServer) GetStyleContext(ctx context.Context, workspaceName string, styleName string) (style *Style, err error) {
 	targetURL := g.stylesURL(workspaceName, styleName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -96,7 +115,7 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Sty
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		style = &Style{}
@@ -111,21 +130,27 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Sty
 	return
 }
 
-// StyleExists return true if style exists in geoserver
+// StyleExists checks for a style using context.Background.
 func (g *GeoServer) StyleExists(workspaceName string, styleName string) (exists bool, err error) {
-	_, styleErr := g.GetStyle(workspaceName, styleName)
-	if styleErr != nil {
-		exists = false
-		err = styleErr
-		return
-	}
-	exists = true
-	return
+	return g.StyleExistsContext(context.Background(), workspaceName, styleName)
 }
 
-// CreateStyle create geoserver empty sld with name and filename is(${styleName.sld}),
-// if workspace is "" will create geoserver public style
+// StyleExistsContext is the context-aware variant of [GeoServer.StyleExists].
+func (g *GeoServer) StyleExistsContext(ctx context.Context, workspaceName string, styleName string) (exists bool, err error) {
+	_, styleErr := g.GetStyleContext(ctx, workspaceName, styleName)
+	if styleErr != nil {
+		return false, styleErr
+	}
+	return true, nil
+}
+
+// CreateStyle creates an empty SLD using context.Background.
 func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created bool, err error) {
+	return g.CreateStyleContext(context.Background(), workspaceName, styleName)
+}
+
+// CreateStyleContext is the context-aware variant of [GeoServer.CreateStyle].
+func (g *GeoServer) CreateStyleContext(ctx context.Context, workspaceName string, styleName string) (created bool, err error) {
 	targetURL := g.stylesURL(workspaceName)
 	style := Style{Name: styleName, Filename: fmt.Sprintf("%s.sld", styleName)}
 	serializedStyle, serErr := g.SerializeStruct(StyleRequestBody{Style: &style})
@@ -141,7 +166,7 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 		URL:      targetURL,
 		Query:    nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusCreated {
 		g.logger.Error(string(response))
 		created = false
@@ -152,17 +177,16 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	return
 }
 
-// UploadStyle upload geoserver sld,
-// if workspace is "" will upload geoserver public style sld , return err if error occurred
+// UploadStyle uploads SLD content using context.Background.
 func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName string, overwrite bool) (success bool, err error) {
+	return g.UploadStyleContext(context.Background(), data, workspaceName, styleName, overwrite)
+}
+
+// UploadStyleContext is the context-aware variant of [GeoServer.UploadStyle].
+func (g *GeoServer) UploadStyleContext(ctx context.Context, data io.Reader, workspaceName string, styleName string, overwrite bool) (success bool, err error) {
 	targetURL := g.stylesURL(workspaceName, styleName)
-	exists, existsErr := g.StyleExists(workspaceName, styleName)
-	// existsErr is non-nil for any HTTP failure other than the missing-style
-	// happy path. Surface it instead of silently ignoring (the prior behavior
-	// would race against StyleExists returning the wrong answer on transient
-	// failures).
+	exists, existsErr := g.StyleExistsContext(ctx, workspaceName, styleName)
 	if existsErr != nil {
-		// Distinguish 404 (style absent — proceed) from real errors.
 		// Without a typed-error system in v1.0 this was awkward; in v1.1
 		// callers can use errors.Is(err, ErrNotFound). For backwards
 		// compatibility we keep proceeding when StyleExists reports false
@@ -176,7 +200,7 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 		return
 	}
 	if !exists {
-		created, uploadErr := g.CreateStyle(workspaceName, styleName)
+		created, uploadErr := g.CreateStyleContext(ctx, workspaceName, styleName)
 		if !created {
 			success = false
 			err = uploadErr
@@ -191,7 +215,7 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 		URL:      targetURL,
 		Query:    nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		success = false
@@ -202,9 +226,13 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 	return
 }
 
-// DeleteStyle delete geoserver style,
-// if workspace is "" will delete geoserver public style , return err if error occurred
+// DeleteStyle deletes a style using context.Background.
 func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bool) (deleted bool, err error) {
+	return g.DeleteStyleContext(context.Background(), workspaceName, styleName, purge)
+}
+
+// DeleteStyleContext is the context-aware variant of [GeoServer.DeleteStyle].
+func (g *GeoServer) DeleteStyleContext(ctx context.Context, workspaceName string, styleName string, purge bool) (deleted bool, err error) {
 	targetURL := g.stylesURL(workspaceName, styleName)
 	httpRequest := HTTPRequest{
 		Method: deleteMethod,
@@ -212,7 +240,7 @@ func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bo
 		URL:    targetURL,
 		Query:  map[string]string{"purge": strconv.FormatBool(purge)},
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		deleted = false

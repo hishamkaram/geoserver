@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 )
 
@@ -19,6 +20,12 @@ type SettingsService interface {
 	// UpdateGlobalSettings performs a partial update of the GeoServer global
 	// settings. Returns whether the change was applied and an error if any.
 	UpdateGlobalSettings(globalSettings GlobalSettings) (modified bool, err error)
+}
+
+// SettingsServiceWithContext is the context-aware sibling of [SettingsService].
+type SettingsServiceWithContext interface {
+	GetGlobalSettingsContext(ctx context.Context) (settings GlobalSettings, err error)
+	UpdateGlobalSettingsContext(ctx context.Context, globalSettings GlobalSettings) (modified bool, err error)
 }
 
 // Contact describes the GeoServer contact-information block surfaced under
@@ -103,8 +110,13 @@ type GlobalSettings struct {
 	Global Global `json:"global,omitempty"`
 }
 
-// GetGlobalSettings returns the GeoServer global settings, or an error.
+// GetGlobalSettings returns global settings using context.Background.
 func (g *GeoServer) GetGlobalSettings() (globalSettings GlobalSettings, err error) {
+	return g.GetGlobalSettingsContext(context.Background())
+}
+
+// GetGlobalSettingsContext is the context-aware variant of [GeoServer.GetGlobalSettings].
+func (g *GeoServer) GetGlobalSettingsContext(ctx context.Context) (globalSettings GlobalSettings, err error) {
 	targetURL := g.ParseURL("rest", "settings")
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -112,7 +124,7 @@ func (g *GeoServer) GetGlobalSettings() (globalSettings GlobalSettings, err erro
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		globalSettings = GlobalSettings{}
@@ -128,22 +140,18 @@ func (g *GeoServer) GetGlobalSettings() (globalSettings GlobalSettings, err erro
 	return
 }
 
-// UpdateGlobalSettings performs a partial update of GeoServer global settings.
-// Returns whether the change was applied and any error.
+// UpdateGlobalSettings performs a partial update of GeoServer global settings
+// using context.Background.
 func (g *GeoServer) UpdateGlobalSettings(globalSettings GlobalSettings) (modified bool, err error) {
-	return g.UpdateGlobalSetting(globalSettings)
+	return g.UpdateGlobalSettingsContext(context.Background(), globalSettings)
 }
 
-// UpdateGlobalSetting performs a partial update of GeoServer global settings.
-//
-// Deprecated: this name is retained for backward compatibility with v1.0.x;
-// new code should call [GeoServer.UpdateGlobalSettings] (plural), which
-// matches the [SettingsService] interface declaration.
-func (g *GeoServer) UpdateGlobalSetting(globalSettings GlobalSettings) (modified bool, err error) {
+// UpdateGlobalSettingsContext is the context-aware variant of [GeoServer.UpdateGlobalSettings].
+func (g *GeoServer) UpdateGlobalSettingsContext(ctx context.Context, globalSettings GlobalSettings) (modified bool, err error) {
 	targetURL := g.ParseURL("rest", "settings")
 	serializedSettings, serErr := g.SerializeStruct(globalSettings)
 	if serErr != nil {
-		return false, fmt.Errorf("UpdateGlobalSetting: serialize settings: %w", serErr)
+		return false, fmt.Errorf("UpdateGlobalSettings: serialize settings: %w", serErr)
 	}
 	httpRequest := HTTPRequest{
 		Method:   putMethod,
@@ -153,7 +161,7 @@ func (g *GeoServer) UpdateGlobalSetting(globalSettings GlobalSettings) (modified
 		URL:      targetURL,
 		Query:    nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		modified = false
@@ -162,4 +170,13 @@ func (g *GeoServer) UpdateGlobalSetting(globalSettings GlobalSettings) (modified
 	}
 	modified = true
 	return
+}
+
+// UpdateGlobalSetting performs a partial update of GeoServer global settings.
+//
+// Deprecated: this name is retained for backward compatibility with v1.0.x;
+// new code should call [GeoServer.UpdateGlobalSettings] (plural), which
+// matches the [SettingsService] interface declaration.
+func (g *GeoServer) UpdateGlobalSetting(globalSettings GlobalSettings) (modified bool, err error) {
+	return g.UpdateGlobalSettings(globalSettings)
 }

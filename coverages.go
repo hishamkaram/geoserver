@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,6 +22,17 @@ type CoverageService interface {
 	UpdateCoverage(workspaceName string, coverage *Coverage) (modified bool, err error)
 	PublishCoverage(workspaceName string, coverageStoreName string, coverageName string, publishName string) (published bool, err error)
 	PublishGeoTiffLayer(workspaceName string, coverageStoreName string, publishName string, fileName string) (published bool, err error)
+}
+
+// CoverageServiceWithContext is the context-aware sibling of [CoverageService].
+type CoverageServiceWithContext interface {
+	GetCoveragesContext(ctx context.Context, workspaceName string) (coverages []*Resource, err error)
+	GetStoreCoveragesContext(ctx context.Context, workspaceName string, coverageStore string) (coverages []string, err error)
+	GetCoverageContext(ctx context.Context, workspaceName string, coverageName string) (coverage *Coverage, err error)
+	DeleteCoverageContext(ctx context.Context, workspaceName string, layerName string, recurse bool) (deleted bool, err error)
+	UpdateCoverageContext(ctx context.Context, workspaceName string, coverage *Coverage) (modified bool, err error)
+	PublishCoverageContext(ctx context.Context, workspaceName string, coverageStoreName string, coverageName string, publishName string) (published bool, err error)
+	PublishGeoTiffLayerContext(ctx context.Context, workspaceName string, coverageStoreName string, publishName string, fileName string) (published bool, err error)
 }
 
 // Coverage is geoserver Coverage (raster layer) data struct
@@ -56,9 +68,13 @@ type publishCoverageRequest struct {
 	CoverageDescr *publishedCoverageDescr `json:"coverage,omitempty"`
 }
 
-// GetCoverages returns all published raster layers (coverages) for workspace as resources,
-// err is an error if error occurred else err is nil
+// GetCoverages lists coverages using context.Background.
 func (g *GeoServer) GetCoverages(workspaceName string) (coverages []*Resource, err error) {
+	return g.GetCoveragesContext(context.Background(), workspaceName)
+}
+
+// GetCoveragesContext is the context-aware variant of [GeoServer.GetCoverages].
+func (g *GeoServer) GetCoveragesContext(ctx context.Context, workspaceName string) (coverages []*Resource, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coverages")
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -66,7 +82,7 @@ func (g *GeoServer) GetCoverages(workspaceName string) (coverages []*Resource, e
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		err = g.GetError(responseCode, response)
@@ -93,9 +109,13 @@ func (g *GeoServer) GetCoverages(workspaceName string) (coverages []*Resource, e
 	return coveragesResponse.Coverages.Coverage, nil
 }
 
-// GetStoreCoverages returns a list for all coverages (raster layers) names including unpublished for coverageStore,
-// err is an error if error occurred else err is nil
+// GetStoreCoverages lists store coverages using context.Background.
 func (g *GeoServer) GetStoreCoverages(workspaceName string, coverageStore string) (coverages []string, err error) {
+	return g.GetStoreCoveragesContext(context.Background(), workspaceName, coverageStore)
+}
+
+// GetStoreCoveragesContext is the context-aware variant of [GeoServer.GetStoreCoverages].
+func (g *GeoServer) GetStoreCoveragesContext(ctx context.Context, workspaceName string, coverageStore string) (coverages []string, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", coverageStore, "coverages")
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -103,7 +123,7 @@ func (g *GeoServer) GetStoreCoverages(workspaceName string, coverageStore string
 		URL:    targetURL,
 		Query:  map[string]string{"list": "all"},
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		err = g.GetError(responseCode, response)
@@ -123,9 +143,13 @@ func (g *GeoServer) GetStoreCoverages(workspaceName string, coverageStore string
 	return coveragesResponse.List.CoverageName, nil
 }
 
-// GetCoverage returns the coverage with name coverageName
-// err is an error if error occurred else err is nil
+// GetCoverage fetches a coverage using context.Background.
 func (g *GeoServer) GetCoverage(workspaceName string, coverageName string) (coverage *Coverage, err error) {
+	return g.GetCoverageContext(context.Background(), workspaceName, coverageName)
+}
+
+// GetCoverageContext is the context-aware variant of [GeoServer.GetCoverage].
+func (g *GeoServer) GetCoverageContext(ctx context.Context, workspaceName string, coverageName string) (coverage *Coverage, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coverages", coverageName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -133,7 +157,7 @@ func (g *GeoServer) GetCoverage(workspaceName string, coverageName string) (cove
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		err = g.GetError(responseCode, response)
@@ -151,15 +175,24 @@ func (g *GeoServer) GetCoverage(workspaceName string, coverageName string) (cove
 	return &coverageResponse.Coverage, nil
 }
 
-// DeleteCoverage removes the coverage,
-// err is an error if error occurred else err is nil
+// DeleteCoverage deletes a coverage using context.Background.
 func (g *GeoServer) DeleteCoverage(workspaceName string, layerName string, recurse bool) (deleted bool, err error) {
-	// it's just a wrapper about DeleteLayer function as it does the same in the most use cases
-	return g.DeleteLayer(workspaceName, layerName, recurse)
+	return g.DeleteCoverageContext(context.Background(), workspaceName, layerName, recurse)
 }
 
-// UpdateCoverage updates geoserver coverage (raster layer), else returns error,
+// DeleteCoverageContext is the context-aware variant of [GeoServer.DeleteCoverage].
+func (g *GeoServer) DeleteCoverageContext(ctx context.Context, workspaceName string, layerName string, recurse bool) (deleted bool, err error) {
+	// it's just a wrapper about DeleteLayer function as it does the same in the most use cases
+	return g.DeleteLayerContext(ctx, workspaceName, layerName, recurse)
+}
+
+// UpdateCoverage updates a coverage using context.Background.
 func (g *GeoServer) UpdateCoverage(workspaceName string, coverage *Coverage) (modified bool, err error) {
+	return g.UpdateCoverageContext(context.Background(), workspaceName, coverage)
+}
+
+// UpdateCoverageContext is the context-aware variant of [GeoServer.UpdateCoverage].
+func (g *GeoServer) UpdateCoverageContext(ctx context.Context, workspaceName string, coverage *Coverage) (modified bool, err error) {
 	if coverage == nil || coverage.Store == nil {
 		return false, errors.New("UpdateCoverage: coverage and coverage.Store must be non-nil")
 	}
@@ -187,7 +220,7 @@ func (g *GeoServer) UpdateCoverage(workspaceName string, coverage *Coverage) (mo
 		URL:      targetURL,
 		Query:    nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		err = g.GetError(responseCode, response)
@@ -197,9 +230,13 @@ func (g *GeoServer) UpdateCoverage(workspaceName string, coverage *Coverage) (mo
 	return
 }
 
-// PublishCoverage publishes coverage from coverageStore
-// coverageName - the name of the layer in the coverageStore (use GetStoreCoverages to get them), publishName - the name it was presented at geoserver
+// PublishCoverage publishes a coverage using context.Background.
 func (g *GeoServer) PublishCoverage(workspaceName string, coverageStoreName string, coverageName string, publishName string) (published bool, err error) {
+	return g.PublishCoverageContext(context.Background(), workspaceName, coverageStoreName, coverageName, publishName)
+}
+
+// PublishCoverageContext is the context-aware variant of [GeoServer.PublishCoverage].
+func (g *GeoServer) PublishCoverageContext(ctx context.Context, workspaceName string, coverageStoreName string, coverageName string, publishName string) (published bool, err error) {
 	if publishName == "" {
 		publishName = coverageName
 	}
@@ -210,12 +247,12 @@ func (g *GeoServer) PublishCoverage(workspaceName string, coverageStoreName stri
 			NativeCoverageName: coverageName,
 		},
 	}
-	return g.publishCoverage(workspaceName, coverageStoreName, publishRequest)
+	return g.publishCoverage(ctx, workspaceName, coverageStoreName, publishRequest)
 }
 
 // publishCoverage publishes coverage to the given workspace's coverage store.
 // If workspaceName is empty, the global /rest/coveragestores endpoint is used.
-func (g *GeoServer) publishCoverage(workspaceName string, coverageStoreName string, request publishCoverageRequest) (published bool, err error) {
+func (g *GeoServer) publishCoverage(ctx context.Context, workspaceName string, coverageStoreName string, request publishCoverageRequest) (published bool, err error) {
 	var targetURL string
 	if workspaceName == "" {
 		targetURL = g.ParseURL("rest", "coveragestores", coverageStoreName, "coverages")
@@ -236,7 +273,7 @@ func (g *GeoServer) publishCoverage(workspaceName string, coverageStoreName stri
 		URL:      targetURL,
 		Query:    nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusCreated {
 		g.logger.Error(string(response))
 		err = g.GetError(responseCode, response)
@@ -246,8 +283,13 @@ func (g *GeoServer) publishCoverage(workspaceName string, coverageStoreName stri
 	return true, nil
 }
 
-// PublishGeoTiffLayer publishes geotiff to geoserver
+// PublishGeoTiffLayer publishes a GeoTIFF using context.Background.
 func (g *GeoServer) PublishGeoTiffLayer(workspaceName string, coverageStoreName string, publishName string, fileName string) (published bool, err error) {
+	return g.PublishGeoTiffLayerContext(context.Background(), workspaceName, coverageStoreName, publishName, fileName)
+}
+
+// PublishGeoTiffLayerContext is the context-aware variant of [GeoServer.PublishGeoTiffLayer].
+func (g *GeoServer) PublishGeoTiffLayerContext(ctx context.Context, workspaceName string, coverageStoreName string, publishName string, fileName string) (published bool, err error) {
 	// it was moved from layers.go because this is the better place for raster layers functions (coverages)
 	// I tried to maintain the original behavior for backward compatibilities,
 	// but it didn't seem to be working as expected from scratch
@@ -259,5 +301,5 @@ func (g *GeoServer) PublishGeoTiffLayer(workspaceName string, coverageStoreName 
 		},
 	}
 
-	return g.publishCoverage(workspaceName, coverageStoreName, publishRequest)
+	return g.publishCoverage(ctx, workspaceName, coverageStoreName, publishRequest)
 }

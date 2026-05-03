@@ -1,6 +1,7 @@
 package geoserver
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -60,6 +61,13 @@ type FeatureTypeService interface {
 	GetFeatureTypes(workspaceName string, datastoreName string) (featureTypes []*Resource, err error)
 	GetFeatureType(workspaceName string, datastoreName string, featureTypeName string) (featureType *FeatureType, err error)
 	DeleteFeatureType(workspaceName string, datastoreName string, featureTypeName string, recurse bool) (deleted bool, err error)
+}
+
+// FeatureTypeServiceWithContext is the context-aware sibling of [FeatureTypeService].
+type FeatureTypeServiceWithContext interface {
+	GetFeatureTypesContext(ctx context.Context, workspaceName string, datastoreName string) (featureTypes []*Resource, err error)
+	GetFeatureTypeContext(ctx context.Context, workspaceName string, datastoreName string, featureTypeName string) (featureType *FeatureType, err error)
+	DeleteFeatureTypeContext(ctx context.Context, workspaceName string, datastoreName string, featureTypeName string, recurse bool) (deleted bool, err error)
 }
 
 // Entry is geoserver Entry
@@ -196,8 +204,13 @@ func (g *GeoServer) featureTypesURL(workspaceName, datastoreName string, extra .
 	return g.ParseURL(parts...)
 }
 
-// GetFeatureTypes return all featureTypes in workspace and datastore if error occurred err will be return and nil for featrueTypes
+// GetFeatureTypes lists feature types using context.Background.
 func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) (featureTypes []*Resource, err error) {
+	return g.GetFeatureTypesContext(context.Background(), workspaceName, datastoreName)
+}
+
+// GetFeatureTypesContext is the context-aware variant of [GeoServer.GetFeatureTypes].
+func (g *GeoServer) GetFeatureTypesContext(ctx context.Context, workspaceName string, datastoreName string) (featureTypes []*Resource, err error) {
 	targetURL := g.featureTypesURL(workspaceName, datastoreName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -205,7 +218,7 @@ func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) 
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		featureTypes = nil
 		err = g.GetError(responseCode, response)
@@ -219,10 +232,13 @@ func (g *GeoServer) GetFeatureTypes(workspaceName string, datastoreName string) 
 	return
 }
 
-// DeleteFeatureType Delete FeatureType from geoserver given that workspaceName, datastoreName, featureTypeName
-// if featuretype deleted successfully will return true and nil for err
-// if error occurred will return false and error for err
+// DeleteFeatureType deletes a feature type using context.Background.
 func (g *GeoServer) DeleteFeatureType(workspaceName string, datastoreName string, featureTypeName string, recurse bool) (deleted bool, err error) {
+	return g.DeleteFeatureTypeContext(context.Background(), workspaceName, datastoreName, featureTypeName, recurse)
+}
+
+// DeleteFeatureTypeContext is the context-aware variant of [GeoServer.DeleteFeatureType].
+func (g *GeoServer) DeleteFeatureTypeContext(ctx context.Context, workspaceName string, datastoreName string, featureTypeName string, recurse bool) (deleted bool, err error) {
 	targetURL := g.featureTypesURL(workspaceName, datastoreName, featureTypeName)
 	httpRequest := HTTPRequest{
 		Method: deleteMethod,
@@ -230,7 +246,7 @@ func (g *GeoServer) DeleteFeatureType(workspaceName string, datastoreName string
 		URL:    targetURL,
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		deleted = false
 		err = g.GetError(responseCode, response)
@@ -240,9 +256,13 @@ func (g *GeoServer) DeleteFeatureType(workspaceName string, datastoreName string
 	return
 }
 
-// GetFeatureType it return geoserver FeatureType and nil err
-// if success else nil for fetureType error for err
+// GetFeatureType fetches a feature type using context.Background.
 func (g *GeoServer) GetFeatureType(workspaceName string, datastoreName string, featureTypeName string) (featureType *FeatureType, err error) {
+	return g.GetFeatureTypeContext(context.Background(), workspaceName, datastoreName, featureTypeName)
+}
+
+// GetFeatureTypeContext is the context-aware variant of [GeoServer.GetFeatureType].
+func (g *GeoServer) GetFeatureTypeContext(ctx context.Context, workspaceName string, datastoreName string, featureTypeName string) (featureType *FeatureType, err error) {
 	targetURL := g.featureTypesURL(workspaceName, datastoreName, featureTypeName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -250,7 +270,7 @@ func (g *GeoServer) GetFeatureType(workspaceName string, datastoreName string, f
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		featureType = nil
 		err = g.GetError(responseCode, response)

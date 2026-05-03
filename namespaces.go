@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 )
 
@@ -24,6 +25,15 @@ type NamespaceService interface {
 	DeleteNamespace(prefix string) (deleted bool, err error)
 }
 
+// NamespaceServiceWithContext is the context-aware sibling of [NamespaceService].
+type NamespaceServiceWithContext interface {
+	NamespaceExistsContext(ctx context.Context, prefix string) (exists bool, err error)
+	GetNamespacesContext(ctx context.Context) (namespaces []*Namespace, err error)
+	GetNamespaceContext(ctx context.Context, prefix string) (namespace Namespace, err error)
+	CreateNamespaceContext(ctx context.Context, prefix string, uri string) (created bool, err error)
+	DeleteNamespaceContext(ctx context.Context, prefix string) (deleted bool, err error)
+}
+
 // Namespace is the Namespace Object
 type Namespace struct {
 	Prefix   string `json:"prefix,omitempty"`
@@ -37,8 +47,13 @@ type NamespaceRequestBody struct {
 	Namespace *Namespace `json:"namespace,omitempty"`
 }
 
-// CreateNamespace creates a Namespace and return if created or not else return error
+// CreateNamespace creates a namespace using context.Background.
 func (g *GeoServer) CreateNamespace(prefix string, uri string) (created bool, err error) {
+	return g.CreateNamespaceContext(context.Background(), prefix, uri)
+}
+
+// CreateNamespaceContext is the context-aware variant of [GeoServer.CreateNamespace].
+func (g *GeoServer) CreateNamespaceContext(ctx context.Context, prefix string, uri string) (created bool, err error) {
 	//TODO: check if Namespace exist before creating it
 	Namespace := Namespace{Prefix: prefix, URI: uri}
 	serializedNamespace, serErr := g.SerializeStruct(NamespaceRequestBody{Namespace: &Namespace})
@@ -55,7 +70,7 @@ func (g *GeoServer) CreateNamespace(prefix string, uri string) (created bool, er
 		URL:      targetURL,
 		Query:    nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusCreated {
 		g.logger.Warn(string(response))
 		created = false
@@ -66,27 +81,34 @@ func (g *GeoServer) CreateNamespace(prefix string, uri string) (created bool, er
 	return
 }
 
-// NamespaceExists check if Namespace in geoserver or not else return error
+// NamespaceExists checks for a namespace using context.Background.
 func (g *GeoServer) NamespaceExists(prefix string) (exists bool, err error) {
-	_, NamespaceErr := g.GetNamespace(prefix)
-	if NamespaceErr != nil {
-		exists = false
-		err = NamespaceErr
-		return
-	}
-	exists = true
-	return
+	return g.NamespaceExistsContext(context.Background(), prefix)
 }
 
-// DeleteNamespace delete geoserver Namespace and its reources else return error
+// NamespaceExistsContext is the context-aware variant of [GeoServer.NamespaceExists].
+func (g *GeoServer) NamespaceExistsContext(ctx context.Context, prefix string) (exists bool, err error) {
+	_, NamespaceErr := g.GetNamespaceContext(ctx, prefix)
+	if NamespaceErr != nil {
+		return false, NamespaceErr
+	}
+	return true, nil
+}
+
+// DeleteNamespace deletes a namespace using context.Background.
 func (g *GeoServer) DeleteNamespace(prefix string) (deleted bool, err error) {
+	return g.DeleteNamespaceContext(context.Background(), prefix)
+}
+
+// DeleteNamespaceContext is the context-aware variant of [GeoServer.DeleteNamespace].
+func (g *GeoServer) DeleteNamespaceContext(ctx context.Context, prefix string) (deleted bool, err error) {
 	url := g.ParseURL("rest", "namespaces", prefix)
 	httpRequest := HTTPRequest{
 		Method: deleteMethod,
 		Accept: jsonType,
 		URL:    url,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		deleted = false
@@ -97,8 +119,13 @@ func (g *GeoServer) DeleteNamespace(prefix string) (deleted bool, err error) {
 	return
 }
 
-// GetNamespaces get geoserver namespaces else return error
+// GetNamespaces lists namespaces using context.Background.
 func (g *GeoServer) GetNamespaces() (namespaces []*Namespace, err error) {
+	return g.GetNamespacesContext(context.Background())
+}
+
+// GetNamespacesContext is the context-aware variant of [GeoServer.GetNamespaces].
+func (g *GeoServer) GetNamespacesContext(ctx context.Context) (namespaces []*Namespace, err error) {
 	url := g.ParseURL("rest", "namespaces")
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -106,7 +133,7 @@ func (g *GeoServer) GetNamespaces() (namespaces []*Namespace, err error) {
 		URL:    url,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		namespaces = nil
@@ -125,8 +152,13 @@ func (g *GeoServer) GetNamespaces() (namespaces []*Namespace, err error) {
 	return
 }
 
-// GetNamespace get geoserver Namespace else return error
+// GetNamespace fetches a namespace by prefix using context.Background.
 func (g *GeoServer) GetNamespace(prefix string) (namespace Namespace, err error) {
+	return g.GetNamespaceContext(context.Background(), prefix)
+}
+
+// GetNamespaceContext is the context-aware variant of [GeoServer.GetNamespace].
+func (g *GeoServer) GetNamespaceContext(ctx context.Context, prefix string) (namespace Namespace, err error) {
 	url := g.ParseURL("rest", "namespaces", prefix)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -134,7 +166,7 @@ func (g *GeoServer) GetNamespace(prefix string) (namespace Namespace, err error)
 		URL:    url,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		err = g.GetError(responseCode, response)

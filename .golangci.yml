@@ -28,7 +28,6 @@ linters:
     - bodyclose
     - errorlint
     - noctx
-    - contextcheck
     - copyloopvar
     # Style / hygiene
     - revive

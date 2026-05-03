@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 )
@@ -94,6 +95,14 @@ type LayerGroupService interface {
 	DeleteLayerGroup(workspaceName string, layerGroupName string) (deleted bool, err error)
 }
 
+// LayerGroupServiceWithContext is the context-aware sibling of [LayerGroupService].
+type LayerGroupServiceWithContext interface {
+	GetLayerGroupsContext(ctx context.Context, workspaceName string) (layerGroups []*Resource, err error)
+	GetLayerGroupContext(ctx context.Context, workspaceName string, layerGroupName string) (layer *LayerGroup, err error)
+	CreateLayerGroupContext(ctx context.Context, workspaceName string, layerGroup *LayerGroup) (created bool, err error)
+	DeleteLayerGroupContext(ctx context.Context, workspaceName string, layerGroupName string) (deleted bool, err error)
+}
+
 // layerGroupsURL builds /rest[/workspaces/{ws}]/layergroups[/{name}].
 func (g *GeoServer) layerGroupsURL(workspaceName string, extra ...string) string {
 	parts := []string{"rest"}
@@ -105,9 +114,13 @@ func (g *GeoServer) layerGroupsURL(workspaceName string, extra ...string) string
 	return g.ParseURL(parts...)
 }
 
-// GetLayerGroups  get all layergroups from workspace in geoserver else return error,
-// if workspace is "" the it will return all public layers in geoserver
+// GetLayerGroups lists layer groups using context.Background.
 func (g *GeoServer) GetLayerGroups(workspaceName string) (layerGroups []*Resource, err error) {
+	return g.GetLayerGroupsContext(context.Background(), workspaceName)
+}
+
+// GetLayerGroupsContext is the context-aware variant of [GeoServer.GetLayerGroups].
+func (g *GeoServer) GetLayerGroupsContext(ctx context.Context, workspaceName string) (layerGroups []*Resource, err error) {
 	targetURL := g.layerGroupsURL(workspaceName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -115,7 +128,7 @@ func (g *GeoServer) GetLayerGroups(workspaceName string) (layerGroups []*Resourc
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		layerGroups = nil
@@ -130,9 +143,13 @@ func (g *GeoServer) GetLayerGroups(workspaceName string) (layerGroups []*Resourc
 	return
 }
 
-// GetLayerGroup get specific LayerGroup in a workspace from geoserver else return error,
-// if workspace is "" the it will return geoserver public layer with ${layerName}
+// GetLayerGroup fetches a layer group using context.Background.
 func (g *GeoServer) GetLayerGroup(workspaceName string, layerGroupName string) (layerGroup *LayerGroup, err error) {
+	return g.GetLayerGroupContext(context.Background(), workspaceName, layerGroupName)
+}
+
+// GetLayerGroupContext is the context-aware variant of [GeoServer.GetLayerGroup].
+func (g *GeoServer) GetLayerGroupContext(ctx context.Context, workspaceName string, layerGroupName string) (layerGroup *LayerGroup, err error) {
 	targetURL := g.layerGroupsURL(workspaceName, layerGroupName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -140,7 +157,7 @@ func (g *GeoServer) GetLayerGroup(workspaceName string, layerGroupName string) (
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		layerGroup = &LayerGroup{}
@@ -155,9 +172,13 @@ func (g *GeoServer) GetLayerGroup(workspaceName string, layerGroupName string) (
 	return
 }
 
-// CreateLayerGroup create specific LayerGroup in geoserver return created=true else created=false and the error,
-// if workspace is "" the it will return geoserver public layer with ${layerName}
+// CreateLayerGroup creates a layer group using context.Background.
 func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGroup) (created bool, err error) {
+	return g.CreateLayerGroupContext(context.Background(), workspaceName, layerGroup)
+}
+
+// CreateLayerGroupContext is the context-aware variant of [GeoServer.CreateLayerGroup].
+func (g *GeoServer) CreateLayerGroupContext(ctx context.Context, workspaceName string, layerGroup *LayerGroup) (created bool, err error) {
 	group := layerGroupDetailsResponse{LayerGroup: layerGroup}
 	serializedGroup, serErr := g.SerializeStruct(group)
 	if serErr != nil {
@@ -174,7 +195,7 @@ func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGrou
 		URL:      targetURL,
 		Query:    nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusCreated {
 		g.logger.Error(string(response))
 		created = false
@@ -185,9 +206,13 @@ func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGrou
 	return
 }
 
-// DeleteLayerGroup delete geoserver layergroup else return error,
-// if workspace is "" will delete public layergroup with name ${layerGroupName} if exists
+// DeleteLayerGroup deletes a layer group using context.Background.
 func (g *GeoServer) DeleteLayerGroup(workspaceName string, layerGroupName string) (deleted bool, err error) {
+	return g.DeleteLayerGroupContext(context.Background(), workspaceName, layerGroupName)
+}
+
+// DeleteLayerGroupContext is the context-aware variant of [GeoServer.DeleteLayerGroup].
+func (g *GeoServer) DeleteLayerGroupContext(ctx context.Context, workspaceName string, layerGroupName string) (deleted bool, err error) {
 	targetURL := g.layerGroupsURL(workspaceName, layerGroupName)
 	httpRequest := HTTPRequest{
 		Method: deleteMethod,
@@ -195,7 +220,7 @@ func (g *GeoServer) DeleteLayerGroup(workspaceName string, layerGroupName string
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		deleted = false

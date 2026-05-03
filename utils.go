@@ -1,6 +1,7 @@
 package geoserver
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,6 +26,7 @@ type HTTPRequest struct {
 // UtilsInterface contains common function used to help you deal with data and geoserver api
 type UtilsInterface interface {
 	DoRequest(request HTTPRequest) (responseText []byte, statusCode int)
+	DoRequestContext(ctx context.Context, request HTTPRequest) (responseText []byte, statusCode int)
 	SerializeStruct(structObj interface{}) ([]byte, error)
 	DeSerializeJSON(response []byte, structObj interface{}) (err error)
 	ParseURL(urlParts ...string) (parsedURL string)
@@ -37,7 +39,17 @@ type UtilsInterface interface {
 //
 // Backward-compatibility note: prior versions of this method panicked on
 // transport errors. Panics are now translated to (nil, 0) returns.
+//
+// DoRequest uses context.Background. Use [GeoServer.DoRequestContext] when
+// you need cancellation, deadlines, or trace propagation.
 func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusCode int) {
+	return g.DoRequestContext(context.Background(), request)
+}
+
+// DoRequestContext is the context-aware variant of [GeoServer.DoRequest]. The
+// supplied context is attached to the underlying *http.Request and honoured
+// by transport, including cancellation and deadlines.
+func (g *GeoServer) DoRequestContext(ctx context.Context, request HTTPRequest) (responseText []byte, statusCode int) {
 	defer func() {
 		// Belt-and-suspenders: in case any code path below still panics,
 		// translate to the historical (string-of-panic, 0) contract that
@@ -48,20 +60,28 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 		}
 	}()
 
-	var req *http.Request
+	var (
+		req    *http.Request
+		reqErr error
+	)
 	switch request.Method {
 	case getMethod, deleteMethod:
-		req = g.GetGeoserverRequest(request.URL, request.Method, request.Accept, nil, "")
+		req, reqErr = g.GetGeoserverRequestE(request.URL, request.Method, request.Accept, nil, "")
 	case postMethod, putMethod:
-		req = g.GetGeoserverRequest(request.URL, request.Method, request.Accept, request.Data, request.DataType)
+		req, reqErr = g.GetGeoserverRequestE(request.URL, request.Method, request.Accept, request.Data, request.DataType)
 	default:
 		g.logger.Errorf("DoRequest: unsupported HTTP method %q", request.Method)
+		return nil, 0
+	}
+	if reqErr != nil {
+		g.logger.Errorf("DoRequest: build request %s %s: %v", request.Method, request.URL, reqErr)
 		return nil, 0
 	}
 	if req == nil {
 		g.logger.Errorf("DoRequest: failed to construct request for %s %s", request.Method, request.URL)
 		return nil, 0
 	}
+	req = req.WithContext(ctx)
 
 	if len(request.Query) != 0 {
 		q := req.URL.Query()

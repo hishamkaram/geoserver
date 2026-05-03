@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strconv"
 )
@@ -23,6 +24,15 @@ type DatastoreService interface {
 
 	// DeleteDatastore deletes a datastore from geoserver else return error
 	DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, err error)
+}
+
+// DatastoreServiceWithContext is the context-aware sibling of [DatastoreService].
+type DatastoreServiceWithContext interface {
+	DatastoreExistsContext(ctx context.Context, workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, err error)
+	GetDatastoresContext(ctx context.Context, workspaceName string) (datastores []*Resource, err error)
+	GetDatastoreDetailsContext(ctx context.Context, workspaceName string, datastoreName string) (datastore *Datastore, err error)
+	CreateDatastoreContext(ctx context.Context, datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error)
+	DeleteDatastoreContext(ctx context.Context, workspaceName string, datastoreName string, recurse bool) (deleted bool, err error)
 }
 
 // Datastore holds geoserver store information
@@ -99,8 +109,13 @@ func (connection *DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
 	return
 }
 
-// DatastoreExists checks if a datastore exists in a workspace else return error
+// DatastoreExists checks if a datastore exists in a workspace using context.Background.
 func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, err error) {
+	return g.DatastoreExistsContext(context.Background(), workspaceName, datastoreName, quietOnNotFound)
+}
+
+// DatastoreExistsContext is the context-aware variant of [GeoServer.DatastoreExists].
+func (g *GeoServer) DatastoreExistsContext(ctx context.Context, workspaceName string, datastoreName string, quietOnNotFound bool) (exists bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -108,7 +123,7 @@ func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, 
 		URL:    targetURL,
 		Query:  map[string]string{"quietOnNotFound": strconv.FormatBool(quietOnNotFound)},
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		exists = false
 		err = g.GetError(responseCode, response)
@@ -118,8 +133,13 @@ func (g *GeoServer) DatastoreExists(workspaceName string, datastoreName string, 
 	return
 }
 
-// GetDatastores return datastores in a workspace else return error
+// GetDatastores returns datastores in a workspace using context.Background.
 func (g *GeoServer) GetDatastores(workspaceName string) (datastores []*Resource, err error) {
+	return g.GetDatastoresContext(context.Background(), workspaceName)
+}
+
+// GetDatastoresContext is the context-aware variant of [GeoServer.GetDatastores].
+func (g *GeoServer) GetDatastoresContext(ctx context.Context, workspaceName string) (datastores []*Resource, err error) {
 	//TODO: check if workspace exist before creating it
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores")
 	httpRequest := HTTPRequest{
@@ -128,7 +148,7 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []*Resource,
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		datastores = nil
 		err = g.GetError(responseCode, response)
@@ -146,8 +166,13 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []*Resource,
 	return
 }
 
-// GetDatastoreDetails get specific datastore from geoserver else return error
+// GetDatastoreDetails returns the full datastore document using context.Background.
 func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName string) (datastore *Datastore, err error) {
+	return g.GetDatastoreDetailsContext(context.Background(), workspaceName, datastoreName)
+}
+
+// GetDatastoreDetailsContext is the context-aware variant of [GeoServer.GetDatastoreDetails].
+func (g *GeoServer) GetDatastoreDetailsContext(ctx context.Context, workspaceName string, datastoreName string) (datastore *Datastore, err error) {
 	//TODO: check if workspace exist before creating it
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName)
 	httpRequest := HTTPRequest{
@@ -156,7 +181,7 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		datastore = &Datastore{}
 		err = g.GetError(responseCode, response)
@@ -172,8 +197,13 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 
 }
 
-// CreateDatastore create a datastore under provided workspace
+// CreateDatastore creates a datastore using context.Background.
 func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error) {
+	return g.CreateDatastoreContext(context.Background(), datastoreConnection, workspaceName)
+}
+
+// CreateDatastoreContext is the context-aware variant of [GeoServer.CreateDatastore].
+func (g *GeoServer) CreateDatastoreContext(ctx context.Context, datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores")
 	if datastoreConnection.DBSchema == "" {
 		datastoreConnection.DBSchema = "public"
@@ -194,7 +224,7 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 		URL:      targetURL,
 		Query:    nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusCreated {
 		g.logger.Warn(string(response))
 		created = false
@@ -206,8 +236,13 @@ func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, wor
 
 }
 
-// DeleteDatastore deletes a datastore from geoserver else return error
+// DeleteDatastore deletes a datastore using context.Background.
 func (g *GeoServer) DeleteDatastore(workspaceName string, datastoreName string, recurse bool) (deleted bool, err error) {
+	return g.DeleteDatastoreContext(context.Background(), workspaceName, datastoreName, recurse)
+}
+
+// DeleteDatastoreContext is the context-aware variant of [GeoServer.DeleteDatastore].
+func (g *GeoServer) DeleteDatastoreContext(ctx context.Context, workspaceName string, datastoreName string, recurse bool) (deleted bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName)
 	httpRequest := HTTPRequest{
 		Method: deleteMethod,
@@ -215,7 +250,7 @@ func (g *GeoServer) DeleteDatastore(workspaceName string, datastoreName string, 
 		URL:    targetURL,
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Warn(string(response))
 		deleted = false
