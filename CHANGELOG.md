@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — internal restructure (no API change)
+
+The implementation behind a few public methods on `*GeoServer` has moved into a new `internal/transport` package. The exported symbols, signatures, and observable behavior are byte-identical to v1.1.0 — verified by full unit + integration suites on GeoServer 2.27.4 and 2.28.0 plus the `breaking-change-checker` agent's exported-API diff.
+
+What moved:
+
+- `*GeoServer.ParseURL` — algorithm now lives in `internal/transport.BuildURL`. The public method is a thin wrapper that translates errors into the logged-and-empty-string contract v1.0 callers expect.
+- `*GeoServer.DoRequestContext` — the "apply query, execute, read body, log" portion now lives in `internal/transport.Execute`. The public method still owns request building (because it depends on the client's basic-auth credentials) and delegates the rest. Panic-recovery moved with the algorithm.
+- The unexported `(*GeoServer).getGoGeoserverPackageDir` test helper is replaced by the new `internal/testutil.PkgDir` free function. Test code was the only caller.
+- `vars.go` renamed to `consts.go` (the file contains constants, not vars; only `statusErrorMapping` is a var, which is correctly named per Go convention).
+
+What didn't move (and why):
+
+- Everything on `*GeoServer` stays exported and at the same import path. v1.x is non-breaking; consumers see no symbol or behavior change.
+- Auth (basic auth in `GetGeoserverRequestE`) stays per-request rather than via a `RoundTripper`. Moving auth would be a soft compat break for callers constructing `*GeoServer` directly with `Username`/`Password` fields outside the `New(...)` constructor — deferred to v2.
+- v2 will own the deeper restructure (sub-clients, immutable Client, `internal/transport/` shared with the public Client). v1's `internal/transport/` reuses the same algorithms so the v2 port can lean on proven code.
+
 ## [1.1.0] — 2026-05-03
 
 The v1.1 revival release. Modernizes the build, fixes long-standing bugs, adds a context-aware / typed-error / functional-options API surface alongside the existing one, ports two long-stalled community contributions (PRs #15 and #17), and lands the project's CI / governance scaffolding (Claude Code config, mandatory integration tests on PR, branch + squash-merge workflow). Existing v1.0.x callers can upgrade with only a `go.mod` bump — no source changes required.

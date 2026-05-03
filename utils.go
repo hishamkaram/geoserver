@@ -3,14 +3,12 @@ package geoserver
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io"
 	"net/http"
-	"net/url"
-	"path"
-	"path/filepath"
 	"reflect"
-	"strings"
+
+	"github.com/hishamkaram/geoserver/internal/transport"
 )
 
 // HTTPRequest is an http request object
@@ -49,17 +47,13 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 // DoRequestContext is the context-aware variant of [GeoServer.DoRequest]. The
 // supplied context is attached to the underlying *http.Request and honoured
 // by transport, including cancellation and deadlines.
+//
+// Implementation: the per-request shape (method, URL, body, auth) is built
+// here on *GeoServer because it depends on the client's credentials. The
+// generic "apply query, execute, read body, log" portion is delegated to
+// internal/transport.Execute so it can be unit-tested in isolation and
+// reused by v2.
 func (g *GeoServer) DoRequestContext(ctx context.Context, request HTTPRequest) (responseText []byte, statusCode int) {
-	defer func() {
-		// Belt-and-suspenders: in case any code path below still panics,
-		// translate to the historical (string-of-panic, 0) contract that
-		// callers may depend on.
-		if r := recover(); r != nil {
-			responseText = []byte(fmt.Sprintf("%s", r))
-			statusCode = 0
-		}
-	}()
-
 	var (
 		req    *http.Request
 		reqErr error
@@ -83,28 +77,7 @@ func (g *GeoServer) DoRequestContext(ctx context.Context, request HTTPRequest) (
 	}
 	req = req.WithContext(ctx)
 
-	if len(request.Query) != 0 {
-		q := req.URL.Query()
-		for k, v := range request.Query {
-			q.Add(k, v)
-		}
-		req.URL.RawQuery = q.Encode()
-	}
-
-	response, responseErr := g.HttpClient.Do(req)
-	if responseErr != nil {
-		g.logger.Errorf("DoRequest: %s %s: %v", req.Method, req.URL, responseErr)
-		return nil, 0
-	}
-	defer func() { _ = response.Body.Close() }()
-
-	body, readErr := io.ReadAll(response.Body)
-	if readErr != nil {
-		g.logger.Errorf("DoRequest: read body for %s %s: %v", req.Method, req.URL, readErr)
-		return nil, response.StatusCode
-	}
-	g.logger.Infof("url:%s  Status=%s", req.URL, response.Status)
-	return body, response.StatusCode
+	return transport.Execute(req, g.HttpClient, g.logger, request.Query)
 }
 
 // GetError returns a typed [*Error] for the given GeoServer HTTP response.
@@ -160,12 +133,6 @@ func (g *GeoServer) DeSerializeJSON(response []byte, structObj interface{}) (err
 	return nil
 }
 
-// getGoGeoserverPackageDir returns the absolute path to the package working
-// directory. Used by tests; library callers should not rely on it.
-func (g *GeoServer) getGoGeoserverPackageDir() (string, error) {
-	return filepath.Abs("./")
-}
-
 // ParseURL joins urlParts with the GeoServer base URL, applying url.PathEscape
 // to each user-provided segment. Empty segments are dropped. On a malformed
 // base URL, it returns the empty string and logs at Error.
@@ -175,11 +142,15 @@ func (g *GeoServer) getGoGeoserverPackageDir() (string, error) {
 // produce correct URLs instead of malformed ones. Previously such inputs
 // silently produced bad URLs.
 //
-// Bug fix in v1.1.1: the encoded path is preserved through url.URL.String()
+// Bug fix in v1.1.x: the encoded path is preserved through url.URL.String()
 // by setting [url.URL.RawPath] alongside [url.URL.Path]. Without RawPath,
 // segments that PathEscape'd to a sequence containing "%" (e.g., "*" → "%2A")
 // were re-encoded by String() to "%252A", which GeoServer's request firewall
 // rejects as a potentially malicious URL.
+//
+// The algorithm itself lives in internal/transport.BuildURL; this method is
+// a thin wrapper that translates errors into the logged-and-empty-string
+// contract v1.0 callers expect.
 func (g *GeoServer) ParseURL(urlParts ...string) (parsedURL string) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -187,34 +158,14 @@ func (g *GeoServer) ParseURL(urlParts ...string) (parsedURL string) {
 		}
 	}()
 
-	geoserverURL, err := url.Parse(g.ServerURL)
+	parsed, err := transport.BuildURL(g.ServerURL, urlParts)
 	if err != nil {
-		g.logger.Errorf("ParseURL: invalid base URL %q: %v", g.ServerURL, err)
-		return ""
-	}
-
-	// Preserve the base path (e.g. "/geoserver/"), then escape each
-	// caller-provided segment individually. Empty segments are skipped so
-	// callers can pass conditional values without producing "//".
-	basePath := strings.TrimRight(geoserverURL.Path, "/")
-	escaped := make([]string, 0, len(urlParts)+1)
-	if basePath != "" {
-		escaped = append(escaped, basePath)
-	}
-	for _, p := range urlParts {
-		if p == "" {
-			continue
+		if errors.Is(err, transport.ErrInvalidBaseURL) {
+			g.logger.Errorf("ParseURL: invalid base URL %q", g.ServerURL)
+		} else {
+			g.logger.Errorf("ParseURL: cannot build path: %v", err)
 		}
-		escaped = append(escaped, url.PathEscape(p))
-	}
-	rawPath := path.Join(escaped...)
-	decoded, decodeErr := url.PathUnescape(rawPath)
-	if decodeErr != nil {
-		// Should be unreachable since we built rawPath from PathEscape outputs.
-		g.logger.Errorf("ParseURL: cannot unescape built path %q: %v", rawPath, decodeErr)
 		return ""
 	}
-	geoserverURL.Path = decoded
-	geoserverURL.RawPath = rawPath
-	return geoserverURL.String()
+	return parsed
 }

@@ -90,10 +90,19 @@ linters:
         text: "var-naming.*(Id should be ID|XmlPostRequestLogBufferSize)"
       # Historic error strings ("Not Found", "Forbidden", etc.) are part of the
       # observable error format from v1.0; lowercasing them would break
-      # callers that match on text. The ST1005 warning is suppressed for vars.go.
-      - path: vars\.go
+      # callers that match on text. The ST1005 warning is suppressed for
+      # consts.go (renamed from vars.go in the v1.1 internal restructure).
+      - path: consts\.go
         linters: [staticcheck]
         text: "ST1005"
+      # internal/transport.Execute calls client.Do on a *http.Request whose
+      # URL is composed by callers — the same shape as the previous
+      # *GeoServer.DoRequestContext. gosec's SSRF taint analysis (G704)
+      # flags this; the request URL is always built from configured-server +
+      # PathEscape'd segments, not user-controlled input.
+      - path: internal/transport/transport\.go
+        linters: [gosec]
+        text: "G704"
       # gocritic style nits we don't want noise from:
       # - sloppyReassign disagrees with named return values, which we use
       # - paramTypeCombine is purely cosmetic
