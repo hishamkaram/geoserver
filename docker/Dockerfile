@@ -32,6 +32,27 @@ RUN set -eux; \
     mv /tmp/geoserver/geoserver.war /usr/local/tomcat/webapps/geoserver.war; \
     rm -rf /tmp/geoserver /tmp/geoserver.war.zip
 
+# Pre-extract the WAR so we can drop extension JARs into WEB-INF/lib.
+# Tomcat will run the unpacked form just like the WAR.
+RUN set -eux; \
+    cd /usr/local/tomcat/webapps; \
+    mkdir geoserver; \
+    unzip -q geoserver.war -d geoserver; \
+    rm geoserver.war
+
+# Importer extension — required for the v2 SDK's `c.Imports`
+# integration tests. Without it `GET /rest/imports` returns 404
+# and the suite skips. Baked in here so CI exercises the full
+# v2/rest/imports surface against a real server.
+ARG IMPORTER_DOWNLOAD_URL=https://downloads.sourceforge.net/project/geoserver/GeoServer/${GEOSERVER_VERSION}/extensions/geoserver-${GEOSERVER_VERSION}-importer-plugin.zip
+RUN set -eux; \
+    cd /tmp; \
+    curl -fsSL --proto '=https' --tlsv1.2 -o importer.zip "${IMPORTER_DOWNLOAD_URL}"; \
+    mkdir importer-jars; \
+    unzip -q -j importer.zip "*.jar" -d importer-jars; \
+    cp importer-jars/*.jar /usr/local/tomcat/webapps/geoserver/WEB-INF/lib/; \
+    rm -rf importer.zip importer-jars
+
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \

@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — Importer extension client
+
+- **`v2/rest/imports/` package** — `c.Imports` exposes the GeoServer Importer extension at `/rest/imports` for batch ingest and migration workflows. Daily-driver session+tasks surface: `Create`, `List`, `Iter`, `Get`, `Delete`, `Execute`; `ListTasks`, `AddTask`, `GetTask`, `UpdateTask`, `DeleteTask`. Per-task Layer / Transforms / Data sub-resources and the `database`/`mosaic` data types are deferred to follow-ups.
+- **Typed enums** — `State` (INIT, INIT_ERROR, PENDING, READY, RUNNING, COMPLETE, COMPLETE_ERROR), `DataType` (file, directory, remote).
+- **`CreateOptions{Async, Execute}`** controls the async/exec query parameters on `POST /rest/imports`.
+- **Wire-shape note** — TargetWorkspace and TargetStore are nested objects, not strings: `{"workspace":{"name":"<name>"}}` / `{"dataStore":{"name":"<name>"}}`. The `ImportRequest` API accepts flat string names and the package marshals them into the nested form.
+
+### Docker image — Importer extension baked in
+
+- **`docker/Dockerfile`** now downloads and installs the GeoServer Importer extension during the image build. CI's compose stack on both 2.27.4 LTS and 2.28.0 stable will exercise the full `v2/rest/imports` integration suite without skipping. The Dockerfile pre-extracts the WAR (Tomcat happily runs the unpacked form) and drops the importer JARs into `WEB-INF/lib/`.
+- Without this change, `GET /rest/imports` returns 404 and the import-test suite skips silently. The integration test still has a `requireImporter` skip-gate to handle deployments where the extension is intentionally absent.
+
 ### Added — GeoWebCache REST client
 
 - **`v2/rest/gwc/` package** — `c.GWC` exposes the GeoWebCache REST endpoints universal to any deployment serving map tiles. URL prefix is `/gwc/rest/` (outside the `/rest/` catalog tree).

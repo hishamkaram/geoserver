@@ -19,6 +19,7 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/datastores"
 	"github.com/hishamkaram/geoserver/v2/rest/featuretypes"
 	"github.com/hishamkaram/geoserver/v2/rest/gwc"
+	"github.com/hishamkaram/geoserver/v2/rest/imports"
 	"github.com/hishamkaram/geoserver/v2/rest/layergroups"
 	"github.com/hishamkaram/geoserver/v2/rest/layers"
 	"github.com/hishamkaram/geoserver/v2/rest/namespaces"
@@ -144,6 +145,13 @@ type Client struct {
 	// document.
 	WCS *wcs.Client
 
+	// Imports is the entry point for the GeoServer Importer
+	// extension at /rest/imports — bulk-ingest sessions for batch
+	// publishing, migrations, and drop-and-republish workflows.
+	// The extension is NOT installed by default; calls to a
+	// GeoServer without it return ErrNotFound.
+	Imports *imports.Client
+
 	// GWC is the entry point for GeoWebCache REST endpoints —
 	// per-layer cache config, seed/reseed/truncate tasks, and
 	// disk-quota policy. Lives at /gwc/rest/ (outside the /rest/
@@ -232,6 +240,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.WCS = wcs.New(adapter)
 	c.Services = services.New(adapter)
 	c.GWC = gwc.New(adapter)
+	c.Imports = imports.New(adapter)
 	return c, nil
 }
 
