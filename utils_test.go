@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hishamkaram/geoserver/internal/testutil"
 )
 
 func TestGetError(t *testing.T) {
@@ -70,9 +72,8 @@ func TestDeSerializeJSON(t *testing.T) {
 	assert.NotNil(t, err)
 
 }
-func TestGetGoGeoserverPackageDir(t *testing.T) {
-	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
-	geoserverPath, err := gsCatalog.getGoGeoserverPackageDir()
+func TestPkgDir(t *testing.T) {
+	geoserverPath, err := testutil.PkgDir()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, geoserverPath)
 }
