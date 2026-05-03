@@ -135,6 +135,68 @@ func (c *WorkspaceClient) Update(ctx context.Context, name string, layer *Layer)
 	return c.core.Do(ctx, op, http.MethodPut, u, body, nil, nil)
 }
 
+// ListStyles returns the layer's alternative-style list — the styles
+// callable through WMS `?styles=<name>` beyond the layer's default
+// style. The default style is exposed separately on
+// [Layer.DefaultStyle] (read via [WorkspaceClient.Get]); this method
+// covers only the additional-styles sub-resource.
+//
+// An empty list (no alternatives configured) is the common case and
+// returns nil with no error.
+func (c *WorkspaceClient) ListStyles(ctx context.Context, layer string) ([]Ref, error) {
+	const op = "Layers.ListStyles"
+	if c.workspace == "" {
+		return nil, errors.New(op + ": empty workspace name")
+	}
+	if layer == "" {
+		return nil, errors.New(op + ": empty layer name")
+	}
+	u, err := c.core.URL("rest", "workspaces", c.workspace, "layers", layer, "styles")
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	var resp stylesListResponse
+	if err := c.core.Do(ctx, op, http.MethodGet, u, nil, nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Styles.Style, nil
+}
+
+// AddStyle attaches a style to the layer's alternative-style list.
+// With opts.Default=true the call also atomically promotes the new
+// style to the layer's default style — equivalent to a separate
+// [WorkspaceClient.Update] but in one wire round-trip.
+//
+// The named style must already exist (registered via
+// [styles.Client.Create] either globally or in a workspace).
+//
+// Removing an alternative style is not exposed as a dedicated method
+// because the GeoServer docs do not document a DELETE on this
+// sub-resource. Use [WorkspaceClient.Update] with the unwanted
+// reference removed from [Layer.Styles] instead.
+func (c *WorkspaceClient) AddStyle(ctx context.Context, layer, styleName string, opts AddStyleOptions) error {
+	const op = "Layers.AddStyle"
+	if c.workspace == "" {
+		return errors.New(op + ": empty workspace name")
+	}
+	if layer == "" {
+		return errors.New(op + ": empty layer name")
+	}
+	if styleName == "" {
+		return errors.New(op + ": empty styleName")
+	}
+	u, err := c.core.URL("rest", "workspaces", c.workspace, "layers", layer, "styles")
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	body := addStyleRequest{Style: addStylePayload{Name: styleName}}
+	var query map[string]string
+	if opts.Default {
+		query = map[string]string{"default": "true"}
+	}
+	return c.core.Do(ctx, op, http.MethodPost, u, body, query, nil)
+}
+
 // Delete removes a layer. With opts.Recurse=true, also removes the
 // underlying feature type or coverage. Default leaves the data
 // resource intact.
