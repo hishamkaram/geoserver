@@ -5,6 +5,7 @@ package about
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -39,11 +40,38 @@ type VersionInfo struct {
 
 // Resource is one component in [VersionInfo]. Wire shape uses the
 // XML-as-JSON `@name` attribute for the component name.
+//
+// Version may come back as either a JSON string ("2.28.0") or a JSON
+// number (34) depending on the component — GeoTools, for example,
+// reports a bare integer in some releases. The custom Unmarshal
+// coerces both forms into the string field.
 type Resource struct {
 	Name           string `json:"@name,omitempty"`
-	Version        string `json:"Version,omitempty"`
+	Version        string `json:"-"`
 	BuildTimestamp string `json:"Build-Timestamp,omitempty"`
 	GitRevision    string `json:"Git-Revision,omitempty"`
+}
+
+// UnmarshalJSON tolerates string-or-number Version. The other fields
+// decode via the alias trick to avoid recursion.
+func (r *Resource) UnmarshalJSON(data []byte) error {
+	type alias Resource
+	aux := struct {
+		*alias
+		Version json.RawMessage `json:"Version,omitempty"`
+	}{alias: (*alias)(r)}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if len(aux.Version) == 0 || string(aux.Version) == "null" {
+		return nil
+	}
+	if aux.Version[0] == '"' {
+		return json.Unmarshal(aux.Version, &r.Version)
+	}
+	// Number or other — preserve as raw string ("34" → "34").
+	r.Version = string(aux.Version)
+	return nil
 }
 
 // Ping issues a GET against /rest/about/version and returns nil if

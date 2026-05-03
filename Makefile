@@ -28,7 +28,7 @@ GOLANGCI_LINT_VERSION ?= v2.12.1
 
 .PHONY: help
 help: ## Show this help
-	@awk 'BEGIN {FS = ":.*##"; printf "Targets:\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "Targets:\n"} /^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
 .PHONY: tidy
 tidy: ## go mod tidy && verify
@@ -118,6 +118,10 @@ examples-v2: ## compile-check every example under v2/examples/
 .PHONY: test-v2-unit
 test-v2-unit: ## v2 module unit tests (no Docker)
 	cd v2 && $(GO) test -race -short -timeout=60s ./...
+
+.PHONY: test-v2-integration
+test-v2-integration: ## v2 module integration tests (requires `make compose-up`)
+	cd v2 && $(GO) test -race -tags=$(INT_TAG) -timeout=15m ./...
 
 .PHONY: build-v2
 build-v2: ## v2 module build + vet

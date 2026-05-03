@@ -30,4 +30,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Shared GIS wire-format types (`CRS` with custom Marshal/Unmarshal, `BoundingBox`, `NativeBoundingBox`, `LatLonBoundingBox`, `Keywords`) extracted to `internal/wire`. `featuretypes.CRS` and `coverages.CRS` (and the related types) are now type aliases for `wire.X`, sharing underlying type identity — values can flow between the two sub-packages without conversion. Public API surface unchanged; users keep accessing the types through the sub-package they already use.
 
+### Fixed
+
+- **`about.Resource.Version`** decodes both string ("2.28.0") and number (`34`) JSON wire forms — GeoTools reports a bare integer in some releases.
+- **`layergroups.Styles`** unmarshal handles all four GeoServer wire shapes for the per-member style list: bare string (no overrides), `{"style":""}` (single member, default), `{"style":{...}}` (single member, explicit), and `{"style":[...]}` (multi-member array). Previously only the array form decoded correctly; single-member groups failed with a parse error.
+- **`namespaces.Namespace`** unmarshal accepts both wire shapes — the list endpoint returns `{"name": ..., "href": ...}` per entry while the detail endpoint returns `{"prefix": ..., "uri": ..., "isolated": ...}`. The list-shape `name` is coerced into `Prefix` so list results are usable.
+- **`datastores.List` empty-collection** — accepts the bare-string `{"dataStores":""}` GeoServer 2.28+ returns for an empty collection (carries forward the v1 issue #22 fix into v2). The same envelope handling is applied to `featuretypes` Discover where applicable.
+
+### Added (tests)
+
+- **Integration test suite** under `v2/rest/<resource>/<resource>_integration_test.go` (build tag `//go:build integration`). Covers workspaces, datastores, featuretypes, coveragestores, coverages, layers, layergroups, styles, namespaces, settings, security, ACL, and about against a real GeoServer 2.27 / 2.28 + PostGIS compose stack. Shared helpers in `internal/testenv` build a v2 client from env vars and synthesize unique resource names per-test for parallel safety.
+- New CI step `Run v2 integration tests` runs the suite alongside the v1 integration tests against both `GeoServer 2.27.4` and `GeoServer 2.28.0` matrix legs; both legs must pass for PR merge.
+- New Makefile target `make test-v2-integration` for local runs against `make compose-up`.
+
 No release tag yet; the module's first published tag will be `v2.0.0-alpha.1` when the surface is wide enough to warrant a soak.
