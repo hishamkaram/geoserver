@@ -158,6 +158,26 @@ func TestList_OK(t *testing.T) {
 	}
 }
 
+// Regression for v1 issue #22: GeoServer 2.28+ returns `{"dataStores":""}`
+// (a bare string) for an empty datastore collection rather than the
+// expected `{"dataStores":{"dataStore":[]}}` shape. List must accept both.
+func TestList_EmptyCollection(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"dataStores":""}`)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	got, err := c.Datastores.InWorkspace("empty").List(context.Background(), datastores.ListOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != nil {
+		t.Fatalf("expected nil for empty collection, got %+v", got)
+	}
+}
+
 func TestList_NotFound(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
