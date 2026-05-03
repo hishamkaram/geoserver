@@ -118,6 +118,17 @@ _ = cov.Create(ctx, &coverages.Coverage{
 })
 ```
 
+## Runnable examples
+
+The [`examples/`](examples/) directory contains self-contained `main` packages demonstrating each idiom:
+
+- [`workspaces/`](examples/workspaces/) — flat sub-client CRUD; `errors.Is` matching.
+- [`publish-postgis/`](examples/publish-postgis/) — end-to-end workspace → datastore → feature type → layer flow with the hierarchical sub-clients.
+- [`style-upload/`](examples/style-upload/) — two-step style publish via `Create` + `UploadSLD`.
+- [`error-handling/`](examples/error-handling/) — full sentinel set + `*APIError` inspection via `errors.As`.
+
+Run any with `go run ./v2/examples/<name>` against a `make compose-up` stack, or compile-check all with `make examples-v2`.
+
 ## Resource status
 
 | Resource | v1 | v2 |
