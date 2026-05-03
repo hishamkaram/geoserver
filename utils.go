@@ -174,6 +174,12 @@ func (g *GeoServer) getGoGeoserverPackageDir() (string, error) {
 // workspace/layer names containing spaces, slashes, or non-ASCII characters
 // produce correct URLs instead of malformed ones. Previously such inputs
 // silently produced bad URLs.
+//
+// Bug fix in v1.1.1: the encoded path is preserved through url.URL.String()
+// by setting [url.URL.RawPath] alongside [url.URL.Path]. Without RawPath,
+// segments that PathEscape'd to a sequence containing "%" (e.g., "*" → "%2A")
+// were re-encoded by String() to "%252A", which GeoServer's request firewall
+// rejects as a potentially malicious URL.
 func (g *GeoServer) ParseURL(urlParts ...string) (parsedURL string) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -201,6 +207,14 @@ func (g *GeoServer) ParseURL(urlParts ...string) (parsedURL string) {
 		}
 		escaped = append(escaped, url.PathEscape(p))
 	}
-	geoserverURL.Path = path.Join(escaped...)
+	rawPath := path.Join(escaped...)
+	decoded, decodeErr := url.PathUnescape(rawPath)
+	if decodeErr != nil {
+		// Should be unreachable since we built rawPath from PathEscape outputs.
+		g.logger.Errorf("ParseURL: cannot unescape built path %q: %v", rawPath, decodeErr)
+		return ""
+	}
+	geoserverURL.Path = decoded
+	geoserverURL.RawPath = rawPath
 	return geoserverURL.String()
 }
