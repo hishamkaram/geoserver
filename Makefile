@@ -111,6 +111,10 @@ compose-test-down: ## tear down integration-test compose
 examples: ## compile-check every example under examples/
 	$(GO) build -o /dev/null ./examples/...
 
+.PHONY: examples-v2
+examples-v2: ## compile-check every example under v2/examples/
+	cd v2 && $(GO) build -o /dev/null ./examples/...
+
 .PHONY: test-v2-unit
 test-v2-unit: ## v2 module unit tests (no Docker)
 	cd v2 && $(GO) test -race -short -timeout=60s ./...
