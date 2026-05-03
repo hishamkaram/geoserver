@@ -23,6 +23,7 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/layergroups"
 	"github.com/hishamkaram/geoserver/v2/rest/layers"
 	"github.com/hishamkaram/geoserver/v2/rest/namespaces"
+	"github.com/hishamkaram/geoserver/v2/rest/resources"
 	"github.com/hishamkaram/geoserver/v2/rest/security"
 	"github.com/hishamkaram/geoserver/v2/rest/services"
 	"github.com/hishamkaram/geoserver/v2/rest/settings"
@@ -165,6 +166,14 @@ type Client struct {
 	// `WMTS()`. Each exposes `Get`/`Update` for global settings and
 	// `.InWorkspace(ws)` for per-workspace overrides (`Get`/`Update`/`Delete`).
 	Services *services.Client
+
+	// Resources is the entry point for the GeoServer Resource API at
+	// /rest/resource/{path} — generic byte-stream access to files
+	// in the GeoServer data directory. Daily-driver methods cover
+	// reading file contents, listing directories, uploading new
+	// resources (FTL templates, SLD includes, icons), moving /
+	// copying files, and recursive deletion.
+	Resources *resources.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -241,6 +250,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.Services = services.New(adapter)
 	c.GWC = gwc.New(adapter)
 	c.Imports = imports.New(adapter)
+	c.Resources = resources.New(adapter)
 	return c, nil
 }
 
@@ -352,12 +362,37 @@ func (a coreAdapter) Do(ctx context.Context, op string, method, requestURL strin
 	return err
 }
 
-// DoStream issues a request whose response is a stream (e.g., an SLD
-// download). The caller owns the returned ReadCloser and must close it.
-// Reserved for future resource ports; not used by Workspaces.
+// DoStream issues a request whose response is a streamed body
+// (e.g., a Resource API file download whose Content-Type can be
+// XML / JSON / image / binary depending on the file). The caller
+// owns the returned [io.ReadCloser] and must close it.
+//
+// On 2xx, returns the open body, the status code, and nil error.
+// On non-2xx, drains and closes the body, returns a [*APIError].
+// On transport failure, returns the wrapped transport error.
 func (a coreAdapter) DoStream(ctx context.Context, op string, method, requestURL string, query map[string]string) (io.ReadCloser, int, error) {
-	// Placeholder; expand when the first streaming resource ports.
-	return nil, 0, errors.New("geoserver: DoStream not yet implemented")
+	httpReq, err := http.NewRequestWithContext(ctx, method, requestURL, nil)
+	if err != nil {
+		return nil, 0, fmt.Errorf("%s: build request: %w", op, err)
+	}
+	httpReq.Header.Set("Accept", "*/*")
+	if len(query) > 0 {
+		q := httpReq.URL.Query()
+		for k, v := range query {
+			q.Set(k, v)
+		}
+		httpReq.URL.RawQuery = q.Encode()
+	}
+	resp, err := a.core.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, 0, fmt.Errorf("%s: %s %s: %w", op, method, requestURL, err)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<10))
+		_ = resp.Body.Close()
+		return nil, resp.StatusCode, newAPIError(op, method, requestURL, resp.StatusCode, body)
+	}
+	return resp.Body, resp.StatusCode, nil
 }
 
 // DoXML issues a GET-style request and decodes the response as XML.
@@ -379,6 +414,20 @@ func (a coreAdapter) DoXML(ctx context.Context, op, method, requestURL string, q
 		return newAPIError(tErr.Op, tErr.Method, tErr.URL, tErr.StatusCode, tErr.Body)
 	}
 	return err
+}
+
+// SynthesizeError manufactures an [*APIError] with the supplied
+// status code, suitable for sub-clients that need to surface a
+// package sentinel (e.g., [ErrNotFound]) when the wire response is
+// semantically an error but technically a 2xx — for example, the
+// Resource API returns 200 with type="undefined" for missing paths
+// when queried with operation=metadata, and the [resources] sub-client
+// translates that into an [ErrNotFound]-bearing [*APIError].
+//
+// bodyHint is preserved on the synthesized error's Body field for
+// diagnostic purposes; it is not parsed.
+func (a coreAdapter) SynthesizeError(op, method, requestURL string, statusCode int, bodyHint string) error {
+	return newAPIError(op, method, requestURL, statusCode, []byte(bodyHint))
 }
 
 // DoRaw issues a request with an arbitrary-Reader body and explicit
