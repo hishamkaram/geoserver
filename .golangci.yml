@@ -1,0 +1,95 @@
+# golangci-lint v2.x configuration for github.com/hishamkaram/geoserver
+# Docs: https://golangci-lint.run/usage/configuration/
+
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+  build-tags:
+    - integration
+
+output:
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+      colors: true
+
+linters:
+  default: none
+  enable:
+    # Correctness — must pass
+    - errcheck
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+    - bodyclose
+    - errorlint
+    - noctx
+    - contextcheck
+    - copyloopvar
+    # Style / hygiene
+    - revive
+    - gocritic
+    - misspell
+    - unconvert
+    - prealloc
+    # Security
+    - gosec
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: false
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+        - shadow
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - "checkPrivateReceivers"
+            - "disableStutteringCheck"
+        - name: var-naming
+        - name: package-comments
+        - name: unused-parameter
+          disabled: true
+    gosec:
+      excludes:
+        - G104
+        - G304
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+      disabled-checks:
+        - hugeParam
+        - rangeValCopy
+
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gosec
+          - prealloc
+      - path: wms/wms\.go
+        text: "ParseCapabilities is deprecated"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/hishamkaram/geoserver
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

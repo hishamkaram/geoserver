@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/hishamkaram/geoserver/security/advisories/new
+    about: Please use private security advisories for vulnerability reports — do not open a public issue.
+  - name: GeoServer (the server) bugs
+    url: https://geoserver.org/
+    about: Bugs in the GeoServer server itself belong upstream, not in this Go client.
