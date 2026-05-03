@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0-alpha.3] — 2026-05-03
+
+Third alpha. Closes the OWS GetCapabilities trio with WFS + WCS, taking v2's surface beyond v1's. No breaking changes from `alpha.2`; existing callers can `go get @v2.0.0-alpha.3` and recompile. Public API may still refine before `v2.0.0` — no production guarantees yet.
+
 ### Added — OWS clients (2/3, 3/3)
 
 - **`v2/ows/wfs/` package** — WFS GetCapabilities. Hand-written subset of WFS 1.1.0 / 2.0 schemas (ServiceIdentification, ServiceProvider, OperationsMetadata, FeatureTypeList with WGS84BoundingBox + DefaultSRS / OtherSRS / OutputFormats). New free function `wfs.ParseCapabilities(io.Reader)` and `c.WFS.GetCapabilities(ctx, opts)` — global by default; `c.WFS.InWorkspace(ws)` for a workspace-scoped capabilities view. Default version 2.0.0; 1.1.0 supported as well (same root element).
@@ -16,6 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `v2/ows/wfs/wfs_test.go` and `v2/ows/wcs/wcs_test.go` — fixture-based parse tests with realistic GeoServer namespace declarations, httptest tests for global + workspace scope, version override, and 404 → sentinel mapping.
 - `v2/ows/wfs/wfs_integration_test.go` and `v2/ows/wcs/wcs_integration_test.go` — real GeoServer assertions (capabilities document non-empty for both global and a fresh empty workspace; WFS 1.1.0 version-override path).
 - Godoc `Example_*` for both packages.
+
+### Fixed (wire-format)
+
+- **`v2/ows/wcs.GetCapabilities`** sends `service=WCS` (uppercase). GeoServer's WCS endpoint is case-sensitive on the `service` query parameter and returns 400 `"Error in service name, expected value: WCS"` on `service=wcs`. WMS and WFS accept lowercase, so the asymmetry only surfaces on WCS. Comment in `wcs.go` records the quirk.
 
 ## [2.0.0-alpha.2] — 2026-05-03
 
