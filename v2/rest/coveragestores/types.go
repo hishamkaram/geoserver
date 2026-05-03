@@ -51,6 +51,50 @@ type DeleteOptions struct {
 	Recurse bool
 }
 
+// UploadMethod selects the file-upload sub-resource on
+// [WorkspaceClient.UploadFile] / [WorkspaceClient.HarvestGranule].
+type UploadMethod string
+
+// Upload methods. The default ([UploadMethodFile]) ships the file
+// body across the wire; the other two reference data already
+// reachable from the server.
+const (
+	// UploadMethodFile uploads the raster bytes in the request body.
+	// Routes to `PUT /file[.<ext>]`. Default.
+	UploadMethodFile UploadMethod = "file"
+	// UploadMethodURL provides a URL string the server fetches.
+	// Routes to `PUT /url[.<ext>]`.
+	UploadMethodURL UploadMethod = "url"
+	// UploadMethodExternal provides a server-local filesystem path
+	// string. No file transfer happens. Routes to `PUT /external[.<ext>]`.
+	UploadMethodExternal UploadMethod = "external"
+)
+
+// UploadOptions controls a [WorkspaceClient.UploadFile] or
+// [WorkspaceClient.HarvestGranule] call.
+type UploadOptions struct {
+	// Extension selects the URL suffix (e.g., "geotiff",
+	// "worldimage", "imagemosaic"). May be empty if GeoServer can
+	// infer from the body, but the documented forms always include
+	// an extension.
+	Extension string
+
+	// Method selects the sub-resource. Default [UploadMethodFile].
+	Method UploadMethod
+
+	// ContentType overrides the Content-Type header. Defaults are:
+	//   - file:     application/zip
+	//   - url:      text/plain
+	//   - external: text/plain
+	// Override when uploading a non-zipped binary (e.g.,
+	// `image/tiff` for a single GeoTIFF granule).
+	ContentType string
+
+	// Update sets the optional `update` query parameter (typically
+	// `overwrite` or `append`). Empty means use the server default.
+	Update string
+}
+
 // listResponse mirrors GeoServer's `{"coverageStores":{"coverageStore":[…]}}`.
 type listResponse struct {
 	CoverageStores struct {

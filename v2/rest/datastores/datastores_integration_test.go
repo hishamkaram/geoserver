@@ -4,6 +4,7 @@ package datastores_test
 
 import (
 	"errors"
+	"os"
 	"testing"
 
 	geoserver "github.com/hishamkaram/geoserver/v2"
@@ -118,5 +119,52 @@ func TestDatastores_PostGIS_CRUD_Integration(t *testing.T) {
 	}
 	if len(leftover) != 0 {
 		t.Fatalf("expected empty after Delete, got %+v", leftover)
+	}
+}
+
+// TestDatastores_UploadFile_Shapefile_Integration uploads a zipped
+// Shapefile via PUT /workspaces/{ws}/datastores/{name}/file.shp and
+// verifies the store gets created. Reuses the hurricane_tracks fixture
+// shipped with the repo at testdata/.
+func TestDatastores_UploadFile_Shapefile_Integration(t *testing.T) {
+	c := testenv.NewClient(t)
+	ctx := testenv.Context(t)
+
+	wsName := testenv.UniqueName(t, "ws")
+	dsName := testenv.UniqueName(t, "ds")
+
+	if err := c.Workspaces.Create(ctx, &workspaces.Workspace{Name: wsName}); err != nil {
+		t.Fatalf("Create workspace: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = c.Workspaces.Delete(ctx, wsName, workspaces.DeleteOptions{Recurse: true})
+	})
+
+	// Open a real zipped shapefile from the repo testdata. Path is
+	// relative to the test working directory (v2/rest/datastores/).
+	zipPath := "../../../testdata/hurricane_tracks.zip"
+	f, err := os.Open(zipPath)
+	if err != nil {
+		t.Skipf("shapefile fixture not available at %s: %v", zipPath, err)
+	}
+	defer f.Close()
+
+	ws := c.Datastores.InWorkspace(wsName)
+	if err := ws.UploadFile(ctx, dsName, f, datastores.UploadOptions{
+		Extension: "shp",
+	}); err != nil {
+		t.Fatalf("UploadFile: %v", err)
+	}
+
+	// Verify the store materialized.
+	got, err := ws.Get(ctx, dsName)
+	if err != nil {
+		t.Fatalf("Get after UploadFile: %v", err)
+	}
+	if got.Name != dsName {
+		t.Errorf("Name = %q, want %q", got.Name, dsName)
+	}
+	if got.Type == "" {
+		t.Errorf("Type empty in returned datastore: %+v", got)
 	}
 }

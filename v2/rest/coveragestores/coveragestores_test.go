@@ -286,3 +286,121 @@ func TestGet_URLEscaping(t *testing.T) {
 		t.Fatalf("URL is double-encoded: %q", capturedURI)
 	}
 }
+
+func TestUploadFile_GeoTIFF(t *testing.T) {
+	var captured struct {
+		Method, Path, ContentType, Accept string
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		captured.Method = r.Method
+		captured.Path = r.URL.Path
+		captured.ContentType = r.Header.Get("Content-Type")
+		captured.Accept = r.Header.Get("Accept")
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	if err := c.CoverageStores.InWorkspace("nurc").UploadFile(context.Background(), "world_dem",
+		strings.NewReader("FAKETIFF"),
+		coveragestores.UploadOptions{Extension: "geotiff", ContentType: "image/tiff"}); err != nil {
+		t.Fatalf("UploadFile: %v", err)
+	}
+	if captured.Method != http.MethodPut {
+		t.Errorf("Method = %q, want PUT", captured.Method)
+	}
+	if captured.Path != "/rest/workspaces/nurc/coveragestores/world_dem/file.geotiff" {
+		t.Errorf("Path = %q", captured.Path)
+	}
+	if captured.ContentType != "image/tiff" {
+		t.Errorf("Content-Type = %q, want image/tiff", captured.ContentType)
+	}
+	if captured.Accept != "*/*" {
+		t.Errorf("Accept = %q, want */*", captured.Accept)
+	}
+}
+
+func TestUploadFile_ImageMosaic(t *testing.T) {
+	var capturedPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedPath = r.URL.Path
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	if err := c.CoverageStores.InWorkspace("nurc").UploadFile(context.Background(), "mosaic",
+		strings.NewReader("FAKEZIP"),
+		coveragestores.UploadOptions{Extension: "imagemosaic"}); err != nil {
+		t.Fatalf("UploadFile: %v", err)
+	}
+	if capturedPath != "/rest/workspaces/nurc/coveragestores/mosaic/file.imagemosaic" {
+		t.Errorf("Path = %q", capturedPath)
+	}
+}
+
+func TestHarvestGranule_OK(t *testing.T) {
+	var captured struct{ Method, Path, ContentType string }
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		captured.Method = r.Method
+		captured.Path = r.URL.Path
+		captured.ContentType = r.Header.Get("Content-Type")
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	// External method: pass a server-local path string as the body.
+	if err := c.CoverageStores.InWorkspace("nurc").HarvestGranule(context.Background(), "mosaic",
+		strings.NewReader("/srv/geoserver/granules/2026_05_03.tif"),
+		coveragestores.UploadOptions{Method: coveragestores.UploadMethodExternal, Extension: "imagemosaic"}); err != nil {
+		t.Fatalf("HarvestGranule: %v", err)
+	}
+	if captured.Method != http.MethodPost {
+		t.Errorf("Method = %q, want POST", captured.Method)
+	}
+	if captured.Path != "/rest/workspaces/nurc/coveragestores/mosaic/external.imagemosaic" {
+		t.Errorf("Path = %q", captured.Path)
+	}
+	if captured.ContentType != "text/plain" {
+		t.Errorf("Content-Type = %q, want text/plain", captured.ContentType)
+	}
+}
+
+func TestUploadFile_Validation(t *testing.T) {
+	c, _ := geoserver.New("http://localhost:8080", geoserver.WithBasicAuth("u", "p"))
+
+	cases := []struct {
+		name string
+		ws   string
+		cs   string
+		body io.Reader
+	}{
+		{"empty workspace", "", "world_dem", strings.NewReader("")},
+		{"empty name", "nurc", "", strings.NewReader("")},
+		{"nil body", "nurc", "world_dem", nil},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := c.CoverageStores.InWorkspace(tc.ws).UploadFile(context.Background(), tc.cs, tc.body,
+				coveragestores.UploadOptions{Extension: "geotiff"})
+			if err == nil {
+				t.Errorf("expected error for %s", tc.name)
+			}
+		})
+	}
+}
+
+func TestUploadFile_NotFound(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "no workspace", http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	err := c.CoverageStores.InWorkspace("missing").UploadFile(context.Background(), "world_dem",
+		strings.NewReader(""), coveragestores.UploadOptions{Extension: "geotiff"})
+	if !errors.Is(err, geoserver.ErrNotFound) {
+		t.Fatalf("err = %v, want ErrNotFound", err)
+	}
+}

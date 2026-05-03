@@ -531,6 +531,159 @@ func TestGet_URLEscaping_BothSegments(t *testing.T) {
 	}
 }
 
+func TestUploadFile_Default(t *testing.T) {
+	var captured struct {
+		Method, Path, ContentType, Accept string
+		Body                              []byte
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		captured.Method = r.Method
+		captured.Path = r.URL.Path
+		captured.ContentType = r.Header.Get("Content-Type")
+		captured.Accept = r.Header.Get("Accept")
+		captured.Body, _ = io.ReadAll(r.Body)
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	body := strings.NewReader("FAKEZIP")
+	if err := c.Datastores.InWorkspace("topp").UploadFile(context.Background(), "states_shp", body,
+		datastores.UploadOptions{Extension: "shp"}); err != nil {
+		t.Fatalf("UploadFile: %v", err)
+	}
+	if captured.Method != http.MethodPut {
+		t.Errorf("Method = %q, want PUT", captured.Method)
+	}
+	if captured.Path != "/rest/workspaces/topp/datastores/states_shp/file.shp" {
+		t.Errorf("Path = %q", captured.Path)
+	}
+	if captured.ContentType != "application/zip" {
+		t.Errorf("Content-Type = %q, want application/zip", captured.ContentType)
+	}
+	if captured.Accept != "*/*" {
+		t.Errorf("Accept = %q, want */*", captured.Accept)
+	}
+	if string(captured.Body) != "FAKEZIP" {
+		t.Errorf("Body = %q", string(captured.Body))
+	}
+}
+
+func TestUploadFile_URLMethod(t *testing.T) {
+	var captured struct{ Path, ContentType string }
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		captured.Path = r.URL.Path
+		captured.ContentType = r.Header.Get("Content-Type")
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	if err := c.Datastores.InWorkspace("topp").UploadFile(context.Background(), "states_shp",
+		strings.NewReader("file:///data/states.shp"),
+		datastores.UploadOptions{Method: datastores.UploadMethodURL, Extension: "shp"}); err != nil {
+		t.Fatalf("UploadFile: %v", err)
+	}
+	if captured.Path != "/rest/workspaces/topp/datastores/states_shp/url.shp" {
+		t.Errorf("Path = %q", captured.Path)
+	}
+	if captured.ContentType != "text/plain" {
+		t.Errorf("Content-Type = %q, want text/plain", captured.ContentType)
+	}
+}
+
+func TestUploadFile_ExternalMethod(t *testing.T) {
+	var captured struct{ Path string }
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		captured.Path = r.URL.Path
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	if err := c.Datastores.InWorkspace("topp").UploadFile(context.Background(), "states_shp",
+		strings.NewReader("/srv/geoserver/data/states.shp"),
+		datastores.UploadOptions{Method: datastores.UploadMethodExternal, Extension: "shp"}); err != nil {
+		t.Fatalf("UploadFile: %v", err)
+	}
+	if captured.Path != "/rest/workspaces/topp/datastores/states_shp/external.shp" {
+		t.Errorf("Path = %q", captured.Path)
+	}
+}
+
+func TestUploadFile_UpdateQuery(t *testing.T) {
+	var captured string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		captured = r.URL.Query().Get("update")
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	_ = c.Datastores.InWorkspace("topp").UploadFile(context.Background(), "states_shp",
+		strings.NewReader(""), datastores.UploadOptions{Extension: "shp", Update: "overwrite"})
+	if captured != "overwrite" {
+		t.Errorf("update = %q, want overwrite", captured)
+	}
+}
+
+func TestUploadFile_ContentTypeOverride(t *testing.T) {
+	var captured string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		captured = r.Header.Get("Content-Type")
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	_ = c.Datastores.InWorkspace("topp").UploadFile(context.Background(), "states_shp",
+		strings.NewReader(""),
+		datastores.UploadOptions{Extension: "shp", ContentType: "application/octet-stream"})
+	if captured != "application/octet-stream" {
+		t.Errorf("Content-Type = %q", captured)
+	}
+}
+
+func TestUploadFile_Validation(t *testing.T) {
+	c, _ := geoserver.New("http://localhost:8080", geoserver.WithBasicAuth("u", "p"))
+
+	cases := []struct {
+		name string
+		ws   string
+		ds   string
+		body io.Reader
+		opts datastores.UploadOptions
+	}{
+		{"empty workspace", "", "states", strings.NewReader(""), datastores.UploadOptions{Extension: "shp"}},
+		{"empty name", "topp", "", strings.NewReader(""), datastores.UploadOptions{Extension: "shp"}},
+		{"nil body", "topp", "states", nil, datastores.UploadOptions{Extension: "shp"}},
+		{"invalid method", "topp", "states", strings.NewReader(""),
+			datastores.UploadOptions{Method: datastores.UploadMethod("bogus"), Extension: "shp"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := c.Datastores.InWorkspace(tc.ws).UploadFile(context.Background(), tc.ds, tc.body, tc.opts)
+			if err == nil {
+				t.Errorf("expected error for %s", tc.name)
+			}
+		})
+	}
+}
+
+func TestUploadFile_NotFound(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "no workspace", http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	err := c.Datastores.InWorkspace("missing").UploadFile(context.Background(), "states",
+		strings.NewReader(""), datastores.UploadOptions{Extension: "shp"})
+	if !errors.Is(err, geoserver.ErrNotFound) {
+		t.Fatalf("err = %v, want ErrNotFound", err)
+	}
+}
+
 func TestInWorkspace_Workspace(t *testing.T) {
 	c, err := geoserver.New("http://localhost:8080/geoserver")
 	if err != nil {
