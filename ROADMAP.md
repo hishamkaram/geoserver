@@ -38,8 +38,12 @@ Lives at module path `github.com/hishamkaram/geoserver/v2` (subdir form). Idioma
 - [x] **OWS clients (1/3, 2/3, 3/3)** — `ows/wms/`, `ows/wfs/`, `ows/wcs/` (GetCapabilities + workspace scope on each). All three follow the same shape: free-function `ParseCapabilities(io.Reader)` plus a sub-client method routed through `transport.DoXML`.
 - [x] **Migration guide** — `docs/migration-v1-to-v2.md` populated with concrete v1 → v2 mappings for every resource.
 - [x] **v1 parity at `master`** — every v1 surface (REST + OWS) has a v2 equivalent.
-- [ ] **v2.0.0-alpha.2** (or later alpha) — re-tag to publish the post-`alpha.1` work (godoc Examples, README refresh, OWS WMS port, system reload/reset). Tag is an explicit user action.
-- [ ] **v2.0.0-beta.1** — REST + OWS surface complete (achieved at `master`), integration matrix on 2.27 + 2.28, public API frozen for review.
+- [x] **v2.0.0-alpha.2** — bundles the post-`alpha.1` work (godoc Examples, README refresh, OWS WMS port, system reload/reset). *Tagged 2026-05-03.*
+- [x] **v2.0.0-alpha.3** — adds WFS + WCS GetCapabilities (closes the OWS GetCapabilities trio) plus WFS `DescribeFeatureType` and WCS `DescribeCoverage`. *Tagged 2026-05-03.*
+- [x] **Top-5 gap-analysis surface** — closes the planned "everyone needs it" gaps from `~/.claude/plans/v2-top5-rest-api-gaps.md`: layer–style associations (`c.Layers.AddStyle`/`ListStyles`), file-upload publishing on stores (`c.Datastores.UploadFile` + `c.CoverageStores.UploadFile`/`HarvestGranule`), per-service OWS settings (`c.Services.WMS()`/`WFS()`/`WCS()`/`WMTS()`), GeoWebCache (`c.GWC.Layers()`/`Seed()`/`DiskQuota()`), and Importer extension (`c.Imports`). Dev/test docker image bakes in the importer plugin so CI exercises it without skipping.
+- [x] **v2.0.0-alpha.4** — bundles the top-5 gap closures + docs refresh. *Tagged 2026-05-03.*
+- [ ] **Tier-2 also-rans** — narrower-audience endpoints from the gap-analysis tier-2 list: mosaic granules, Resource API, FTL templates, auth providers + filter chains, ACL services/REST/catalog, URL checks, cascaded WMS/WMTS stores, XSLT transforms, manifests, runtime logging config. Each is tractable as its own follow-up PR.
+- [ ] **v2.0.0-beta.1** — public API frozen for review. Surface freeze comes after enough early-adopter feedback on `alpha.4` to lock in shapes.
 - [ ] **v2.0.0** — final tag.
 
 ## GeoServer 3.0 support

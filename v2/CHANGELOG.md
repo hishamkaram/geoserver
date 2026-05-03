@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0-alpha.4] — 2026-05-03
+
+Fourth alpha. **Closes the planned scope of the gap-analysis plan** — every "everyone needs it" REST API surface identified in `docs/v2-top5-rest-api-gaps.md` is now covered. Five focused PRs landed in sequence: layer–style associations, file-upload publishing on stores, per-service OWS settings (WMS/WFS/WCS/WMTS), GeoWebCache (layers + seed + diskquota), and the Importer extension. Dev/test docker image now bakes the importer plugin in. Public API may still refine before `v2.0.0` based on early-adopter feedback — no production guarantees yet.
+
 ### Added — Importer extension client
 
 - **`v2/rest/imports/` package** — `c.Imports` exposes the GeoServer Importer extension at `/rest/imports` for batch ingest and migration workflows. Daily-driver session+tasks surface: `Create`, `List`, `Iter`, `Get`, `Delete`, `Execute`; `ListTasks`, `AddTask`, `GetTask`, `UpdateTask`, `DeleteTask`. Per-task Layer / Transforms / Data sub-resources and the `database`/`mosaic` data types are deferred to follow-ups.
