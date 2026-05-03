@@ -16,17 +16,29 @@ type Doer interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-// Request is the per-call shape: method, fully-built URL, optional JSON
-// body, optional query params, optional Accept override.
+// Request is the per-call shape: method, fully-built URL, optional
+// body (JSON or raw), optional query params, optional Accept override.
 //
 // The transport does NOT own URL composition — callers (resource
 // sub-clients) build the URL via [BuildURL] and pass it here.
+//
+// Body and RawBody are mutually exclusive: when RawBody is non-nil
+// it is sent as-is with ContentType (defaulting to
+// "application/octet-stream") and Body is ignored.
 type Request struct {
 	Method string
 	URL    string
-	// Body, if non-nil, is JSON-encoded with the body cap respected.
-	// Use nil for GET / DELETE / HEAD with no body.
+	// Body, if non-nil, is JSON-encoded.
+	// Use nil for GET / DELETE / HEAD with no body, or set RawBody
+	// for non-JSON payloads.
 	Body any
+	// RawBody, if non-nil, is sent as-is with ContentType. When set,
+	// Body is ignored and the request is NOT JSON-encoded.
+	RawBody io.Reader
+	// ContentType is the wire Content-Type for RawBody. Ignored when
+	// RawBody is nil. Defaults to "application/octet-stream" when
+	// RawBody is set and ContentType is empty.
+	ContentType string
 	// Query is added on top of any query already present in URL.
 	Query map[string]string
 	// Accept overrides the default "application/json".
@@ -49,6 +61,33 @@ type JSON any
 //
 // On transport error: status is 0; err is the wrapped transport error.
 func DoJSON(ctx context.Context, doer Doer, logger *slog.Logger, op string, req Request, out JSON) (status int, err error) {
+	return doRequest(ctx, doer, logger, op, req, out)
+}
+
+// DoRaw sends a request with an arbitrary-Reader body and explicit
+// Content-Type / Accept. The response handling is identical to
+// [DoJSON] — out (if non-nil) is JSON-decoded; non-2xx returns a
+// *Error.
+//
+// Use this for non-JSON uploads (SLD XML, shapefile zips, GeoTIFF
+// blobs) where the request body is bytes and the response is the
+// usual JSON / empty body.
+//
+// If body is nil, the request is sent with no payload. If contentType
+// is empty, "application/octet-stream" is used. If accept is empty,
+// "application/json" is used.
+func DoRaw(ctx context.Context, doer Doer, logger *slog.Logger, op string, method, url string, body io.Reader, contentType, accept string, query map[string]string, out JSON) (status int, err error) {
+	return doRequest(ctx, doer, logger, op, Request{
+		Method:      method,
+		URL:         url,
+		RawBody:     body,
+		ContentType: contentType,
+		Accept:      accept,
+		Query:       query,
+	}, out)
+}
+
+func doRequest(ctx context.Context, doer Doer, logger *slog.Logger, op string, req Request, out JSON) (status int, err error) {
 	httpReq, err := buildHTTPRequest(ctx, req)
 	if err != nil {
 		return 0, fmt.Errorf("%s: build request: %w", op, err)
@@ -116,13 +155,24 @@ const bodyReadCap = 8 << 10 // 8 KiB
 // Accept set. Auth and User-Agent are applied by the transport
 // RoundTripper, not here.
 func buildHTTPRequest(ctx context.Context, req Request) (*http.Request, error) {
-	var body io.Reader = http.NoBody
-	if req.Body != nil {
+	var (
+		body        io.Reader = http.NoBody
+		contentType string
+	)
+	switch {
+	case req.RawBody != nil:
+		body = req.RawBody
+		contentType = req.ContentType
+		if contentType == "" {
+			contentType = "application/octet-stream"
+		}
+	case req.Body != nil:
 		buf, err := json.Marshal(req.Body)
 		if err != nil {
 			return nil, fmt.Errorf("encode body: %w", err)
 		}
 		body = bytes.NewReader(buf)
+		contentType = "application/json"
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, req.Method, req.URL, body)
@@ -135,8 +185,8 @@ func buildHTTPRequest(ctx context.Context, req Request) (*http.Request, error) {
 		accept = "application/json"
 	}
 	httpReq.Header.Set("Accept", accept)
-	if req.Body != nil {
-		httpReq.Header.Set("Content-Type", "application/json")
+	if contentType != "" {
+		httpReq.Header.Set("Content-Type", contentType)
 	}
 
 	if len(req.Query) > 0 {
