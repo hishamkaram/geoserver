@@ -29,11 +29,26 @@ jobs:
           go vet ./...
           go test -race -short ./...
 
+      - name: Extract release notes for ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          tag='${{ github.ref_name }}'
+          version="${tag#v}"
+          awk -v version="$version" '
+            $0 ~ "^## \\["version"\\]" {flag=1; next}
+            flag && /^## \[/ {exit}
+            flag {print}
+          ' CHANGELOG.md > /tmp/release-notes.md
+          if [ ! -s /tmp/release-notes.md ]; then
+            echo "::error::No CHANGELOG stanza found for [$version] (tag $tag); refusing to publish a release with empty body."
+            exit 1
+          fi
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v3
         with:
-          generate_release_notes: true
+          body_path: /tmp/release-notes.md
+          generate_release_notes: false
           fail_on_unmatched_files: false
-          body_path: ${{ github.workspace }}/CHANGELOG.md
           draft: false
           prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}

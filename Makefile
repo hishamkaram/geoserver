@@ -107,6 +107,17 @@ compose-test-up: ## boot the integration-test compose (2.27 LTS leg)
 compose-test-down: ## tear down integration-test compose
 	$(COMPOSE) -f docker-compose.test.yml down -v
 
+.PHONY: examples
+examples: ## compile-check every example under examples/
+	$(GO) build -o /dev/null ./examples/...
+
+.PHONY: docs-check
+docs-check: ## sanity-check that README and docs/ cross-reference each other
+	@grep -q 'docs/architecture.md' README.md || { echo "README.md should link to docs/architecture.md"; exit 1; }
+	@grep -q 'examples/' README.md || { echo "README.md should mention examples/"; exit 1; }
+	@grep -q 'geoserver-rest-quirks.md' docs/architecture.md || { echo "docs/architecture.md should link to geoserver-rest-quirks.md"; exit 1; }
+	@echo "docs cross-references OK"
+
 .PHONY: clean
 clean: ## remove generated artifacts
 	rm -f $(COVER_FILE)

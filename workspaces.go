@@ -61,7 +61,6 @@ func (g *GeoServer) CreateWorkspace(workspaceName string) (created bool, err err
 // CreateWorkspaceContext creates a workspace and returns whether it was
 // created and any error.
 func (g *GeoServer) CreateWorkspaceContext(ctx context.Context, workspaceName string) (created bool, err error) {
-	//TODO: check if workspace exist before creating it
 	workspace := Workspace{Name: workspaceName}
 	serializedWorkspace, serErr := g.SerializeStruct(WorkspaceRequestBody{Workspace: &workspace})
 	if serErr != nil {

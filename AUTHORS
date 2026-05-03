@@ -1,0 +1,15 @@
+# This file lists the people who have contributed to github.com/hishamkaram/geoserver.
+#
+# Order: maintainer first, then contributors in the order their work landed on
+# master. Add yourself when your first PR is merged. Use the form:
+#     Name <email-or-handle> (role / first-contribution-context)
+#
+# This file is informational. Authoritative contribution metadata is in git
+# history (`git shortlog -sn`).
+
+Hesham Karm <hishamwaleedkaram@gmail.com> (author and maintainer)
+
+# Community contributions absorbed during the v1.1 revival (May 2026):
+
+Alexander Cherviakov <@archer-v on GitHub> — original PR #15 (security / ACL / JNDI datastore / CreateFeatureType, ported in PR #37)
+Wichert Akkerman <@wichert on GitHub> — original PR #17 (GetFeatureTypeList feature-type discovery, ported in PR #38)

@@ -1,0 +1,7 @@
+# https://docs.github.com/en/repositories/managing-your-repositories-settings-and-customization/customizing-your-repository/about-code-owners
+#
+# Reviewers listed here are auto-requested when a PR touches their owned paths.
+# The maintainer (@hishamkaram) owns everything by default. Expand as
+# co-maintainers come on board.
+
+* @hishamkaram

@@ -185,7 +185,6 @@ func (g *GeoServer) GetDatastores(workspaceName string) (datastores []*Resource,
 
 // GetDatastoresContext is the context-aware variant of [GeoServer.GetDatastores].
 func (g *GeoServer) GetDatastoresContext(ctx context.Context, workspaceName string) (datastores []*Resource, err error) {
-	//TODO: check if workspace exist before creating it
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores")
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -218,7 +217,6 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 
 // GetDatastoreDetailsContext is the context-aware variant of [GeoServer.GetDatastoreDetails].
 func (g *GeoServer) GetDatastoreDetailsContext(ctx context.Context, workspaceName string, datastoreName string) (datastore *Datastore, err error) {
-	//TODO: check if workspace exist before creating it
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores", datastoreName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,

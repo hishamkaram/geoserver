@@ -54,7 +54,6 @@ func (g *GeoServer) CreateNamespace(prefix string, uri string) (created bool, er
 
 // CreateNamespaceContext is the context-aware variant of [GeoServer.CreateNamespace].
 func (g *GeoServer) CreateNamespaceContext(ctx context.Context, prefix string, uri string) (created bool, err error) {
-	//TODO: check if Namespace exist before creating it
 	Namespace := Namespace{Prefix: prefix, URI: uri}
 	serializedNamespace, serErr := g.SerializeStruct(NamespaceRequestBody{Namespace: &Namespace})
 	if serErr != nil {

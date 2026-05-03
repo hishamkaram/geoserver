@@ -324,9 +324,15 @@ The library was dormant for ~3 years (Feb 2023 → May 2026) before being revive
 
 ## Documentation
 
-- API reference — [pkg.go.dev/github.com/hishamkaram/geoserver](https://pkg.go.dev/github.com/hishamkaram/geoserver)
-- Working examples — see the integration test suite (`*_test.go` under build tag `integration`)
-- GeoServer REST itself — [docs.geoserver.org/stable/en/user/rest](https://docs.geoserver.org/stable/en/user/rest/)
+- **API reference** — [pkg.go.dev/github.com/hishamkaram/geoserver](https://pkg.go.dev/github.com/hishamkaram/geoserver)
+- **Architecture** — [docs/architecture.md](docs/architecture.md): package shape, the *Context twin pattern, error model, logging, concurrency, transport organization
+- **GeoServer REST quirks** — [docs/geoserver-rest-quirks.md](docs/geoserver-rest-quirks.md): version-specific REST API quirks the client works around
+- **Version compatibility** — [docs/version-compat.md](docs/version-compat.md): supported Go × GeoServer matrix with rationale
+- **v1 → v2 migration** — [docs/migration-v1-to-v2.md](docs/migration-v1-to-v2.md): in-progress; v2 lives at `github.com/hishamkaram/geoserver/v2`
+- **Roadmap** — [ROADMAP.md](ROADMAP.md): v1.x maintenance, v2.x design, GeoServer 3.0 timeline
+- **Runnable examples** — [examples/](examples/): workspaces, publish-postgis, style-upload, error-handling. Run with `go run ./examples/<name>` against a `make compose-up` stack.
+- **Reference flows in tests** — the integration suite (`*_test.go` under build tag `integration`) exercises the full surface end-to-end against GeoServer 2.27 LTS and 2.28 stable.
+- **GeoServer REST itself** — [docs.geoserver.org/stable/en/user/rest](https://docs.geoserver.org/stable/en/user/rest/)
 
 ## Contributing
 
