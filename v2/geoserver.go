@@ -371,7 +371,7 @@ func (a coreAdapter) Do(ctx context.Context, op string, method, requestURL strin
 // On non-2xx, drains and closes the body, returns a [*APIError].
 // On transport failure, returns the wrapped transport error.
 func (a coreAdapter) DoStream(ctx context.Context, op string, method, requestURL string, query map[string]string) (io.ReadCloser, int, error) {
-	httpReq, err := http.NewRequestWithContext(ctx, method, requestURL, nil)
+	httpReq, err := http.NewRequestWithContext(ctx, method, requestURL, http.NoBody)
 	if err != nil {
 		return nil, 0, fmt.Errorf("%s: build request: %w", op, err)
 	}

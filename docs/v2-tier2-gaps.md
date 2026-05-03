@@ -1,23 +1,26 @@
 # v2 — tier-2 gap-analysis backlog
 
-The v2 client closes every "everyone needs it" REST API surface in the published `v2.0.0-alpha.4` (see [`../v2/CHANGELOG.md`](../v2/CHANGELOG.md)). What's documented here is the **next tier** — endpoint groups that real deployments do reach for, but that help a narrower audience than the top-5 surface that already shipped.
+The v2 client closes every "everyone needs it" REST API surface plus two of the original tier-2 items (security ACL services / REST / catalog rules and the Resource API) in the published `v2.0.0-beta.1` (see [`../v2/CHANGELOG.md`](../v2/CHANGELOG.md)). What's documented here is the remaining tier-2 backlog — endpoint groups that real deployments do reach for, but that help a narrower audience than the surface already shipped.
 
-Each entry below is independently tractable as its own follow-up PR. None block beta or `v2.0.0`. Each is grounded in the official GeoServer REST docs (`https://docs.geoserver.org/latest/en/user/rest/`) and reuses the existing v2 plumbing (`internal/transport.BuildURL`, `transport.DoJSON` / `DoXML` / `DoRaw`, the per-resource `Core` interface, the `*Client → InWorkspace(ws) → *WorkspaceClient` scoping pattern). PRs welcome — open an issue first if the work touches a new wire-format quirk so the design conversation can happen in public.
+Each entry below is independently tractable as its own follow-up PR. None block `v2.0.0`. Each is grounded in the official GeoServer REST docs (`https://docs.geoserver.org/latest/en/user/rest/`) and reuses the existing v2 plumbing (`internal/transport.BuildURL`, `transport.DoJSON` / `DoXML` / `DoRaw`, the per-resource `Core` interface, the `*Client → InWorkspace(ws) → *WorkspaceClient` scoping pattern). PRs welcome — open an issue first if the work touches a new wire-format quirk so the design conversation can happen in public.
 
 ## Backlog (priority order)
 
 | # | Gap | Audience | Rough scope |
 |---|-----|----------|-------------|
 | 1 | **Mosaic / structured-coverage granules** — `/coveragestores/{cs}/coverages/{c}/index/granules` | Raster-mosaic users | Add / list / delete granules in image-mosaic stores. Companion to the existing `c.CoverageStores.HarvestGranule`. |
-| 2 | **Resource API** — `/resource/{path}` | Anyone customizing the data dir | Generic byte-stream read/write for files in `GEOSERVER_DATA_DIR` — FTL templates, SLD includes, freemarker overrides, etc. |
-| 3 | **Templates** — `/templates`, `/workspaces/{ws}/templates`, `/workspaces/{ws}/featuretypes/{ft}/templates` | GetFeatureInfo / WMS HTML customizers | Per-workspace and per-feature-type FTL upload. |
-| 4 | **Auth providers + filter chains** — `/security/auth/providers`, `/security/filters`, `/security/usergroup/{name}` | Multi-IdP deployments | LDAP / OAuth / header-auth provider registration; reorder filter chains. |
-| 5 | **ACL services / REST / catalog rules** — `/security/acl/services`, `/security/acl/rest`, `/security/acl/catalog` | Production security tuning | Already partial in v2 — only `c.ACL.Layers()` is wired today. The other three rule scopes complete the access-control story. |
-| 6 | **URL checks** — `/urlchecks` | SSRF-conscious deployments | Allow / deny lists for external URL references in styles, mosaics, and remote stores. |
-| 7 | **Cascaded WMS / WMTS stores** — `/wmsstores`, `/wmtsstores` | Federation / proxy setups | Re-publish a remote WMS / WMTS through your own server. |
-| 8 | **XSLT transforms** — `/services/wfs/transforms` | WFS-T payload customizers | Upload XSLT for custom GetFeature output formats. |
-| 9 | **Manifests + system status** — `/about/manifest`, `/about/system-status` | Ops / capacity planning | Inspect installed plugins; live JVM and OS stats. |
-| 10 | **Logging** — `/logging` | Production debugging | Adjust log levels and configurations at runtime without bouncing the server. |
+| 2 | **Templates** — `/templates`, `/workspaces/{ws}/templates`, `/workspaces/{ws}/featuretypes/{ft}/templates` | GetFeatureInfo / WMS HTML customizers | Per-workspace and per-feature-type FTL upload. |
+| 3 | **Auth providers + filter chains** — `/security/auth/providers`, `/security/filters`, `/security/usergroup/{name}` | Multi-IdP deployments | LDAP / OAuth / header-auth provider registration; reorder filter chains. |
+| 4 | **URL checks** — `/urlchecks` | SSRF-conscious deployments | Allow / deny lists for external URL references in styles, mosaics, and remote stores. |
+| 5 | **Cascaded WMS / WMTS stores** — `/wmsstores`, `/wmtsstores` | Federation / proxy setups | Re-publish a remote WMS / WMTS through your own server. |
+| 6 | **XSLT transforms** — `/services/wfs/transforms` | WFS-T payload customizers | Upload XSLT for custom GetFeature output formats. |
+| 7 | **Manifests + system status** — `/about/manifest`, `/about/system-status` | Ops / capacity planning | Inspect installed plugins; live JVM and OS stats. |
+| 8 | **Logging** — `/logging` | Production debugging | Adjust log levels and configurations at runtime without bouncing the server. |
+
+## Already shipped (post-alpha.4, pre-beta.1)
+
+- **ACL services / REST / catalog rules** — `c.ACL.Services()` / `c.ACL.REST()` / `c.ACL.Catalog()`. Closed in beta.1.
+- **Resource API** — `c.Resources` Get / List / Stat / Exists / Put / Move / Copy / Delete against `/rest/resource/{path}`. Closed in beta.1.
 
 Beyond these ten: CRS list, fonts list, monitoring, master password, self-admin password, usergroup-service registration, individual filter-chain editing, and the OWS `oseo` (OpenSearch for Earth Observation) service settings. Each is a single endpoint or two and can ride along with whichever neighbor lands first.
 

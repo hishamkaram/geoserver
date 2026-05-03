@@ -11,7 +11,7 @@
 //
 // For the next-generation sub-client SDK, see
 // [github.com/hishamkaram/geoserver/v2] (preview, currently
-// v2.0.0-alpha.4).
+// v2.0.0-beta.1).
 //
 // # Quick start
 //

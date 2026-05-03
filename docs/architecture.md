@@ -12,7 +12,7 @@ The library is a single `package geoserver` at the module root, with one subpack
 | `github.com/hishamkaram/geoserver/wms` | XML types and parser for WMS GetCapabilities responses |
 | `github.com/hishamkaram/geoserver/internal/transport` (v1.1.x+) | HTTP request building / dispatch and URL construction. Implementation detail — not importable by external code |
 
-A separate module exists at `github.com/hishamkaram/geoserver/v2` (latest preview `v2.0.0-alpha.4`) with a different shape — sub-clients per resource (`c.Workspaces`, `c.Datastores.InWorkspace(ws)`, `c.Services.WMS()`, `c.GWC.Seed()`, `c.Imports`, etc.) and surfaces v1 never had. v1 and v2 ship independently. See [`migration-v1-to-v2.md`](./migration-v1-to-v2.md) for the side-by-side mapping.
+A separate module exists at `github.com/hishamkaram/geoserver/v2` (latest tag `v2.0.0-beta.1` — public API frozen for review) with a different shape — sub-clients per resource (`c.Workspaces`, `c.Datastores.InWorkspace(ws)`, `c.Services.WMS()`, `c.GWC.Seed()`, `c.Imports`, `c.Resources`, etc.) and surfaces v1 never had. v1 and v2 ship independently. See [`migration-v1-to-v2.md`](./migration-v1-to-v2.md) for the side-by-side mapping.
 
 ## Public API entry points
 

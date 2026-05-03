@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0-beta.1] — 2026-05-03
+
+First beta — the v2 public API surface is now considered **frozen for review**. Subsequent betas will tighten wire-format edge cases and absorb early-adopter feedback, but breaking changes to type names, method shapes, or constructor signatures will not land without a strong reason. v2 has been continuously verified against real GeoServer 2.27.4 LTS and 2.28.0 stable on every PR since alpha.1; this tag's surface is the candidate for `v2.0.0`.
+
+beta.1 ships the alpha.4 surface plus the two tier-2 closures from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md) that landed since alpha.4 — ACL services / REST / catalog (security tier-2) and the Resource API (data-dir tier-2). The Importer extension and the dev/test docker image bake-in remain unchanged.
+
 ### Added — Resource API client
 
 Closes the Resource API tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Generic byte-stream access to files in the GeoServer data directory — FreeMarker templates, SLD includes, external graphic icons, and arbitrary descendants of the data dir.

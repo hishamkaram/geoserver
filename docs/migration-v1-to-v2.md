@@ -1,6 +1,6 @@
 # Migration from v1.x to v2.x
 
-> **Status: alpha.** Latest published preview is `v2.0.0-alpha.4`. v2 has full v1 feature parity at `master` plus surfaces v1 never had — per-service OWS settings, file-upload publishing, layer–style associations, GeoWebCache, the Importer extension, and the OWS read-only trio (GetCapabilities + DescribeFeatureType + DescribeCoverage). The public API may still shift before `v2.0.0`. Until a stable v2 tag ships, **prefer v1.x for production usage**.
+> **Status: beta.** Latest published tag is `v2.0.0-beta.1` — public API now frozen for review. v2 has full v1 feature parity at `master` plus surfaces v1 never had — per-service OWS settings, file-upload publishing, layer–style associations, GeoWebCache, the Importer extension, the full ACL surface (`Layers`/`Services`/`REST`/`Catalog`), the Resource API (data-dir byte-stream access), and the OWS read-only trio (GetCapabilities + DescribeFeatureType + DescribeCoverage). Until `v2.0.0` final, **prefer v1.x for production usage**.
 
 This guide walks through the concrete API differences between v1.x (`github.com/hishamkaram/geoserver`) and v2.x (`github.com/hishamkaram/geoserver/v2`). Each section pairs a v1 snippet with the v2 equivalent.
 
@@ -353,10 +353,10 @@ if err := c.FeatureTypes.InWorkspace("demo").InDatastore("states_pg").
 
 ## When to upgrade
 
-`v2.0.0-alpha.4` is preview-quality — feature-complete on the gap-analysis "everyone needs it" surface, exercised against real GeoServer 2.27.4 LTS + 2.28.0 stable in CI, but the public API may still refine before `v2.0.0`. Reasonable adoption strategy:
+`v2.0.0-beta.1` ships the gap-analysis "everyone needs it" surface plus the security and Resource-API tier-2 closures, with the public API frozen for review. Exercised against real GeoServer 2.27.4 LTS + 2.28.0 stable in CI on every PR. Reasonable adoption strategy:
 
 - **Production**: stay on v1.x until v2.0.0 lands.
-- **New projects / internal tools**: try `v2.0.0-alpha.4` and file shape-feedback issues. The current API surface is the candidate for `v2.0.0-beta.1` (frozen-for-review).
+- **New projects / internal tools**: try `v2.0.0-beta.1` and file shape-feedback issues. The current API surface is the candidate for `v2.0.0` final.
 - **Migrations from v1 to v2**: use this guide; the catalog mappings above are stable. The non-catalog surfaces (file-upload, services, GWC, imports) are net-new with no v1 equivalent — adoption-time effort.
 
 ## Contributing to v2
