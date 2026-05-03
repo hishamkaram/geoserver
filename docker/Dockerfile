@@ -1,7 +1,11 @@
 # GeoServer dev/test image.
-# Base: Tomcat 10 + JDK 17 (Temurin). GeoServer 2.x runs on Servlet 4 (Tomcat 9/10).
+#
+# Base: Tomcat 9 + JDK 17 (Temurin). GeoServer 2.27 LTS / 2.28 stable use the
+# javax.* servlet namespace (Servlet 4.x) and do not run on Tomcat 10/11
+# (which moved to jakarta.*). GeoServer 3.0 will be the Tomcat 11 / Jakarta EE
+# target and is tracked separately for v2 of this client library.
 
-ARG TOMCAT_TAG=10.1-jdk17-temurin
+ARG TOMCAT_TAG=9-jdk17-temurin
 FROM tomcat:${TOMCAT_TAG}
 
 LABEL maintainer="Hesham Karm<hishamwaleedkaram@gmail.com>"
