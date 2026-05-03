@@ -31,8 +31,8 @@ Lives at module path `github.com/hishamkaram/geoserver/v2` (subdir form). Idioma
 
 - [x] **Scaffold** — `/v2/` skeleton + `Workspaces` reference resource + transport layer + `internal/transport/` algorithms.
 - [ ] **v2.0.0-alpha.1** — scaffold tag, signals public API direction.
-- [ ] **Resource port (1/3)** — `datastores`, `coverage_stores`, `feature_types`.
-- [ ] **Resource port (2/3)** — `layers`, `layergroups`, `coverages`, `styles`.
+- [x] **Resource port (1/3)** — `datastores`, `feature_types`, `coverage_stores`, `coverages`.
+- [ ] **Resource port (2/3)** — `layers`, `layergroups`, `styles`.
 - [ ] **Resource port (3/3)** — `namespaces`, `settings`, `security`, `acl`, `about`, `capabilities`.
 - [ ] **v2.0.0-beta.1** — REST surface complete, integration matrix on 2.27 + 2.28, public API frozen for review.
 - [ ] **OWS clients** — `ows/wms/`, `ows/wfs/`, `ows/wcs/` subpackages. (May slip to v2.x point release.)
