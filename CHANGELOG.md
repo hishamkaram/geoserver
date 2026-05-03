@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] — Unreleased
+
+Patch release. Bug fix plus the internal restructure that landed in `master` after v1.1.0. No public API change. Existing v1.1.0 callers can upgrade with only a `go.mod` bump.
+
+### Fixed
+
+- **`GetDatastores` empty-collection wire form** ([#22](https://github.com/hishamkaram/geoserver/issues/22)) — GeoServer 2.28+ returns `{"dataStores":""}` (a bare string) for an empty datastore collection rather than `{"dataStores":{"dataStore":[]}}`, which broke unmarshal on the fixed struct shape with `json: cannot unmarshal string into Go struct field …`. `GetDatastoresContext` now accepts both shapes; the empty form returns a `nil` slice. Same envelope pattern v1.1 already had for coverages and styles. Reported by @sotex.
+
 ### Changed — internal restructure (no API change)
 
 The implementation behind a few public methods on `*GeoServer` has moved into a new `internal/transport` package. The exported symbols, signatures, and observable behavior are byte-identical to v1.1.0 — verified by full unit + integration suites on GeoServer 2.27.4 and 2.28.0 plus the `breaking-change-checker` agent's exported-API diff.
