@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0-alpha.1] — 2026-05-03
+
+First public preview of v2. Surface is wide (workspaces, datastores, feature types, coverage stores, coverages, layers, layer groups, styles, namespaces, settings, about, security, ACL) and exercised by both unit and real-GeoServer integration suites on 2.27.4 LTS and 2.28.0 stable. Public API may still change before `v2.0.0` based on early-adopter feedback. No production guarantees.
+
 ### Added
 
 - Initial scaffold. `*Client` immutable constructor (`New`) with functional options (`WithHTTPClient`, `WithTransport`, `WithBasicAuth`, `WithBearerToken`, `WithLogger`, `WithUserAgent`, `WithTimeout`, `WithHeader`).
@@ -43,4 +47,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - New CI step `Run v2 integration tests` runs the suite alongside the v1 integration tests against both `GeoServer 2.27.4` and `GeoServer 2.28.0` matrix legs; both legs must pass for PR merge.
 - New Makefile target `make test-v2-integration` for local runs against `make compose-up`.
 
-No release tag yet; the module's first published tag will be `v2.0.0-alpha.1` when the surface is wide enough to warrant a soak.
+### Added (godoc)
+
+- `v2/example_test.go`, `v2/rest/workspaces/example_test.go`, `v2/rest/datastores/example_test.go`, `v2/rest/styles/example_test.go` — godoc `Example_*` functions that render under each public symbol on `pkg.go.dev`. Examples without `// Output:` comments compile-check via `go test` but don't execute, so they stay green without a live GeoServer.

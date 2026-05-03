@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.1] — Unreleased
+## [1.1.1] — 2026-05-03
 
 Patch release. Bug fix plus the internal restructure that landed in `master` after v1.1.0. No public API change. Existing v1.1.0 callers can upgrade with only a `go.mod` bump.
 
