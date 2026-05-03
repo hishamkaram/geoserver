@@ -46,13 +46,15 @@ make compose-down
 
 ## Pull requests
 
-1. **Branch from `master`.** Use a short descriptive name (`fix/url-escape`, `feat/context-methods`).
+1. **Branch from `master`.** Use a short descriptive name (`fix/url-escape`, `feat/context-methods`). Never commit directly to `master`.
 2. **One concern per PR.** Smaller PRs review faster.
 3. **Conventional Commits.** Commit messages follow [Conventional Commits 1.0](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`, `build:`, `ci:`). The CHANGELOG is generated from these.
-4. **Tests.** New code needs unit tests (`*_unit_test.go`, `httptest`-based). Behavioral changes also need an integration test entry.
+4. **Tests are mandatory.** New code needs unit tests (`*_unit_test.go`, `httptest`-based). Behavioral changes also need an integration test entry. **Integration tests run on every PR** against both GeoServer 2.27.4 LTS and 2.28.0 stable — both legs must pass.
 5. **Lint clean.** `make lint` must pass with zero warnings.
 6. **Backward compatibility.** v1.x is non-breaking. If your change requires breaking a public symbol, open a discussion first — it likely belongs in v2.
 7. **No new runtime dependencies** without prior discussion. Test-only deps are fine.
+8. **All CI checks must pass before merge.** The required gates on every PR: `Lint`, `Unit tests (Go 1.23)`, `Unit tests (Go 1.25)`, `govulncheck`, `Analyze (Go)` (CodeQL), `GeoServer 2.27.4`, `GeoServer 2.28.0`. Don't merge with any check red, pending, or skipped.
+9. **Squash merge.** PRs are squash-merged into `master` so each merge produces exactly one commit on the trunk and the CHANGELOG stays clean. Don't use rebase- or merge-commit strategies.
 
 ## Project layout
 
@@ -76,3 +78,23 @@ make compose-down
 ## Releasing
 
 Releases are cut by maintainers via tags (`v1.x.y`). The `release.yml` workflow assembles release notes from Conventional Commit messages.
+
+## Working with Claude Code in this repo
+
+The repo ships project-scoped Claude Code config so any contributor using Claude Code (CLI, IDE extensions, web app) gets the same conventions and shortcuts. Auto-loaded from `CLAUDE.md` (root) and `.claude/`.
+
+Available helpers:
+
+| Type | Name | Purpose |
+|---|---|---|
+| Slash command | `/integration-test [version]` | Boot the docker-compose stack and run the integration suite (default 2.28; `2.27` for the LTS leg). |
+| Slash command | `/lint-fix` | Run `golangci-lint --fix` + `gofmt` + `goimports`, report the diff and any remaining manual fixes. |
+| Slash command | `/release-prep` | Local-runnable subset of CI gates for a v1.1.x tag. |
+| Skill | `/add-context-twin <method> <file>` | Apply the *Context twin pattern to a new method on `*GeoServer`. |
+| Skill | `/non-breaking-v1` | Pre-PR checklist for the v1.1.x non-breaking contract. |
+| Skill | `/geoserver-rest-quirks` | Reference for GeoServer 2.x REST quirks the client works around (auto-loads when relevant). |
+| Subagent | `go-reviewer` | Idiom + non-breaking review of changed Go files. |
+| Subagent | `integration-runner` | Boots the stack, runs integration tests, diagnoses failures from container logs. |
+| Subagent | `breaking-change-checker` | Computes the exported-API diff against `master` / `v1.0.0` and classifies each change. |
+
+Personal per-machine settings live in `.claude/settings.local.json` (gitignored). The team baseline (permissions, attribution, hooks) is intentionally **not** committed yet — see `~/.claude/plans/tranquil-hatching-rabin.md` for the design if we decide to add it later.

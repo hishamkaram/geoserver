@@ -53,3 +53,7 @@ _testmain.go
 uploaded
 vendor
 examples
+
+# Claude Code per-machine state
+.claude/settings.local.json
+.claude/.cache/
