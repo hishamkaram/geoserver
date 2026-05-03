@@ -52,6 +52,29 @@ func TestACL_Layers_CRUD_Integration(t *testing.T) {
 		t.Fatalf("rule for %s.%s.r not found in List", wsName, layerName)
 	}
 
+	// Update the role list before deletion.
+	updatedRole := testenv.UniqueName(t, "ROLE")
+	updated := rule
+	updated.Roles = []string{roleName, updatedRole}
+	if err := c.ACL.Layers().Update(ctx, updated); err != nil {
+		t.Fatalf("Update ACL rule: %v", err)
+	}
+
+	rules, err = c.ACL.Layers().List(ctx, acl.ListOptions{})
+	if err != nil {
+		t.Fatalf("List after Update: %v", err)
+	}
+	gotRoles := []string(nil)
+	for _, r := range rules {
+		if r.Workspace == wsName && r.Layer == layerName && r.Operation == acl.OpRead {
+			gotRoles = r.Roles
+			break
+		}
+	}
+	if len(gotRoles) != 2 {
+		t.Errorf("expected 2 roles after Update, got %v", gotRoles)
+	}
+
 	if err := c.ACL.Layers().Delete(ctx, rule); err != nil {
 		t.Fatalf("Delete: %v", err)
 	}
