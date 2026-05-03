@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — per-service OWS settings
+
+- **`v2/rest/services/` package** — per-service OWS configuration for WMS / WFS / WCS / WMTS. The companion to `v2/rest/settings/` (which covers the global `/rest/settings` document). New entry-point `c.Services` exposes `.WMS()` / `.WFS()` / `.WCS()` / `.WMTS()`, each returning a typed client with `Get`/`Update` (global) and `.InWorkspace(ws)` returning a workspace-scoped client with `Get`/`Update`/`Delete` (DELETE removes the per-workspace override and falls back to the global config).
+- **Per-service settings types** — `WMSSettings` (watermark, interpolation, max\* tunables, GFI/GetMap MIME-checking flags), `WFSSettings` (maxFeatures, serviceLevel BASIC/TRANSACTIONAL/COMPLETE, GML output config), `WCSSettings` (gmlPrefixing, latLon, max\*Memory in KB), `WMTSSettings` (no unique fields beyond ServiceInfo). All embed the common `ServiceInfo` block.
+
+### Wire-format quirks (services package)
+
+Discovered via local integration testing against live GeoServer 2.28.0 — three quirks the upstream OpenAPI YAML doesn't document:
+
+- **`versions`** uses a class-name wrapper key (`org.geotools.util.Version`) and collapses single-element arrays to a scalar object. `Versions{List []string}` decodes both shapes into a flat slice; marshal emits the canonical array form.
+- **`keywords.string`** collapses single-element arrays to a scalar string. `Keywords{Strings []string}` decodes both; marshal emits the array form.
+- **`metadataLink`** is sent as `""` (empty string) when unset, not as `null` or absent. Custom UnmarshalJSON on `*MetadataLink` treats the empty-string form as "unset" — the resulting pointer is non-nil but with all-zero fields.
+
 ### Added — file-upload publishing on stores
 
 - **`v2/rest/datastores.WorkspaceClient.UploadFile(ctx, name, body, opts)`** — `PUT /workspaces/{ws}/datastores/{name}/{file|url|external}[.<ext>]`. Publishes a file-backed datastore by uploading the file contents (`UploadMethodFile`, default), pointing at a remote URL the server fetches (`UploadMethodURL`), or referencing a server-local path with no transfer (`UploadMethodExternal`). Documented `Extension` values: `shp`, `properties`, `appschema`. Default `Content-Type` is `application/zip` for file uploads, `text/plain` for URL/external; override via `UploadOptions.ContentType`.
