@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 
 	geoserver "github.com/hishamkaram/geoserver/v2"
 	"github.com/hishamkaram/geoserver/v2/rest/datastores"
@@ -18,6 +20,39 @@ func ExampleClient_InWorkspace() {
 
 	ws := c.Datastores.InWorkspace("topp")
 	_ = ws // ws.Get / ws.Create / ws.List / ws.Update / ws.Delete
+}
+
+// ExampleWorkspaceClient_UploadFile publishes a Shapefile by
+// uploading a zipped bundle (the .shp + .shx + .dbf + .prj
+// sidecars). For non-PostgreSQL data this is the fast path —
+// no need to copy files into the data directory by hand.
+func ExampleWorkspaceClient_UploadFile() {
+	c, _ := geoserver.New("http://localhost:8080/geoserver",
+		geoserver.WithBasicAuth("admin", "geoserver"))
+
+	f, err := os.Open("states.zip")
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	_ = c.Datastores.InWorkspace("topp").UploadFile(context.Background(),
+		"states_shp", f, datastores.UploadOptions{Extension: "shp"})
+}
+
+// ExampleWorkspaceClient_UploadFile_external registers a
+// server-local Shapefile path without transferring bytes — the
+// store points at a file already on the GeoServer host.
+func ExampleWorkspaceClient_UploadFile_external() {
+	c, _ := geoserver.New("http://localhost:8080/geoserver",
+		geoserver.WithBasicAuth("admin", "geoserver"))
+
+	_ = c.Datastores.InWorkspace("topp").UploadFile(context.Background(),
+		"states_shp", strings.NewReader("/srv/geoserver/data/states.shp"),
+		datastores.UploadOptions{
+			Method:    datastores.UploadMethodExternal,
+			Extension: "shp",
+		})
 }
 
 // ExampleWorkspaceClient_Create_postGIS publishes a PostGIS connection

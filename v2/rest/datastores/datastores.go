@@ -19,6 +19,11 @@ type Core interface {
 	URL(parts ...string) (string, error)
 	Do(ctx context.Context, op string, method, requestURL string, body any, query map[string]string, out any) error
 	DoStream(ctx context.Context, op string, method, requestURL string, query map[string]string) (io.ReadCloser, int, error)
+	// DoRaw sends a non-JSON-encoded request body and lets the caller set
+	// Content-Type and Accept explicitly. Used by [WorkspaceClient.UploadFile]
+	// to PUT a Shapefile zip (binary), a URL string, or a server-local path
+	// to GeoServer's `/file`, `/url`, `/external` sub-resources.
+	DoRaw(ctx context.Context, op, method, requestURL string, body io.Reader, contentType, accept string, query map[string]string) error
 }
 
 // Client is the v2 datastores sub-client. It is a thin entry point —
@@ -199,6 +204,77 @@ func (c *WorkspaceClient) Update(ctx context.Context, name string, patch *Patch)
 		DataStore Patch `json:"dataStore"`
 	}{DataStore: *patch}
 	return c.core.Do(ctx, op, http.MethodPut, u, body, nil, nil)
+}
+
+// UploadFile publishes a file-backed datastore by uploading the file
+// contents (or pointing at a remote URL or a server-local path).
+//
+// The endpoint shape is `PUT /workspaces/{ws}/datastores/{name}/{method}[.{ext}]`
+// where method is one of `file`, `url`, `external`:
+//
+//   - [UploadMethodFile] (default): body is the file's binary contents
+//     (typically a zipped Shapefile + sidecars). Default Content-Type
+//     `application/zip`.
+//   - [UploadMethodURL]: body is a URL string the server fetches.
+//     Default Content-Type `text/plain`.
+//   - [UploadMethodExternal]: body is a server-local filesystem path
+//     string. No file transfer happens. Default Content-Type `text/plain`.
+//
+// Documented `opts.Extension` values for datastores: `shp`, `properties`,
+// `appschema`. Other values are accepted by GeoServer at the wire level
+// but not officially supported.
+//
+// If `opts.Update` is non-empty, it's sent as the `update` query parameter
+// (typically `overwrite` to replace, or `append` for store types that
+// support adding to existing data).
+func (c *WorkspaceClient) UploadFile(ctx context.Context, name string, body io.Reader, opts UploadOptions) error {
+	const op = "Datastores.UploadFile"
+	if c.workspace == "" {
+		return errors.New(op + ": empty workspace name")
+	}
+	if name == "" {
+		return errors.New(op + ": empty name")
+	}
+	if body == nil {
+		return errors.New(op + ": nil body")
+	}
+
+	method := opts.Method
+	if method == "" {
+		method = UploadMethodFile
+	}
+	switch method {
+	case UploadMethodFile, UploadMethodURL, UploadMethodExternal:
+	default:
+		return fmt.Errorf("%s: invalid Method %q (want file / url / external)", op, method)
+	}
+
+	segment := string(method)
+	if opts.Extension != "" {
+		segment = segment + "." + opts.Extension
+	}
+
+	u, err := c.core.URL("rest", "workspaces", c.workspace, "datastores", name, segment)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	contentType := opts.ContentType
+	if contentType == "" {
+		switch method {
+		case UploadMethodURL, UploadMethodExternal:
+			contentType = "text/plain"
+		default:
+			contentType = "application/zip"
+		}
+	}
+
+	var query map[string]string
+	if opts.Update != "" {
+		query = map[string]string{"update": opts.Update}
+	}
+
+	return c.core.DoRaw(ctx, op, http.MethodPut, u, body, contentType, "*/*", query)
 }
 
 // Delete removes a datastore. With opts.Recurse=true, also removes all

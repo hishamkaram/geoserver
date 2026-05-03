@@ -2,6 +2,8 @@ package coveragestores_test
 
 import (
 	"context"
+	"os"
+	"strings"
 
 	geoserver "github.com/hishamkaram/geoserver/v2"
 	"github.com/hishamkaram/geoserver/v2/rest/coveragestores"
@@ -31,6 +33,42 @@ func ExampleWorkspaceClient_Create() {
 			URL:     "file:data/coverages/world_dem.tif",
 			Type:    "GeoTIFF",
 			Enabled: true,
+		})
+}
+
+// ExampleWorkspaceClient_UploadFile publishes a GeoTIFF by
+// uploading the raster bytes — the modern alternative to copying
+// the file into the data directory by hand and calling Reload.
+func ExampleWorkspaceClient_UploadFile() {
+	c, _ := geoserver.New("http://localhost:8080/geoserver",
+		geoserver.WithBasicAuth("admin", "geoserver"))
+
+	f, err := os.Open("world_dem.tif")
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	_ = c.CoverageStores.InWorkspace("nurc").UploadFile(context.Background(),
+		"world_dem", f, coveragestores.UploadOptions{
+			Extension:   "geotiff",
+			ContentType: "image/tiff",
+		})
+}
+
+// ExampleWorkspaceClient_HarvestGranule appends a new granule to an
+// existing image-mosaic store. Use UploadMethodExternal with a
+// server-local path to avoid transferring large rasters across HTTP.
+func ExampleWorkspaceClient_HarvestGranule() {
+	c, _ := geoserver.New("http://localhost:8080/geoserver",
+		geoserver.WithBasicAuth("admin", "geoserver"))
+
+	_ = c.CoverageStores.InWorkspace("nurc").HarvestGranule(context.Background(),
+		"world_mosaic",
+		strings.NewReader("/srv/geoserver/granules/2026_05_03.tif"),
+		coveragestores.UploadOptions{
+			Method:    coveragestores.UploadMethodExternal,
+			Extension: "imagemosaic",
 		})
 }
 

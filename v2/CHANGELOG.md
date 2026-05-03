@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — file-upload publishing on stores
+
+- **`v2/rest/datastores.WorkspaceClient.UploadFile(ctx, name, body, opts)`** — `PUT /workspaces/{ws}/datastores/{name}/{file|url|external}[.<ext>]`. Publishes a file-backed datastore by uploading the file contents (`UploadMethodFile`, default), pointing at a remote URL the server fetches (`UploadMethodURL`), or referencing a server-local path with no transfer (`UploadMethodExternal`). Documented `Extension` values: `shp`, `properties`, `appschema`. Default `Content-Type` is `application/zip` for file uploads, `text/plain` for URL/external; override via `UploadOptions.ContentType`.
+- **`v2/rest/coveragestores.WorkspaceClient.UploadFile(ctx, name, body, opts)`** — same shape for raster stores. Documented `Extension` values: `geotiff`, `worldimage`, `imagemosaic`. Override `ContentType` to `image/tiff` for a single GeoTIFF.
+- **`v2/rest/coveragestores.WorkspaceClient.HarvestGranule(ctx, name, body, opts)`** — `POST` to the same endpoint. Appends a new granule to an existing image-mosaic store without reconfiguring the whole store. Use `UploadMethodExternal` with a server-local path to avoid transferring large rasters across HTTP.
+- Both packages add `DoRaw` to their `Core` interface and route uploads through `transport.DoRaw` with `Accept: */*` (matches the workspace-scoped POST quirk handled by `styles.Client.Create` and the new `layers.AddStyle`).
+
 ### Added — layer–style associations
 
 - **`v2/rest/layers.WorkspaceClient.ListStyles(ctx, layer)`** and **`AddStyle(ctx, layer, styleName, opts)`** — dedicated sub-resource for managing a layer's alternative-style list (`/workspaces/{ws}/layers/{l}/styles`). `AddStyleOptions{Default: true}` atomically promotes the new style to the layer's default in one wire round-trip, replacing the previous GET + mutate + PUT dance. Removing an alternative style is not exposed as a dedicated method (GeoServer doesn't document a DELETE on this sub-resource); use `Update()` with the unwanted reference removed from `Layer.Styles`.
