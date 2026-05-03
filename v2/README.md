@@ -1,6 +1,6 @@
 # geoserver/v2
 
-> 🧪 **`v2.0.0-alpha.1` is published.** v2 has feature parity with v1 today (workspaces, datastores, feature types, coverage stores, coverages, layers, layer groups, styles, namespaces, settings, about, security, ACL); only WMS GetCapabilities is deferred to a v2.x point release once the `ows/wms/` XML subpackage lands. Public API may still change before `v2.0.0` based on early-adopter feedback — no production guarantees yet. **For stable production use, stay on the v1 line:**
+> 🧪 **`v2.0.0-alpha.1` is published.** v2 now has full v1 parity at `master`: workspaces, datastores, feature types, coverage stores, coverages, layers, layer groups, styles, namespaces, settings, about, security, ACL, system (reload + cache reset), and WMS GetCapabilities (`v2/ows/wms`). Public API may still change before `v2.0.0` based on early-adopter feedback — no production guarantees yet. **For stable production use, stay on the v1 line:**
 >
 > ```go
 > import "github.com/hishamkaram/geoserver"          // v1.1.x — stable, full surface
