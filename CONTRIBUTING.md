@@ -89,7 +89,9 @@ See [`docker/README.md`](docker/README.md) for what's in the image (Importer ext
 
 ## Releasing
 
-Releases are cut by maintainers via tags (`v1.x.y`). The `release.yml` workflow assembles release notes from Conventional Commit messages.
+Releases are cut by maintainers via tags (`v1.x.y` for v1, `v2.x.y` for v2). The `release.yml` workflow assembles release notes from Conventional Commit messages.
+
+Both `CHANGELOG.md` (v1) and `v2/CHANGELOG.md` (v2) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The `[Unreleased]` block at the top of each file accumulates entries between tags; cutting a release promotes the block contents into a dated stanza and leaves a fresh `[Unreleased]` placeholder.
 
 ## Working with Claude Code in this repo
 

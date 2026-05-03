@@ -12,6 +12,27 @@ A Go client library for the [GeoServer](https://geoserver.org/) REST API. Manage
 [![License: MIT](https://img.shields.io/github/license/hishamkaram/geoserver.svg)](LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/hishamkaram/geoserver?include_prereleases&sort=semver)](https://github.com/hishamkaram/geoserver/releases)
 
+## Contents
+
+- [Highlights](#highlights)
+- [When to use this library](#when-to-use-this-library)
+- [Compatibility](#compatibility)
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Constructing a client](#constructing-a-client)
+- [Context propagation](#context-propagation)
+- [Typed errors](#typed-errors)
+- [Logging](#logging)
+- [API surface](#api-surface)
+- [Concurrency](#concurrency)
+- [Testing](#testing)
+- [Project status](#project-status)
+- [Roadmap](#roadmap)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Acknowledgements](#acknowledgements)
+- [License](#license)
+
 ---
 
 ## Highlights
@@ -21,6 +42,13 @@ A Go client library for the [GeoServer](https://geoserver.org/) REST API. Manage
 - **Structured logging via stdlib `log/slog`** — no third-party logger dependency; silent by default, fully pluggable through `WithLogger`.
 - **Verified against real GeoServer** — every release tag triggers an integration matrix that spins up GeoServer 2.27 LTS and 2.28 stable in Docker and runs the full test suite.
 - **Zero runtime third-party dependencies** — only stdlib `net/http`, `encoding/json`, `encoding/xml`, `log/slog`, `context`. (Test-only deps are testify and `gopkg.in/yaml.v3` for the YAML config helper.)
+
+## When to use this library
+
+- **Driving GeoServer config from Go.** This is the daily-driver use case: provisioning workspaces, publishing layers from PostGIS / Shapefile / GeoTIFF, managing styles, ACL rules, security users / groups / roles, and the general catalog. Both v1 (this README) and [v2](v2/README.md) cover the full catalog.
+- **Multi-server orchestration.** This client targets a single GeoServer at a time. To coordinate across servers (failover, blue-green deploys, federation), construct one client per server and orchestrate above the library.
+- **GetCapabilities / DescribeFeatureType / DescribeCoverage.** v1 ships WMS GetCapabilities; v2 adds WFS and WCS GetCapabilities + WFS DescribeFeatureType + WCS DescribeCoverage. If you only need read-only OWS introspection, stdlib `encoding/xml` against the OGC schemas is also a viable alternative when you don't want a GeoServer-specific dependency.
+- **Tile rendering / GetMap / GetCoverage / WFS-T.** Out of scope. This is a config / admin client, not a request-path client. For data-delivery operations, hit GeoServer's `/wms`, `/wfs`, `/wcs` endpoints directly with `net/http`.
 
 ## Compatibility
 
@@ -351,6 +379,10 @@ Pull requests welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for the de
 For security issues, see [SECURITY.md](SECURITY.md) and use the private GitHub Security Advisory channel — please do not open a public issue.
 
 By participating in this project you agree to abide by the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Acknowledgements
+
+This library has been kept alive by community contributions across multiple years. See [`AUTHORS`](AUTHORS) for the maintainer and contributor roll, and the [v1.1.0 CHANGELOG entry](CHANGELOG.md#110--2026-05-03) for the long-stalled forks (PRs #15 and #17) that landed in the revival release.
 
 ## License
 
