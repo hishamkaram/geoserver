@@ -2,7 +2,6 @@ package geoserver
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -88,18 +87,18 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 	return body, response.StatusCode
 }
 
-// GetError returns a string-formatted error for the given GeoServer HTTP
-// response. The returned error preserves the historical
-// "abstract:%s\ndetails:%s\n" format for backward compatibility; in v1.1+
-// it is also matchable against typed sentinels via errors.Is — see errors.go.
+// GetError returns a typed [*Error] for the given GeoServer HTTP response.
+//
+// The returned error's Error() string preserves the v1.0
+// "abstract:%s\ndetails:%s\n" format for backward compatibility, while new
+// callers can match it against package sentinel errors:
+//
+//	err := gs.CreateWorkspace("topp")
+//	if errors.Is(err, geoserver.ErrNotFound) { ... }
+//	var apiErr *geoserver.Error
+//	if errors.As(err, &apiErr) { ... apiErr.StatusCode ... apiErr.Body ... }
 func (g *GeoServer) GetError(statusCode int, text []byte) (err error) {
-	geoserverErr, ok := statusErrorMapping[statusCode]
-	if !ok {
-		geoserverErr = fmt.Errorf("unexpected error with status code %d", statusCode)
-	}
-	errDetails := string(text)
-	fullMSG := fmt.Sprintf("abstract:%s\ndetails:%s\n", geoserverErr, errDetails)
-	return errors.New(fullMSG)
+	return newError("", "", statusCode, text)
 }
 
 // IsEmpty helper function to check if obj/struct is nil/empty
