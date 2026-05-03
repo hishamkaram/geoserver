@@ -1,6 +1,6 @@
 # geoserver/v2
 
-> ⚠️ **In development.** v2 is a clean redesign of `github.com/hishamkaram/geoserver` for 2026-era idiomatic Go. The public API is not yet stable; `Workspaces` and `Datastores` are implemented today and the rest port in subsequent PRs. **For production use today, use the v1 line:**
+> ⚠️ **In development.** v2 is a clean redesign of `github.com/hishamkaram/geoserver` for 2026-era idiomatic Go. The public API is not yet stable; `Workspaces`, `Datastores`, and `FeatureTypes` are implemented today and the rest port in subsequent PRs. **For production use today, use the v1 line:**
 >
 > ```go
 > import "github.com/hishamkaram/geoserver"          // v1 — stable, full surface
@@ -84,14 +84,35 @@ stores, _ := ds.List(ctx, datastores.ListOptions{})
 _ = ds.Delete(ctx, "states", datastores.DeleteOptions{Recurse: true})
 ```
 
+### 2-level scoped resources (feature types)
+
+Resources nested under both a workspace and a datastore (feature types now, coverages later) drill in through two `In…` calls:
+
+```go
+import "github.com/hishamkaram/geoserver/v2/rest/featuretypes"
+
+ft := c.FeatureTypes.InWorkspace("topp").InDatastore("states_pg")
+
+// Discover tables in the datastore not yet configured.
+names, _ := ft.Discover(ctx, featuretypes.DiscoverOptions{
+    Kind: featuretypes.DiscoverAvailableWithGeometry,
+})
+
+// Publish one of them as a feature type.
+_ = ft.Create(ctx, &featuretypes.FeatureType{
+    Name: "states", NativeName: "states",
+    SRS: "EPSG:4326", Enabled: true,
+})
+```
+
 ## Resource status
 
 | Resource | v1 | v2 |
 |---|---|---|
 | Workspaces | full | **ported** (flat reference resource) |
 | Datastores | full | **ported** (workspace-scoped reference; `c.Datastores.InWorkspace(ws)`) |
+| Feature types | full | **ported** (2-level hierarchy reference; `c.FeatureTypes.InWorkspace(ws).InDatastore(ds)`) |
 | Coverages, coverage stores | full | not yet ported |
-| Feature types | full | not yet ported |
 | Layers, layer groups | full | not yet ported |
 | Styles | full | not yet ported |
 | Namespaces | full | not yet ported |
