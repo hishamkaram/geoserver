@@ -4,6 +4,18 @@
 
 This guide walks through the concrete API differences between v1.x (`github.com/hishamkaram/geoserver`) and v2.x (`github.com/hishamkaram/geoserver/v2`). Each section pairs a v1 snippet with the v2 equivalent.
 
+## Contents
+
+- [Module path](#module-path)
+- [Design tenets that drive the breakage](#design-tenets-that-drive-the-breakage)
+- [Constructor](#constructor)
+- [Errors](#errors)
+- [Mapping table](#mapping-table) — workspaces, datastores, feature types, coverage stores, coverages, layers and layer groups, styles, namespaces, settings, security, ACL, about / health, OWS read-only
+- [Surfaces v2 has that v1 doesn't](#surfaces-v2-has-that-v1-doesnt) — file-upload publishing, layer–style associations, per-service OWS settings, GeoWebCache, Importer
+- [Side-by-side: a typical workflow](#side-by-side-a-typical-workflow)
+- [When to upgrade](#when-to-upgrade)
+- [Contributing to v2](#contributing-to-v2)
+
 ## Module path
 
 ```diff

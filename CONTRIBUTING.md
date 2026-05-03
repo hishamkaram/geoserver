@@ -30,6 +30,8 @@ make test-integration     # runs tests with -tags=integration
 make compose-down
 ```
 
+See [`docker/README.md`](docker/README.md) for what's in the image (Importer extension baked in, supported GeoServer versions, env file, PostGIS seed).
+
 ## Make targets
 
 | Target | What it does |
@@ -62,11 +64,21 @@ make compose-down
 .
 ├── *.go                       # v1 public API (one file per resource)
 ├── wms/                       # WMS XML types (parser)
-├── docker/                    # Dockerfile for the dev GeoServer
+├── internal/transport/        # v1.1.x algorithm package (URL building, request execution)
+├── v2/                        # v2 SDK — separate Go module (own go.mod)
+│   ├── *.go, doc.go           # v2 root client and package doc
+│   ├── rest/                  # one subpackage per resource (workspaces, datastores, services, gwc, imports, …)
+│   ├── ows/                   # OWS clients (wms, wfs, wcs)
+│   ├── internal/transport/    # v2 transport helpers (DoJSON, DoXML, DoRaw, DoStream)
+│   └── examples/              # runnable v2 reference flows
+├── docs/                      # Architecture, REST quirks, version compat, migration, tier-2 gap backlog
+├── examples/                  # Runnable v1 reference flows
+├── docker/                    # Dockerfile for the dev/test GeoServer (Importer plugin baked in)
 ├── docker-compose.yml         # Default dev stack (GeoServer 2.28 + PostGIS 16)
 ├── docker-compose.test.yml    # Integration test stack with 2.27 LTS leg
 ├── testdata/                  # Test fixtures (SLDs, shapefiles, JSON responses)
-└── scripts/                   # Test helper scripts
+├── scripts/                   # Test helper scripts
+└── .github/                   # Issue / PR templates, CODEOWNERS, Dependabot, workflows
 ```
 
 ## Reporting bugs / asking questions
@@ -77,7 +89,9 @@ make compose-down
 
 ## Releasing
 
-Releases are cut by maintainers via tags (`v1.x.y`). The `release.yml` workflow assembles release notes from Conventional Commit messages.
+Releases are cut by maintainers via tags (`v1.x.y` for v1, `v2.x.y` for v2). The `release.yml` workflow assembles release notes from Conventional Commit messages.
+
+Both `CHANGELOG.md` (v1) and `v2/CHANGELOG.md` (v2) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The `[Unreleased]` block at the top of each file accumulates entries between tags; cutting a release promotes the block contents into a dated stanza and leaves a fresh `[Unreleased]` placeholder.
 
 ## Working with Claude Code in this repo
 
@@ -97,4 +111,4 @@ Available helpers:
 | Subagent | `integration-runner` | Boots the stack, runs integration tests, diagnoses failures from container logs. |
 | Subagent | `breaking-change-checker` | Computes the exported-API diff against `master` / `v1.0.0` and classifies each change. |
 
-Personal per-machine settings live in `.claude/settings.local.json` (gitignored). The team baseline (permissions, attribution, hooks) is intentionally **not** committed yet — see `~/.claude/plans/tranquil-hatching-rabin.md` for the design if we decide to add it later.
+Personal per-machine settings live in `.claude/settings.local.json` (gitignored). The team baseline (permissions, attribution, hooks) is intentionally **not** committed; revisit if the project grows enough contributors to warrant it.
