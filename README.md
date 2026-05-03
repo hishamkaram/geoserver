@@ -7,6 +7,8 @@ A Go client library for the [GeoServer](https://geoserver.org/) REST API. Manage
 [![CI](https://github.com/hishamkaram/geoserver/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/hishamkaram/geoserver/actions/workflows/ci.yml)
 [![Integration tests](https://github.com/hishamkaram/geoserver/actions/workflows/integration.yml/badge.svg?branch=master)](https://github.com/hishamkaram/geoserver/actions/workflows/integration.yml)
 [![CodeQL](https://github.com/hishamkaram/geoserver/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/hishamkaram/geoserver/actions/workflows/codeql.yml)
+[![codecov](https://codecov.io/gh/hishamkaram/geoserver/branch/master/graph/badge.svg?flag=v1)](https://codecov.io/gh/hishamkaram/geoserver)
+[![codecov v2](https://codecov.io/gh/hishamkaram/geoserver/branch/master/graph/badge.svg?flag=v2)](https://codecov.io/gh/hishamkaram/geoserver)
 [![License: MIT](https://img.shields.io/github/license/hishamkaram/geoserver.svg)](LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/hishamkaram/geoserver?include_prereleases&sort=semver)](https://github.com/hishamkaram/geoserver/releases)
 

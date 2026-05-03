@@ -1,0 +1,52 @@
+# Codecov config — pairs with the upload steps in .github/workflows/ci.yml.
+# Two coverage flags are reported separately so v1 and v2 don't blur into
+# a single project number:
+#   - flag "v1": coverage of the root module (github.com/hishamkaram/geoserver)
+#   - flag "v2": coverage of the v2 submodule (github.com/hishamkaram/geoserver/v2)
+#
+# Codecov tokenless upload works for public repos via the GitHub Actions
+# integration; no CODECOV_TOKEN secret is required.
+
+coverage:
+  status:
+    project:
+      default:
+        # Don't fail PRs on coverage drops; the badge surfaces the trend
+        # without a hard gate. The maintainer can promote to a strict
+        # target later once a baseline is established.
+        target: auto
+        threshold: 1%
+        informational: true
+    patch:
+      default:
+        # Same — informational only.
+        target: auto
+        threshold: 1%
+        informational: true
+
+# Per-flag definitions so v1 + v2 are tracked separately on the dashboard.
+flags:
+  v1:
+    paths:
+      - "!v2/"
+    carryforward: true
+  v2:
+    paths:
+      - "v2/"
+    carryforward: true
+
+# Ignore non-production code from the coverage calculation.
+ignore:
+  - "**/*_test.go"
+  - "**/example_test.go"
+  - "**/*_integration_test.go"
+  - "v2/examples/"
+  - "v2/internal/testenv/"
+  - "examples/"
+  - "scripts/"
+  - "testdata/"
+
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: false
