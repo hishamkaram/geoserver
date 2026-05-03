@@ -1,6 +1,6 @@
 # geoserver/v2
 
-> ⚠️ **In development.** v2 is a clean redesign of `github.com/hishamkaram/geoserver` for 2026-era idiomatic Go. The public API is not yet stable; `Workspaces`, `Datastores`, `FeatureTypes`, `CoverageStores`, and `Coverages` are implemented today and the rest port in subsequent PRs. **For production use today, use the v1 line:**
+> ⚠️ **In development.** v2 is a clean redesign of `github.com/hishamkaram/geoserver` for 2026-era idiomatic Go. The public API is not yet stable; `Workspaces`, `Datastores`, `FeatureTypes`, `CoverageStores`, `Coverages`, `Layers`, and `LayerGroups` are implemented today and the rest port in subsequent PRs. **For production use today, use the v1 line:**
 >
 > ```go
 > import "github.com/hishamkaram/geoserver"          // v1 — stable, full surface
@@ -127,7 +127,8 @@ _ = cov.Create(ctx, &coverages.Coverage{
 | Feature types | full | **ported** (2-level hierarchy reference; `c.FeatureTypes.InWorkspace(ws).InDatastore(ds)`) |
 | Coverage stores | full | **ported** (workspace-scoped; `c.CoverageStores.InWorkspace(ws)`) |
 | Coverages | full | **ported** (2-level hierarchy; `c.Coverages.InWorkspace(ws).InCoverageStore(cs)`) |
-| Layers, layer groups | full | not yet ported |
+| Layers | full | **ported** (workspace-scoped; `c.Layers.InWorkspace(ws)`) |
+| Layer groups | full | **ported** (workspace-scoped; `c.LayerGroups.InWorkspace(ws)`) |
 | Styles | full | not yet ported |
 | Namespaces | full | not yet ported |
 | Settings | full | not yet ported |
