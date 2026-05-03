@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0-alpha.2] — 2026-05-03
+
+Second alpha. Closes the last v1-parity gap (WMS GetCapabilities + system reload/cache reset), adds full pkg.go.dev godoc Example_* coverage across every sub-client, and refreshes the public-facing docs (READMEs, ROADMAP). No breaking changes from `alpha.1`; existing callers can `go get @v2.0.0-alpha.2` and recompile. Public API may still refine before `v2.0.0` — no production guarantees yet.
+
 ### Added
 
 - **`v2/ows/wms/` package** — port of v1's `wms/` package. Same XML type tree (Capabilities, Service, Capability, Layer, Style, BoundingBox, …) so callers move with no shape changes. New free function `wms.ParseCapabilities(io.Reader)` (v2 idiom — `io.Reader` instead of `[]byte`; the deprecated v1 `ParseCapabilities` no-`E` variant that swallowed errors is gone). New sub-client `c.WMS` with `GetCapabilities(ctx, opts)` — global by default, `c.WMS.InWorkspace(ws)` for a workspace-scoped capabilities view. `GetCapabilitiesOptions` carries Version (default "1.1.1") and an optional UpdateSequence cache token.
@@ -27,6 +31,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed (docs)
 
 - `v2/README.md` banner: "v2 in development" → "`v2.0.0-alpha.1` is published" with a `go get` install one-liner and prerelease disclaimer (PR #61, post-`v2.0.0-alpha.1`).
+- `v2/README.md` banner refreshed again for full v1 parity (WMS + system landed); the "WMS deferred" disclaimer is gone.
+- Root `README.md` Roadmap mirrors the v2 banner state.
+- `ROADMAP.md` checkpoints refreshed: `v2.0.0-alpha.1` marked tagged; new milestones for System endpoints, OWS clients (1/3 = wms), Migration guide, and v1 parity at master all marked complete; forward milestones added for `v2.0.0-alpha.2` retag, OWS clients 2/3 + 3/3 (wfs/wcs), `v2.0.0-beta.1`, `v2.0.0`.
+
+### Branch protection (server-side)
+
+- `master`'s required-status-checks list now includes `Unit tests v2 (Go 1.25)` (the original 6 contexts plus the v2 unit job — every PR must pass v2 unit tests before merging). No code change; recorded here for the maintainer audit trail.
 
 ## [2.0.0-alpha.1] — 2026-05-03
 
