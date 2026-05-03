@@ -1,23 +1,32 @@
-[![Go Reference](https://pkg.go.dev/badge/github.com/hishamkaram/geoserver.svg)](https://pkg.go.dev/github.com/hishamkaram/geoserver)
-[![Go Report Card](https://goreportcard.com/badge/github.com/hishamkaram/geoserver)](https://goreportcard.com/report/github.com/hishamkaram/geoserver)
-[![CI](https://github.com/hishamkaram/geoserver/actions/workflows/ci.yml/badge.svg)](https://github.com/hishamkaram/geoserver/actions/workflows/ci.yml)
-[![GitHub License](https://img.shields.io/github/license/hishamkaram/geoserver.svg)](https://github.com/hishamkaram/geoserver/blob/master/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/hishamkaram/geoserver.svg)](https://github.com/hishamkaram/geoserver/stargazers)
-
-<p align="center">
-  <img src="https://i.imgur.com/bVuV5v6.png" width="200"/>
-</p>
-<p align="center">
-  <img src="https://i.imgur.com/31CL1xg.png" width="200"/>
-</p>
-
 # geoserver
 
-`geoserver` is a Go client library for the [GeoServer](https://geoserver.org/) REST API. Manage workspaces, datastores, layers, styles, coverages, and more from your Go applications.
+A Go client library for the [GeoServer](https://geoserver.org/) REST API. Manage workspaces, datastores, feature types, layers, layer groups, styles, coverages, and namespaces from any Go application.
 
-> **v1.1 revival (May 2026)** — this library was dormant for 3+ years and has been revived with modern Go tooling, an idiomatic `New()` constructor with functional options, full `context.Context` support, typed errors, structured logging via stdlib `log/slog`, and a httptest-based unit-test layer. See the [CHANGELOG](CHANGELOG.md) for details. v1.0 callers can upgrade by changing only their `go.mod` version.
+[![Go Reference](https://pkg.go.dev/badge/github.com/hishamkaram/geoserver.svg)](https://pkg.go.dev/github.com/hishamkaram/geoserver)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hishamkaram/geoserver)](https://goreportcard.com/report/github.com/hishamkaram/geoserver)
+[![CI](https://github.com/hishamkaram/geoserver/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/hishamkaram/geoserver/actions/workflows/ci.yml)
+[![Integration tests](https://github.com/hishamkaram/geoserver/actions/workflows/integration.yml/badge.svg?branch=master)](https://github.com/hishamkaram/geoserver/actions/workflows/integration.yml)
+[![CodeQL](https://github.com/hishamkaram/geoserver/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/hishamkaram/geoserver/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/github/license/hishamkaram/geoserver.svg)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/hishamkaram/geoserver?include_prereleases&sort=semver)](https://github.com/hishamkaram/geoserver/releases)
 
 ---
+
+## Highlights
+
+- **Idiomatic 2026-era Go API** — `New(...)` with functional options, `context.Context` on every method, typed errors usable with `errors.Is` / `errors.As`.
+- **Drop-in for v1.0 callers** — every legacy method shape (`GetCatalog`, `CreateWorkspace`, etc.) still works, just delegates to a context-aware sibling.
+- **Structured logging via stdlib `log/slog`** — no third-party logger dependency; silent by default, fully pluggable through `WithLogger`.
+- **Verified against real GeoServer** — every release tag triggers an integration matrix that spins up GeoServer 2.27 LTS and 2.28 stable in Docker and runs the full test suite.
+- **Zero runtime third-party dependencies** — only stdlib `net/http`, `encoding/json`, `encoding/xml`, `log/slog`, `context`. (Test-only deps are testify and `gopkg.in/yaml.v3` for the YAML config helper.)
+
+## Compatibility
+
+| Component   | Supported                                       |
+|-------------|-------------------------------------------------|
+| Go          | **1.23+** (CI runs against 1.23 and 1.25)       |
+| GeoServer   | **2.27 LTS** and **2.28** (current stable)      |
+| GeoServer 3 | Tracked for v2 — see [Roadmap](#roadmap)        |
 
 ## Install
 
@@ -29,16 +38,7 @@ go get github.com/hishamkaram/geoserver@latest
 import "github.com/hishamkaram/geoserver"
 ```
 
-> **Note**: a legacy `gopkg.in/hishamkaram/geoserver.v1` import path also resolves but is deprecated. New code should use `github.com/hishamkaram/geoserver`.
-
-## Requirements
-
-| Component | Supported |
-|---|---|
-| Go | **1.23+** (CI tests against 1.23 and 1.25) |
-| GeoServer | **2.27 LTS, 2.28** (current stable) |
-
-GeoServer 3.0 support is tracked for v2.
+> The legacy `gopkg.in/hishamkaram/geoserver.v1` import path still resolves but is deprecated. New code should use `github.com/hishamkaram/geoserver`.
 
 ## Quick start
 
@@ -57,7 +57,6 @@ import (
 )
 
 func main() {
-    // v1.1 idiomatic constructor with functional options.
     gs := geoserver.New(
         "http://localhost:8080/geoserver/",
         "admin",
@@ -67,104 +66,276 @@ func main() {
         geoserver.WithLogger(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn})),
     )
 
-    // Every method has a *Context twin. Use them in production.
     ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
 
-    created, err := gs.CreateWorkspaceContext(ctx, "golang")
-    if err != nil {
-        if errors.Is(err, geoserver.ErrConflict) {
-            fmt.Println("workspace already exists, continuing")
-        } else {
-            fmt.Printf("create error: %v\n", err)
+    // Create a workspace, tolerating "already exists".
+    if _, err := gs.CreateWorkspaceContext(ctx, "demo"); err != nil {
+        if !errors.Is(err, geoserver.ErrConflict) {
+            fmt.Println("create workspace:", err)
             return
         }
     }
-    fmt.Printf("created=%v\n", created)
 
+    // List public layers.
     layers, err := gs.GetLayersContext(ctx, "")
     if err != nil {
-        fmt.Printf("error: %v\n", err)
+        fmt.Println("list layers:", err)
         return
     }
     for _, l := range layers {
-        fmt.Printf("Name:%s  Href:%s\n", l.Name, l.Href)
+        fmt.Printf("%-30s %s\n", l.Name, l.Href)
     }
 }
 ```
 
-### Legacy non-context API
+## Constructing a client
 
-The original v1.0 method shapes still work. They internally call the `*Context` versions with `context.Background()`:
+`New` is the v1.1+ entry point. It accepts functional options for everything you would normally tune on an HTTP client:
+
+| Option                      | Default                              | Notes                                                                                                |
+|-----------------------------|--------------------------------------|------------------------------------------------------------------------------------------------------|
+| `WithHTTPClient(*http.Client)` | `&http.Client{Timeout: 30s}`     | Replace the entire client (e.g. instrumented transports, retries, custom auth).                      |
+| `WithTimeout(d)`            | `30s`                                | Override the timeout on the underlying `http.Client`. Per-request deadlines should use `context`.    |
+| `WithLogger(slog.Handler)`  | text handler at Info, stderr         | Pass `nil` to silence the library entirely.                                                          |
+| `WithUserAgent(string)`     | Go's default                         | Wraps the transport with a `User-Agent`-setting `RoundTripper`; safe to layer over `WithHTTPClient`. |
+| `WithBasicAuth(user, pass)` | from constructor args                | Chainable credential override.                                                                       |
+
+The legacy `geoserver.GetCatalog(url, user, pass)` still works (it delegates to `New`) and is retained for v1.0 compatibility. It is marked `Deprecated` in godoc.
+
+## Context propagation
+
+Every public method has a `*Context` sibling that takes a `context.Context` as its first argument. The non-context name remains for v1.0 compatibility and is implemented as a one-line wrapper that calls the `*Context` version with `context.Background()`.
 
 ```go
-gs := geoserver.GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
-created, err := gs.CreateWorkspace("golang") // == gs.CreateWorkspaceContext(context.Background(), "golang")
+ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+defer cancel()
+
+// Modern (recommended):
+ws, err := gs.GetWorkspaceContext(ctx, "demo")
+
+// Legacy (still works):
+ws, err := gs.GetWorkspace("demo")
 ```
 
-`GetCatalog` is deprecated in favor of `New`.
+The `CatalogWithContext` interface bundles the context-aware service interfaces (`WorkspaceServiceWithContext`, `LayerServiceWithContext`, etc.) for callers that want to depend on an interface rather than `*GeoServer`.
 
-### Typed errors
+## Typed errors
 
-REST failures return a typed `*geoserver.Error` you can match against sentinel values:
+REST failures return a typed `*geoserver.Error` matchable against package sentinels:
 
 ```go
 _, err := gs.GetWorkspaceContext(ctx, "missing")
 
 if errors.Is(err, geoserver.ErrNotFound) {
-    fmt.Println("workspace missing")
+    fmt.Println("workspace doesn't exist")
 }
 
 var apiErr *geoserver.Error
 if errors.As(err, &apiErr) {
-    fmt.Printf("status=%d body=%s\n", apiErr.StatusCode, apiErr.Body)
+    fmt.Printf("status=%d url=%s body=%s\n",
+        apiErr.StatusCode, apiErr.URL, apiErr.Body)
 }
 ```
 
-Available sentinels: `ErrNotFound`, `ErrUnauthorized`, `ErrForbidden`, `ErrConflict`, `ErrBadRequest`, `ErrMethodNotAllowed`, `ErrUnsupportedMediaType`, `ErrRateLimited`, `ErrServerError` (any 5xx).
+| Sentinel                  | Matches HTTP status |
+|---------------------------|---------------------|
+| `ErrBadRequest`           | 400                 |
+| `ErrUnauthorized`         | 401                 |
+| `ErrForbidden`            | 403                 |
+| `ErrNotFound`             | 404                 |
+| `ErrMethodNotAllowed`     | 405                 |
+| `ErrConflict`             | 409                 |
+| `ErrUnsupportedMediaType` | 415                 |
+| `ErrRateLimited`          | 429                 |
+| `ErrServerError`          | any 5xx             |
 
-The error's `Error()` string preserves the v1.0 `"abstract:%s\ndetails:%s\n"` format for callers that pattern-match on text.
+For v1.0 compatibility, `Error.Error()` preserves the historical `"abstract:%s\ndetails:%s\n"` text — any code that previously matched on error message strings continues to work.
+
+## Logging
+
+The library logs through stdlib [`log/slog`](https://pkg.go.dev/log/slog). It is silent by default unless you opt in:
+
+```go
+gs := geoserver.New(url, user, pass,
+    geoserver.WithLogger(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+        Level: slog.LevelDebug,
+    })),
+)
+```
+
+| Level   | What you'll see                                       |
+|---------|-------------------------------------------------------|
+| Debug   | (reserved for future request-level traces)            |
+| Info    | One line per outgoing request: URL + status           |
+| Warn    | Non-fatal anomalies (e.g. ignored remote field shape) |
+| Error   | Protocol failures, decode errors, transport errors    |
+
+Pass `nil` to `WithLogger` to drop everything to a discard handler.
+
+## API surface
+
+The most common operations, grouped by resource. See [pkg.go.dev](https://pkg.go.dev/github.com/hishamkaram/geoserver) for the complete reference.
+
+### Workspaces
+
+```go
+gs.GetWorkspacesContext(ctx)
+gs.GetWorkspaceContext(ctx, "topp")
+gs.WorkspaceExistsContext(ctx, "topp")
+gs.CreateWorkspaceContext(ctx, "topp")
+gs.DeleteWorkspaceContext(ctx, "topp", true /*recurse*/)
+```
+
+### Namespaces
+
+```go
+gs.GetNamespacesContext(ctx)
+gs.CreateNamespaceContext(ctx, "topp", "http://www.openplans.org/topp")
+gs.DeleteNamespaceContext(ctx, "topp")
+```
+
+### Datastores
+
+```go
+conn := geoserver.DatastoreConnection{
+    Name:   "ny_postgis",
+    Host:   "postgis", Port: 5432,
+    DBName: "gis", DBUser: "golang", DBPass: "golang",
+    Type:   "postgis",
+}
+gs.CreateDatastoreContext(ctx, conn, "topp")
+gs.GetDatastoreDetailsContext(ctx, "topp", "ny_postgis")
+gs.DeleteDatastoreContext(ctx, "topp", "ny_postgis", true)
+```
+
+### Feature types
+
+```go
+gs.GetFeatureTypesContext(ctx, "topp", "ny_postgis")
+gs.GetFeatureTypeContext(ctx, "topp", "ny_postgis", "buildings")
+gs.DeleteFeatureTypeContext(ctx, "topp", "ny_postgis", "buildings", true)
+```
+
+### Layers
+
+```go
+gs.GetLayersContext(ctx, "")                    // global, unscoped
+gs.GetLayerContext(ctx, "topp", "states")
+gs.UpdateLayerContext(ctx, "topp", "states", layer)
+gs.DeleteLayerContext(ctx, "topp", "states", true)
+gs.PublishPostgisLayerContext(ctx, "topp", "ny_postgis", "buildings", "buildings_table")
+gs.UploadShapeFileContext(ctx, "/path/states.zip", "topp", "states")
+```
+
+### Layer groups
+
+```go
+gs.GetLayerGroupsContext(ctx, "")
+gs.GetLayerGroupContext(ctx, "", "tiger-ny")
+gs.CreateLayerGroupContext(ctx, "topp", &group)
+gs.DeleteLayerGroupContext(ctx, "topp", "tiger-ny")
+```
+
+### Styles
+
+```go
+gs.GetStylesContext(ctx, "topp")
+gs.GetStyleContext(ctx, "topp", "states_style")
+gs.CreateStyleContext(ctx, "topp", "states_style")
+gs.UploadStyleContext(ctx, sldReader, "topp", "states_style", false /*overwrite*/)
+gs.DeleteStyleContext(ctx, "topp", "states_style", true /*purge*/)
+```
+
+### Coverages (raster layers)
+
+```go
+gs.GetCoveragesContext(ctx, "nurc")
+gs.GetCoverageContext(ctx, "nurc", "Arc_Sample")
+gs.PublishCoverageContext(ctx, "nurc", "arcGridSample", "Arc_Sample", "")
+gs.UpdateCoverageContext(ctx, "nurc", &coverage)
+```
+
+### Settings & misc
+
+```go
+gs.GetGlobalSettingsContext(ctx)
+gs.UpdateGlobalSettingsContext(ctx, settings)
+gs.IsRunningContext(ctx)
+gs.GetCapabilitiesContext(ctx, "")
+```
 
 ## Concurrency
 
-`*GeoServer` is safe for concurrent **reads** (calling methods from multiple goroutines is fine). Mutating exported fields after construction is **not safe**. Construct once via `New(...)` and treat the value as read-only thereafter. A v2 redesign with private fields and an immutable client is planned.
+`*GeoServer` is safe for **concurrent reads** — calling its methods from multiple goroutines simultaneously is fine. Mutating its exported fields (`ServerURL`, `Username`, etc.) after construction is **not safe**. The recommended pattern is to construct once via `New(...)` and treat the returned value as read-only thereafter.
+
+A v2 redesign with private fields, an immutable client, and `RoundTripper`-based auth is on the [Roadmap](#roadmap).
 
 ## Testing
 
-This package ships two test layers:
+The package ships two test layers:
 
-### Unit tests (no Docker required)
+### Unit tests — no Docker required
 
 ```bash
 make test-unit
 ```
 
-Runs `go test -race -short ./...`. Uses `httptest.NewServer` to mock GeoServer responses. Covers happy paths plus 401/403/404/409/500 error mapping for the implemented services.
+Runs `go test -race -short ./...`. Uses `httptest.NewServer` to mock GeoServer responses; covers happy paths plus 401/403/404/409/500 error mapping for the implemented services. Suitable for editor save-on-test or any CI pipeline.
 
-### Integration tests (real GeoServer)
+### Integration tests — real GeoServer in Docker
 
 ```bash
-make compose-up        # boots GeoServer 2.28 + PostGIS 16
+make compose-up        # boots GeoServer 2.28 + PostGIS 16 with seeded data
 make test-integration  # runs go test -tags=integration ./...
 make compose-down
 ```
 
-CI runs the integration suite against **GeoServer 2.27 LTS** and **2.28** in parallel. To target a specific version locally:
+To target the LTS leg locally:
 
 ```bash
 GEOSERVER_VERSION=2.27.4 make compose-up
 ```
 
+In CI, the integration suite runs on every release tag (`v*.*.*`) and on a weekly schedule (Sun 03:17 UTC) against both **GeoServer 2.27.4 LTS** and **2.28.0 stable** in parallel. Manual dispatch is also available via the GitHub Actions UI.
+
+## Project status
+
+| Stream      | Status                                                                      |
+|-------------|-----------------------------------------------------------------------------|
+| Daily CI    | Lint, unit tests on Go 1.23 + 1.25, govulncheck, CodeQL — all green         |
+| Integration | GeoServer 2.27 LTS + 2.28 stable, run on tag and weekly — all green         |
+| Latest tag  | See [Releases](https://github.com/hishamkaram/geoserver/releases)           |
+
+The library was dormant for ~3 years (Feb 2023 → May 2026) before being revived as **v1.1**. The revival kept the v1.0 public surface intact: every existing method shape still compiles and behaves the same way, just with bug fixes underneath and modern idiomatic siblings beside it. See [CHANGELOG.md](CHANGELOG.md) for the full breakdown.
+
+## Roadmap
+
+- **v1.1.x** — security fixes, integration test maintenance, additive Dependabot updates.
+- **v2** — tracked separately. Planned themes:
+  - Resource sub-clients (`client.Workspaces.Get(ctx, name)` style).
+  - Immutable `Client` with `RoundTripper`-based auth (concurrency-safe by construction).
+  - GeoServer 3.0 support (Java 17 / Tomcat 11 / Jakarta EE 6.1 / new ImageN raster engine).
+  - Streaming uploads (`io.Reader` instead of `[]byte`).
+  - Range-over-func iterators for paginated endpoints (`iter.Seq2`).
+  - Drop deprecated v1 surface; mandatory `context.Context`.
+
+  v2 will live at `github.com/hishamkaram/geoserver/v2`. v1 stays maintained for security fixes.
+
 ## Documentation
 
-- Full API: [pkg.go.dev/github.com/hishamkaram/geoserver](https://pkg.go.dev/github.com/hishamkaram/geoserver)
-- Detailed examples: see the integration tests under `*_test.go`.
-- GeoServer REST API itself: [docs.geoserver.org/stable/en/user/rest/](https://docs.geoserver.org/stable/en/user/rest/)
+- API reference — [pkg.go.dev/github.com/hishamkaram/geoserver](https://pkg.go.dev/github.com/hishamkaram/geoserver)
+- Working examples — see the integration test suite (`*_test.go` under build tag `integration`)
+- GeoServer REST itself — [docs.geoserver.org/stable/en/user/rest](https://docs.geoserver.org/stable/en/user/rest/)
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, Conventional Commits convention, and PR checklist. Security issues should be reported privately per [SECURITY.md](SECURITY.md).
+Pull requests welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for the dev setup, [Conventional Commits](https://www.conventionalcommits.org/) convention, and the PR checklist.
+
+For security issues, see [SECURITY.md](SECURITY.md) and use the private GitHub Security Advisory channel — please do not open a public issue.
+
+By participating in this project you agree to abide by the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © Hesham Karm and contributors.
