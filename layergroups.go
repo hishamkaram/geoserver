@@ -6,27 +6,27 @@ import (
 	"fmt"
 )
 
-//PublishedGroupLayers geoserver published layers
+// PublishedGroupLayers geoserver published layers
 type PublishedGroupLayers []*GroupPublishableItem
 
-//GroupPublishableItem geoserver Group
+// GroupPublishableItem geoserver Group
 type GroupPublishableItem struct {
 	Type string `json:"@type,omitempty" xml:"type"`
 	Name string `json:"name,omitempty" xml:"name"`
 	Href string `json:"href,omitempty" xml:"href"`
 }
 
-//LayerGroupKeywords geoserver layergroups keywords
+// LayerGroupKeywords geoserver layergroups keywords
 type LayerGroupKeywords struct {
 	Keyword []*string `json:"keyword,omitempty"`
 }
 
-//Publishables Geoserver Published Layers
+// Publishables Geoserver Published Layers
 type Publishables struct {
 	Published PublishedGroupLayers `json:"published" xml:"published"`
 }
 
-//UnmarshalJSON custom deserialization to handle published layers of group
+// UnmarshalJSON custom deserialization to handle published layers of group
 func (u *PublishedGroupLayers) UnmarshalJSON(data []byte) error {
 	var raw interface{}
 	err := json.Unmarshal(data, &raw)
@@ -45,12 +45,12 @@ func (u *PublishedGroupLayers) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-//LayerGroupStyles geoserver layergroup styles
+// LayerGroupStyles geoserver layergroup styles
 type LayerGroupStyles struct {
 	Style []*Resource `json:"style,omitempty" xml:"style"`
 }
 
-//LayerGroup geoserver layergroup details
+// LayerGroup geoserver layergroup details
 type LayerGroup struct {
 	Name          string             `json:"name,omitempty" xml:"name"`
 	Mode          string             `json:"mode,omitempty" xml:"mode"`
@@ -80,8 +80,8 @@ type LayerGroupService interface {
 	DeleteLayerGroup(workspaceName string, layerGroupName string) (deleted bool, err error)
 }
 
-//GetLayerGroups  get all layergroups from workspace in geoserver else return error,
-//if workspace is "" the it will return all public layers in geoserver
+// GetLayerGroups  get all layergroups from workspace in geoserver else return error,
+// if workspace is "" the it will return all public layers in geoserver
 func (g *GeoServer) GetLayerGroups(workspaceName string) (layerGroups []*Resource, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -106,8 +106,8 @@ func (g *GeoServer) GetLayerGroups(workspaceName string) (layerGroups []*Resourc
 	return
 }
 
-//GetLayerGroup get specific LayerGroup in a workspace from geoserver else return error,
-//if workspace is "" the it will return geoserver public layer with ${layerName}
+// GetLayerGroup get specific LayerGroup in a workspace from geoserver else return error,
+// if workspace is "" the it will return geoserver public layer with ${layerName}
 func (g *GeoServer) GetLayerGroup(workspaceName string, layerGroupName string) (layerGroup *LayerGroup, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -132,8 +132,8 @@ func (g *GeoServer) GetLayerGroup(workspaceName string, layerGroupName string) (
 	return
 }
 
-//CreateLayerGroup create specific LayerGroup in geoserver return created=true else created=false and the error,
-//if workspace is "" the it will return geoserver public layer with ${layerName}
+// CreateLayerGroup create specific LayerGroup in geoserver return created=true else created=false and the error,
+// if workspace is "" the it will return geoserver public layer with ${layerName}
 func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGroup) (created bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -162,8 +162,8 @@ func (g *GeoServer) CreateLayerGroup(workspaceName string, layerGroup *LayerGrou
 	return
 }
 
-//DeleteLayerGroup delete geoserver layergroup else return error,
-//if workspace is "" will delete public layergroup with name ${layerGroupName} if exists
+// DeleteLayerGroup delete geoserver layergroup else return error,
+// if workspace is "" will delete public layergroup with name ${layerGroupName} if exists
 func (g *GeoServer) DeleteLayerGroup(workspaceName string, layerGroupName string) (deleted bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)

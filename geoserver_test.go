@@ -14,7 +14,7 @@ func TestLoadConfig(t *testing.T) {
 	geoserver, err := gsCatalog.LoadConfig(file)
 	assert.NotNil(t, geoserver)
 	assert.Nil(t, err)
-	//test 	if can't find yaml
+	// test 	if can't find yaml
 	file, _ = filepath.Abs("")
 	geoserver, err = gsCatalog.LoadConfig(file)
 	assert.Nil(t, geoserver)

@@ -4,8 +4,9 @@
 package geoserver
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetGlobalSettings(t *testing.T) {

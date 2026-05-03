@@ -22,12 +22,12 @@ type StyleService interface {
 	StyleExists(workspaceName string, styleName string) (exists bool, err error)
 }
 
-//LanguageVersion style version
+// LanguageVersion style version
 type LanguageVersion struct {
 	Version string `json:"version,omitempty"`
 }
 
-//Style holds geoserver style
+// Style holds geoserver style
 type Style struct {
 	Name            string           `json:"name,omitempty"`
 	Format          string           `json:"format,omitempty"`
@@ -35,7 +35,7 @@ type Style struct {
 	LanguageVersion *LanguageVersion `json:"languageVersion,omitempty"`
 }
 
-//StyleRequestBody is the api body
+// StyleRequestBody is the api body
 type StyleRequestBody struct {
 	Style *Style `json:"style,omitempty"`
 }
@@ -45,8 +45,8 @@ type Styles struct {
 	Style []Style `json:"styles,omitempty"`
 }
 
-//GetStyles return list of geoserver styles and err if error occurred,
-//if workspace is "" will return non-workspce styles
+// GetStyles return list of geoserver styles and err if error occurred,
+// if workspace is "" will return non-workspce styles
 func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -75,8 +75,8 @@ func (g *GeoServer) GetStyles(workspaceName string) (styles []*Resource, err err
 	return
 }
 
-//GetStyle return specific of geoserver style,
-//if workspace is "" will return non-workspce styles
+// GetStyle return specific of geoserver style,
+// if workspace is "" will return non-workspce styles
 func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Style, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -101,7 +101,7 @@ func (g *GeoServer) GetStyle(workspaceName string, styleName string) (style *Sty
 	return
 }
 
-//StyleExists return true if style exists in geoserver
+// StyleExists return true if style exists in geoserver
 func (g *GeoServer) StyleExists(workspaceName string, styleName string) (exists bool, err error) {
 	_, styleErr := g.GetStyle(workspaceName, styleName)
 	if styleErr != nil {
@@ -113,8 +113,8 @@ func (g *GeoServer) StyleExists(workspaceName string, styleName string) (exists 
 	return
 }
 
-//CreateStyle create geoserver empty sld with name and filename is(${styleName.sld}),
-//if workspace is "" will create geoserver public style
+// CreateStyle create geoserver empty sld with name and filename is(${styleName.sld}),
+// if workspace is "" will create geoserver public style
 func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)
@@ -142,8 +142,8 @@ func (g *GeoServer) CreateStyle(workspaceName string, styleName string) (created
 	return
 }
 
-//UploadStyle upload geoserver sld,
-//if workspace is "" will upload geoserver public style sld , return err if error occurred
+// UploadStyle upload geoserver sld,
+// if workspace is "" will upload geoserver public style sld , return err if error occurred
 func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName string, overwrite bool) (success bool, err error) {
 	workspaceURL := ""
 	if workspaceName != "" {
@@ -184,8 +184,8 @@ func (g *GeoServer) UploadStyle(data io.Reader, workspaceName string, styleName 
 	return
 }
 
-//DeleteStyle delete geoserver style,
-//if workspace is "" will delete geoserver public style , return err if error occurred
+// DeleteStyle delete geoserver style,
+// if workspace is "" will delete geoserver public style , return err if error occurred
 func (g *GeoServer) DeleteStyle(workspaceName string, styleName string, purge bool) (deleted bool, err error) {
 	if workspaceName != "" {
 		workspaceName = fmt.Sprintf("workspaces/%s/", workspaceName)

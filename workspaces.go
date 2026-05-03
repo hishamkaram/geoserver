@@ -20,11 +20,11 @@ type WorkspaceService interface {
 	// CreateWorkspace creates a workspace else return error
 	CreateWorkspace(workspaceName string) (created bool, err error)
 
-	//DeleteWorkspace delete geoserver workspace and its reources else return error
+	// DeleteWorkspace delete geoserver workspace and its reources else return error
 	DeleteWorkspace(workspaceName string, recurse bool) (deleted bool, err error)
 }
 
-//Workspace is the Workspace Object
+// Workspace is the Workspace Object
 type Workspace struct {
 	Name           string `json:"name,omitempty"`
 	Isolated       bool   `json:"isolated,omitempty"`
@@ -34,7 +34,7 @@ type Workspace struct {
 	WmtsStores     string `json:"wmtsStores,omitempty"`
 }
 
-//WorkspaceRequestBody is the api body
+// WorkspaceRequestBody is the api body
 type WorkspaceRequestBody struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 }
@@ -77,7 +77,7 @@ func (g *GeoServer) WorkspaceExists(workspaceName string) (exists bool, err erro
 	return
 }
 
-//DeleteWorkspace delete geoserver workspace and its reources else return error
+// DeleteWorkspace delete geoserver workspace and its reources else return error
 func (g *GeoServer) DeleteWorkspace(workspaceName string, recurse bool) (deleted bool, err error) {
 	url := g.ParseURL("rest", "workspaces", workspaceName)
 	httpRequest := HTTPRequest{

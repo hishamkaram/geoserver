@@ -19,11 +19,11 @@ type NamespaceService interface {
 	// CreateNamespace creates a Namespace else return error
 	CreateNamespace(Prefix string, URI string) (created bool, err error)
 
-	//DeleteNamespace delete geoserver Namespace and its reources else return error
+	// DeleteNamespace delete geoserver Namespace and its reources else return error
 	DeleteNamespace(Prefix string) (deleted bool, err error)
 }
 
-//Namespace is the Namespace Object
+// Namespace is the Namespace Object
 type Namespace struct {
 	Prefix   string `json:"prefix,omitempty"`
 	URI      string `json:"uri,omitempty"`
@@ -31,7 +31,7 @@ type Namespace struct {
 	Isolated bool   `json:"isolated,omitempty"`
 }
 
-//NamespaceRequestBody is the api body
+// NamespaceRequestBody is the api body
 type NamespaceRequestBody struct {
 	Namespace *Namespace `json:"namespace,omitempty"`
 }
@@ -74,7 +74,7 @@ func (g *GeoServer) NamespaceExists(Prefix string) (exists bool, err error) {
 	return
 }
 
-//DeleteNamespace delete geoserver Namespace and its reources else return error
+// DeleteNamespace delete geoserver Namespace and its reources else return error
 func (g *GeoServer) DeleteNamespace(Prefix string) (deleted bool, err error) {
 	url := g.ParseURL("rest", "namespaces", Prefix)
 	httpRequest := HTTPRequest{

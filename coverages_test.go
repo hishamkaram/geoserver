@@ -4,9 +4,10 @@
 package geoserver
 
 import (
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var gsCatalog *GeoServer
@@ -30,7 +31,7 @@ func before() {
 }
 
 func coveragesPrepareTestStorage(t *testing.T, storeName string) {
-	//creating coverageStore if doesn't exist
+	// creating coverageStore if doesn't exist
 
 	coverageStore := CoverageStore{
 		Name:        storeName,
@@ -59,7 +60,7 @@ func coveragesRemoveCoverage(t *testing.T) {
 func TestPublishCoverage(t *testing.T) {
 	before()
 
-	//preparing
+	// preparing
 	coveragesPrepareTestStorage(t, coveragesTestStoreName)
 
 	_, err := gsCatalog.GetCoverage(coveragesTestWorkspace, coveragesTestCoverageName)
@@ -95,7 +96,7 @@ func TestGetCoverage(t *testing.T) {
 
 	before()
 
-	//preparing
+	// preparing
 	coveragesPrepareTestStorage(t, coveragesTestStoreName)
 
 	_, err := gsCatalog.PublishCoverage(coveragesTestWorkspace, coveragesTestStoreName, coveragesTestCoverageName, "")
@@ -103,7 +104,7 @@ func TestGetCoverage(t *testing.T) {
 		assert.Fail(t, "can't publish the coverage", err.Error())
 	}
 
-	//do the test
+	// do the test
 	coverage, err := gsCatalog.GetCoverage(coveragesTestWorkspace, coveragesTestCoverageName)
 	assert.NotNil(t, coverage)
 	assert.Nil(t, err)
@@ -117,7 +118,7 @@ func TestGetCoverage(t *testing.T) {
 func TestUpdateCoverage(t *testing.T) {
 	before()
 
-	//preparing
+	// preparing
 	coveragesPrepareTestStorage(t, coveragesTestStoreName)
 
 	_, err := gsCatalog.GetCoverage(coveragesTestWorkspace, coveragesTestCoverageName)
@@ -149,7 +150,7 @@ func TestUpdateCoverage(t *testing.T) {
 func TestGetCoverages(t *testing.T) {
 	before()
 
-	//preparing
+	// preparing
 	coveragesPrepareTestStorage(t, coveragesTestStoreName)
 
 	_, err := gsCatalog.GetCoverage(coveragesTestWorkspace, coveragesTestCoverageName)
@@ -180,7 +181,7 @@ func TestGetCoverages(t *testing.T) {
 func TestGetStorageCoverages(t *testing.T) {
 	before()
 
-	//preparing
+	// preparing
 	coveragesPrepareTestStorage(t, coveragesTestStoreName)
 
 	coverages, err := gsCatalog.GetStoreCoverages(coveragesTestWorkspace, coveragesTestStoreName)
@@ -189,10 +190,10 @@ func TestGetStorageCoverages(t *testing.T) {
 	}
 	assert.True(t, len(coverages) == 1)
 
-	//create wrong storage
+	// create wrong storage
 	coveragesPrepareTestStorage(t, coveragesTestDummyStoreName)
 
-	//we have to get the error while reading wrong storage
+	// we have to get the error while reading wrong storage
 	coverages, err = gsCatalog.GetStoreCoverages(coveragesTestWorkspace, coveragesTestDummyStoreName)
 	assert.NotNil(t, err)
 

@@ -28,7 +28,7 @@ type Coverage struct {
 	Store                *Resource          `json:"store,omitempty"`
 	CqlFilter            string             `json:"cqlFilter,omitempty"`
 	OverridingServiceSRS bool               `json:"overridingServiceSRS,omitempty"`
-	//Metadata               *Metadata          `json:"metadata,omitempty"`  //need to fix the implementation due to json parse error
+	// Metadata               *Metadata          `json:"metadata,omitempty"`  //need to fix the implementation due to json parse error
 	//SupportedFormats       []string			  `json:"supportedFormats,omitempty"`  //need to fix the implementation due to json parse error
 }
 
@@ -70,7 +70,7 @@ func (g *GeoServer) GetCoverages(workspaceName string) (coverages []*Resource, e
 
 	if err = json.Unmarshal(response, &coveragesResponse); err != nil {
 		if err = g.DeSerializeJSON(response, &coveragesEmptyResponse); err != nil {
-			return nil, fmt.Errorf("can't parse the coverage data, %v", err)
+			return nil, fmt.Errorf("can't parse the coverage data, %w", err)
 		} else {
 			return []*Resource{}, nil
 		}
@@ -103,7 +103,7 @@ func (g *GeoServer) GetStoreCoverages(workspaceName string, coverageStore string
 	}
 
 	if err = g.DeSerializeJSON(response, &coveragesResponse); err != nil {
-		return nil, fmt.Errorf("can't parse the coverages data, %v", err)
+		return nil, fmt.Errorf("can't parse the coverages data, %w", err)
 	}
 
 	return coveragesResponse.List.CoverageName, nil
@@ -131,7 +131,7 @@ func (g *GeoServer) GetCoverage(workspaceName string, coverageName string) (cove
 	}
 
 	if err = g.DeSerializeJSON(response, &coverageResponse); err != nil {
-		return nil, fmt.Errorf("can't parse the coverage data, %v", err)
+		return nil, fmt.Errorf("can't parse the coverage data, %w", err)
 	}
 
 	return &coverageResponse.Coverage, nil
@@ -140,11 +140,11 @@ func (g *GeoServer) GetCoverage(workspaceName string, coverageName string) (cove
 // DeleteCoverage removes the coverage,
 // err is an error if error occurred else err is nil
 func (g *GeoServer) DeleteCoverage(workspaceName string, layerName string, recurse bool) (deleted bool, err error) {
-	//it's just a wrapper about DeleteLayer function as it does the same in the most use cases
+	// it's just a wrapper about DeleteLayer function as it does the same in the most use cases
 	return g.DeleteLayer(workspaceName, layerName, recurse)
 }
 
-//UpdateCoverage updates geoserver coverage (raster layer), else returns error,
+// UpdateCoverage updates geoserver coverage (raster layer), else returns error,
 func (g *GeoServer) UpdateCoverage(workspaceName string, coverage *Coverage) (modified bool, err error) {
 
 	items := strings.Split(coverage.Store.Name, ":")
@@ -223,9 +223,9 @@ func (g *GeoServer) publishCoverage(workspaceName string, coverageStoreName stri
 	return true, nil
 }
 
-//PublishGeoTiffLayer publishes geotiff to geoserver
+// PublishGeoTiffLayer publishes geotiff to geoserver
 func (g *GeoServer) PublishGeoTiffLayer(workspaceName string, coverageStoreName string, publishName string, fileName string) (published bool, err error) {
-	//it was moved from layers.go because this is the better place for raster layers functions (coverages)
+	// it was moved from layers.go because this is the better place for raster layers functions (coverages)
 	//I tried to maintain the original behavior for backward compatibilities,
 	//but it didn't seem to be working as expected from scratch
 	//there were no tests for this function and I couldn't reproduce the working case

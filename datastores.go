@@ -17,7 +17,7 @@ type DatastoreService interface {
 	// GetDatastoreDetails get specific datastore from geoserver else return error
 	GetDatastoreDetails(workspaceName string, datastoreName string) (datastore *Datastore, err error)
 
-	//CreateDatastore create a datastore under provided workspace
+	// CreateDatastore create a datastore under provided workspace
 	CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error)
 
 	// DeleteDatastore deletes a datastore from geoserver else return error
@@ -36,7 +36,7 @@ type Datastore struct {
 	ConnectionParameters DatastoreConnectionParams `json:"connectionParameters,omitempty"`
 }
 
-//DatastoreDetails this struct to send and accept json data from/to geoserver
+// DatastoreDetails this struct to send and accept json data from/to geoserver
 type DatastoreDetails struct {
 	Datastore *Datastore `json:"dataStore"`
 }
@@ -58,7 +58,7 @@ type DatastoreConnectionParams struct {
 	Entry []*Entry `json:"entry,omitempty"`
 }
 
-//GetDatastoreObj return datastore Object to send to geoserver rest
+// GetDatastoreObj return datastore Object to send to geoserver rest
 func (connection *DatastoreConnection) GetDatastoreObj() (datastore Datastore) {
 	datastore = Datastore{
 		Name: connection.Name,
@@ -167,7 +167,7 @@ func (g *GeoServer) GetDatastoreDetails(workspaceName string, datastoreName stri
 
 }
 
-//CreateDatastore create a datastore under provided workspace
+// CreateDatastore create a datastore under provided workspace
 func (g *GeoServer) CreateDatastore(datastoreConnection DatastoreConnection, workspaceName string) (created bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "datastores")
 	if datastoreConnection.DBSchema == "" {
