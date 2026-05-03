@@ -20,6 +20,7 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/layergroups"
 	"github.com/hishamkaram/geoserver/v2/rest/layers"
 	"github.com/hishamkaram/geoserver/v2/rest/namespaces"
+	"github.com/hishamkaram/geoserver/v2/rest/security"
 	"github.com/hishamkaram/geoserver/v2/rest/settings"
 	"github.com/hishamkaram/geoserver/v2/rest/styles"
 	"github.com/hishamkaram/geoserver/v2/rest/workspaces"
@@ -47,6 +48,7 @@ const (
 //	Namespaces     — namespace CRUD (flat global)
 //	Settings       — singleton global settings document (Get / Update)
 //	About          — health check + version info (Ping / Version)
+//	Security       — users, groups, roles, user-role assignment
 //	(more sub-clients as resources port; see ROADMAP.md)
 type Client struct {
 	core *clientCore
@@ -98,6 +100,11 @@ type Client struct {
 	// About is the entry point for server health and version info —
 	// Ping (liveness check) and Version (full component versions).
 	About *about.Client
+
+	// Security is the entry point for users, groups, roles, and
+	// user-role assignment under /rest/security. See
+	// [security.Client] for the nested sub-client surface.
+	Security *security.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -165,6 +172,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.Namespaces = namespaces.New(adapter)
 	c.Settings = settings.New(adapter)
 	c.About = about.New(adapter)
+	c.Security = security.New(adapter)
 	return c, nil
 }
 

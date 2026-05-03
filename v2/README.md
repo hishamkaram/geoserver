@@ -1,6 +1,6 @@
 # geoserver/v2
 
-> ⚠️ **In development.** v2 is a clean redesign of `github.com/hishamkaram/geoserver` for 2026-era idiomatic Go. The public API is not yet stable; the catalog surface (Workspaces, Datastores, FeatureTypes, CoverageStores, Coverages, Layers, LayerGroups, Styles, Namespaces) plus Settings and About are implemented today; security / ACL / capabilities are still pending. **For production use today, use the v1 line:**
+> ⚠️ **In development.** v2 is a clean redesign of `github.com/hishamkaram/geoserver` for 2026-era idiomatic Go. The public API is not yet stable; the catalog surface (Workspaces, Datastores, FeatureTypes, CoverageStores, Coverages, Layers, LayerGroups, Styles, Namespaces) plus Settings, About, and Security are implemented today; ACL and WMS capabilities are still pending. **For production use today, use the v1 line:**
 >
 > ```go
 > import "github.com/hishamkaram/geoserver"          // v1 — stable, full surface
@@ -133,6 +133,7 @@ _ = cov.Create(ctx, &coverages.Coverage{
 | Namespaces | full | **ported** (flat global; `c.Namespaces`) |
 | Settings | full | **ported** (singleton; `c.Settings.Get` / `Update`) |
 | About | full | **ported** (`c.About.Ping`, `c.About.Version`) |
+| Security (users, groups, roles) | full | **ported** (`c.Security.Users()`, `c.Security.Groups()`, `c.Security.Roles`) |
 | Namespaces | full | not yet ported |
 | Settings | full | not yet ported |
 | Security (users, groups, roles) | full | not yet ported |
