@@ -1,16 +1,8 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/hishamkaram/geoserver.svg)](https://pkg.go.dev/github.com/hishamkaram/geoserver)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hishamkaram/geoserver)](https://goreportcard.com/report/github.com/hishamkaram/geoserver)
-[![GitHub license](https://img.shields.io/github/license/hishamkaram/geoserver.svg)](https://github.com/hishamkaram/geoserver/blob/master/LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/hishamkaram/geoserver.svg)](https://github.com/hishamkaram/geoserver/issues)
-[![Coverage Status](https://coveralls.io/repos/github/hishamkaram/geoserver/badge.svg?branch=master&service=github)](https://coveralls.io/github/hishamkaram/geoserver?branch=master&service=github)
-[![Build Status](https://travis-ci.org/hishamkaram/geoserver.svg?branch=master)](https://travis-ci.org/hishamkaram/geoserver)
-[![Documentation](https://godoc.org/github.com/hishamkaram/geoserver?status.svg)](https://godoc.org/github.com/hishamkaram/geoserver?)
-[![GitHub forks](https://img.shields.io/github/forks/hishamkaram/geoserver.svg)](https://github.com/hishamkaram/geoserver/network)
+[![CI](https://github.com/hishamkaram/geoserver/actions/workflows/ci.yml/badge.svg)](https://github.com/hishamkaram/geoserver/actions/workflows/ci.yml)
+[![GitHub License](https://img.shields.io/github/license/hishamkaram/geoserver.svg)](https://github.com/hishamkaram/geoserver/blob/master/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/hishamkaram/geoserver.svg)](https://github.com/hishamkaram/geoserver/stargazers)
-[![Twitter](https://img.shields.io/twitter/url/https/github.com/hishamkaram/geoserver/edit/master/README.md.svg?style=social)](https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2Fhishamkaram%2Fgeoserver%2Fedit%2Fmaster%2FREADME.md)
-
-
-
-
 
 <p align="center">
   <img src="https://i.imgur.com/bVuV5v6.png" width="200"/>
@@ -19,105 +11,160 @@
   <img src="https://i.imgur.com/31CL1xg.png" width="200"/>
 </p>
 
-# Geoserver
-geoserver Is a Go Package For Manipulating a GeoServer Instance via the GeoServer REST API. 
+# geoserver
+
+`geoserver` is a Go client library for the [GeoServer](https://geoserver.org/) REST API. Manage workspaces, datastores, layers, styles, coverages, and more from your Go applications.
+
+> **v1.1 revival (May 2026)** — this library was dormant for 3+ years and has been revived with modern Go tooling, an idiomatic `New()` constructor with functional options, full `context.Context` support, typed errors, structured logging via stdlib `log/slog`, and a httptest-based unit-test layer. See the [CHANGELOG](CHANGELOG.md) for details. v1.0 callers can upgrade by changing only their `go.mod` version.
 
 ---
-## How to install:
-- `go get -v gopkg.in/hishamkaram/geoserver.v1`
-  - now you can import the package from `gopkg.in/hishamkaram/geoserver.v1`, example:
-    ```
-    import (
-      ...
-      "gopkg.in/hishamkaram/geoserver.v1"
-      ...
+
+## Install
+
+```bash
+go get github.com/hishamkaram/geoserver@latest
+```
+
+```go
+import "github.com/hishamkaram/geoserver"
+```
+
+> **Note**: a legacy `gopkg.in/hishamkaram/geoserver.v1` import path also resolves but is deprecated. New code should use `github.com/hishamkaram/geoserver`.
+
+## Requirements
+
+| Component | Supported |
+|---|---|
+| Go | **1.23+** (CI tests against 1.23 and 1.25) |
+| GeoServer | **2.27 LTS, 2.28** (current stable) |
+
+GeoServer 3.0 support is tracked for v2.
+
+## Quick start
+
+```go
+package main
+
+import (
+    "context"
+    "errors"
+    "fmt"
+    "log/slog"
+    "os"
+    "time"
+
+    "github.com/hishamkaram/geoserver"
+)
+
+func main() {
+    // v1.1 idiomatic constructor with functional options.
+    gs := geoserver.New(
+        "http://localhost:8080/geoserver/",
+        "admin",
+        "geoserver",
+        geoserver.WithTimeout(15*time.Second),
+        geoserver.WithUserAgent("my-service/1.0"),
+        geoserver.WithLogger(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn})),
     )
-    ```
----
 
-## usage:
-  - Create new Catalog (which contains all available operations):
-      - `gsCatalog := geoserver.GetCatalog("http://localhost:8080/geoserver13/", "admin", "geoserver")`
-  - Use catalog Methods to Perform a Geoserver REST Operation:
-      - Create New workspace:
-        ```
-        created, err := gsCatalog.CreateWorkspace("golang")
-        if err != nil {
-          fmt.Printf("\nError:%s\n", err)
+    // Every method has a *Context twin. Use them in production.
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    created, err := gs.CreateWorkspaceContext(ctx, "golang")
+    if err != nil {
+        if errors.Is(err, geoserver.ErrConflict) {
+            fmt.Println("workspace already exists, continuing")
+        } else {
+            fmt.Printf("create error: %v\n", err)
+            return
         }
-        fmt.Println(strconv.FormatBool(created))
-        ```
-        output if created:
-        ```
-        INFO[31-03-2018 16:26:35] url:http://localhost:8080/geoserver13/rest/workspaces	response Status=201  
-        true
-        ```
-        output if error:
-        ```
-        INFO[31-03-2018 16:26:37] url:http://localhost:8080/geoserver13/rest/workspaces	response Status=401  
-        WARN[31-03-2018 16:26:37] <!doctype html><html lang="en"><head><title>HTTP Status 401 – Unauthorized</title><style type="text/css">h1 {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;font-size:22px;} h2 {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;font-size:16px;} h3 {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;font-size:14px;} body {font-family:Tahoma,Arial,sans-serif;color:black;background-color:white;} b {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;} p {font-family:Tahoma,Arial,sans-serif;background:white;color:black;font-size:12px;} a {color:black;} a.name {color:black;} .line {height:1px;background-color:#525D76;border:none;}</style></head><body><h1>HTTP Status 401 – Unauthorized</h1><hr class="line" /><p><b>Type</b> Status Report</p><p><b>Message</b> Workspace &#39;golang&#39; already exists</p><p><b>Description</b> The request has not been applied because it lacks valid authentication credentials for the target resource.</p><hr class="line" /><h3>Apache Tomcat/9.0.6</h3></body></html> 
+    }
+    fmt.Printf("created=%v\n", created)
 
-        Error:Unauthorized
-        false
-        ```
-  - Get Layers through GetLayers take workspace as paramter if empty workspace will be ignored and geoserver will return all public layers
-      ```
-      layers, err := gsCatalog.GetLayers("")
-      if err != nil {
-        fmt.Printf("\nError:%s\n", err)
-      }
-      for _, lyr := range layers {
-        fmt.Printf("\nName:%s  href:%s\n", lyr.Name, lyr.Href)
-      }
-      ```
-      output:
-      ```
-      INFO[31-03-2018 19:04:44] url:http://localhost:8080/geoserver13/rest/layers	response Status=200  
+    layers, err := gs.GetLayersContext(ctx, "")
+    if err != nil {
+        fmt.Printf("error: %v\n", err)
+        return
+    }
+    for _, l := range layers {
+        fmt.Printf("Name:%s  Href:%s\n", l.Name, l.Href)
+    }
+}
+```
 
-      Name:tiger:giant_polygon  href:http://localhost:8080/geoserver13/rest/layers/tiger%3Agiant_polygon.json
+### Legacy non-context API
 
-      Name:tiger:poi  href:http://localhost:8080/geoserver13/rest/layers/tiger%3Apoi.json
+The original v1.0 method shapes still work. They internally call the `*Context` versions with `context.Background()`:
 
-      Name:tiger:poly_landmarks  href:http://localhost:8080/geoserver13/rest/layers/tiger%3Apoly_landmarks.json
+```go
+gs := geoserver.GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+created, err := gs.CreateWorkspace("golang") // == gs.CreateWorkspaceContext(context.Background(), "golang")
+```
 
-      Name:tiger:tiger_roads  href:http://localhost:8080/geoserver13/rest/layers/tiger%3Atiger_roads.json
+`GetCatalog` is deprecated in favor of `New`.
 
-      Name:nurc:Arc_Sample  href:http://localhost:8080/geoserver13/rest/layers/nurc%3AArc_Sample.json
+### Typed errors
 
-      Name:nurc:Img_Sample  href:http://localhost:8080/geoserver13/rest/layers/nurc%3AImg_Sample.json
+REST failures return a typed `*geoserver.Error` you can match against sentinel values:
 
-      Name:nurc:Pk50095  href:http://localhost:8080/geoserver13/rest/layers/nurc%3APk50095.json
+```go
+_, err := gs.GetWorkspaceContext(ctx, "missing")
 
-      Name:nurc:mosaic  href:http://localhost:8080/geoserver13/rest/layers/nurc%3Amosaic.json
-      ......
-      ```
-  - Get Specific Layer from Geoserver:
-      ```
-      layer, err := gsCatalog.GetLayer("nurc", "Arc_Sample")
-      if err != nil {
-        fmt.Printf("\nError:%s\n", err)
-      } else {
-        fmt.Printf("%+v\n", layer)
-      }
-       ```
-       output:
-       ```
-      INFO[31-03-2018 20:12:07] url:http://localhost:8080/geoserver13/rest/workspaces/nurc/layers/Arc_Sample	response Status=200  
-      {Name:Arc_Sample Path:/ Type:RASTER DefaultStyle:{Class: Name:rain Href:http://localhost:8080/geoserver13/rest/styles/rain.json} Styles:{Class:linked-hash-set Style:[{Class: Name:raster Href:http://localhost:8080/geoserver13/rest/styles/raster.json}]} Resource:{Class:coverage Name:nurc:Arc_Sample Href:http://localhost:8080/geoserver13/rest/workspaces/nurc/coveragestores/arcGridSample/coverages/Arc_Sample.json} Queryable:false Opaque:false Attribution:{Title: Href: LogoURL: LogoType: LogoWidth:0 LogoHeight:0}}
-       ```
-  - You can find more examples by check testing files
-  - You can find all supported operations on [Godocs](https://godoc.org/github.com/hishamkaram/geoserver)
-  ---
+if errors.Is(err, geoserver.ErrNotFound) {
+    fmt.Println("workspace missing")
+}
 
-### TESTING
-|   | Go Version | Geoserver Version | Tested             |
-|---|------------|-------------------|--------------------|
-| 1 | 1.13.x      | 2.13.x            | :heavy_check_mark: |
-| 2 | 1.13.x      | 2.14.x            | :heavy_check_mark: |
-| 3 | 1.14.x     | 2.13.x            | :heavy_check_mark: |
-| 4 | 1.14.x     | 2.14.x            | :heavy_check_mark: |
-| 5 | 1.15.x     | 2.13.x            | :heavy_check_mark: |
-| 6 | 1.15.x     | 2.14.x            | :heavy_check_mark: |
+var apiErr *geoserver.Error
+if errors.As(err, &apiErr) {
+    fmt.Printf("status=%d body=%s\n", apiErr.StatusCode, apiErr.Body)
+}
+```
 
-___
-### [Documentation](https://godoc.org/github.com/hishamkaram/geoserver)
+Available sentinels: `ErrNotFound`, `ErrUnauthorized`, `ErrForbidden`, `ErrConflict`, `ErrBadRequest`, `ErrMethodNotAllowed`, `ErrUnsupportedMediaType`, `ErrRateLimited`, `ErrServerError` (any 5xx).
+
+The error's `Error()` string preserves the v1.0 `"abstract:%s\ndetails:%s\n"` format for callers that pattern-match on text.
+
+## Concurrency
+
+`*GeoServer` is safe for concurrent **reads** (calling methods from multiple goroutines is fine). Mutating exported fields after construction is **not safe**. Construct once via `New(...)` and treat the value as read-only thereafter. A v2 redesign with private fields and an immutable client is planned.
+
+## Testing
+
+This package ships two test layers:
+
+### Unit tests (no Docker required)
+
+```bash
+make test-unit
+```
+
+Runs `go test -race -short ./...`. Uses `httptest.NewServer` to mock GeoServer responses. Covers happy paths plus 401/403/404/409/500 error mapping for the implemented services.
+
+### Integration tests (real GeoServer)
+
+```bash
+make compose-up        # boots GeoServer 2.28 + PostGIS 16
+make test-integration  # runs go test -tags=integration ./...
+make compose-down
+```
+
+CI runs the integration suite against **GeoServer 2.27 LTS** and **2.28** in parallel. To target a specific version locally:
+
+```bash
+GEOSERVER_VERSION=2.27.4 make compose-up
+```
+
+## Documentation
+
+- Full API: [pkg.go.dev/github.com/hishamkaram/geoserver](https://pkg.go.dev/github.com/hishamkaram/geoserver)
+- Detailed examples: see the integration tests under `*_test.go`.
+- GeoServer REST API itself: [docs.geoserver.org/stable/en/user/rest/](https://docs.geoserver.org/stable/en/user/rest/)
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, Conventional Commits convention, and PR checklist. Security issues should be reported privately per [SECURITY.md](SECURITY.md).
+
+## License
+
+[MIT](LICENSE)
