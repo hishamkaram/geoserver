@@ -24,7 +24,7 @@ A Go client library for the [GeoServer](https://geoserver.org/) REST API. Manage
 
 | Component   | Supported                                       |
 |-------------|-------------------------------------------------|
-| Go          | **1.23+** (CI runs against 1.23 and 1.25)       |
+| Go          | **1.25+** (matches `go.mod`; toolchain auto-pulls go1.25.9 for the patched stdlib CVEs) |
 | GeoServer   | **2.27 LTS** and **2.28** (current stable)      |
 | GeoServer 3 | Tracked for v2 — see [Roadmap](#roadmap)        |
 
@@ -303,8 +303,8 @@ In CI, the integration suite runs on every release tag (`v*.*.*`) and on a weekl
 
 | Stream      | Status                                                                      |
 |-------------|-----------------------------------------------------------------------------|
-| Daily CI    | Lint, unit tests on Go 1.23 + 1.25, govulncheck, CodeQL — all green         |
-| Integration | GeoServer 2.27 LTS + 2.28 stable, run on tag and weekly — all green         |
+| Daily CI    | Lint, unit tests on Go 1.25, govulncheck, CodeQL — all green                 |
+| Integration | GeoServer 2.27 LTS + 2.28 stable, run on every PR — all green                |
 | Latest tag  | See [Releases](https://github.com/hishamkaram/geoserver/releases)           |
 
 The library was dormant for ~3 years (Feb 2023 → May 2026) before being revived as **v1.1**. The revival kept the v1.0 public surface intact: every existing method shape still compiles and behaves the same way, just with bug fixes underneath and modern idiomatic siblings beside it. See [CHANGELOG.md](CHANGELOG.md) for the full breakdown.

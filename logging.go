@@ -3,7 +3,6 @@ package geoserver
 import (
 	"context"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 )
@@ -79,10 +78,9 @@ func loggerFromHandler(h slog.Handler) *Logger {
 }
 
 // discardHandler returns an slog.Handler that drops every log record. Used
-// when the caller passes a nil handler to [WithLogger]. Equivalent to
-// slog.DiscardHandler (Go 1.24+) but compatible with Go 1.23.
+// when the caller passes a nil handler to [WithLogger].
 func discardHandler() slog.Handler {
-	return slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelError + 1})
+	return slog.DiscardHandler
 }
 
 // defaultHandler returns the slog.Handler used when no [WithLogger] option is

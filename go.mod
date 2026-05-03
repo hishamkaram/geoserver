@@ -1,6 +1,8 @@
 module github.com/hishamkaram/geoserver
 
-go 1.23
+go 1.25
+
+toolchain go1.25.9
 
 require (
 	github.com/stretchr/testify v1.11.1

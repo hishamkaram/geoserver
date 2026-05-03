@@ -6,7 +6,7 @@ Thanks for your interest in contributing! This document describes how to get a d
 
 Requirements:
 
-- Go **1.23+** (CI tests against 1.23 and 1.25)
+- Go **1.25+** (matches the `go.mod` directive; CI runs unit, integration, and govulncheck against 1.25.x)
 - Docker + Docker Compose v2 (for integration tests)
 - `make`
 - `golangci-lint` v1.59+ (`go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest`)
@@ -53,7 +53,7 @@ make compose-down
 5. **Lint clean.** `make lint` must pass with zero warnings.
 6. **Backward compatibility.** v1.x is non-breaking. If your change requires breaking a public symbol, open a discussion first — it likely belongs in v2.
 7. **No new runtime dependencies** without prior discussion. Test-only deps are fine.
-8. **All CI checks must pass before merge.** The required gates on every PR: `Lint`, `Unit tests (Go 1.23)`, `Unit tests (Go 1.25)`, `govulncheck`, `Analyze (Go)` (CodeQL), `GeoServer 2.27.4`, `GeoServer 2.28.0`. Don't merge with any check red, pending, or skipped.
+8. **All CI checks must pass before merge.** The required gates on every PR: `Lint`, `Unit tests (Go 1.25)`, `govulncheck`, `Analyze (Go)` (CodeQL), `GeoServer 2.27.4`, `GeoServer 2.28.0`. Don't merge with any check red, pending, or skipped.
 9. **Squash merge.** PRs are squash-merged into `master` so each merge produces exactly one commit on the trunk and the CHANGELOG stays clean. Don't use rebase- or merge-commit strategies.
 
 ## Project layout
