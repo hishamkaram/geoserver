@@ -312,7 +312,7 @@ The library was dormant for ~3 years (Feb 2023 → May 2026) before being revive
 ## Roadmap
 
 - **v1.1.x** — security fixes, integration test maintenance, additive Dependabot updates.
-- **v2** — `v2.0.0-alpha.1` published at `github.com/hishamkaram/geoserver/v2` (`go get github.com/hishamkaram/geoserver/v2@v2.0.0-alpha.1`). Full v1 parity at `master`: catalog (workspaces, datastores, feature types, coverage stores, coverages, layers, layer groups, styles, namespaces) plus security, ACL, settings, about, system (reload + cache reset), and WMS GetCapabilities (`v2/ows/wms`). Exercised by both unit and real-GeoServer integration suites on 2.27.4 LTS and 2.28.0 stable. Public API may still refine before `v2.0.0` — no production guarantees yet.
+- **v2** — `v2.0.0-alpha.2` published at `github.com/hishamkaram/geoserver/v2` (`go get github.com/hishamkaram/geoserver/v2@v2.0.0-alpha.2`). Surface at `master` exceeds v1: catalog (workspaces, datastores, feature types, coverage stores, coverages, layers, layer groups, styles, namespaces) plus security, ACL, settings, about, system (reload + cache reset), and the full OWS GetCapabilities trio — WMS, WFS, WCS — under `v2/ows/`. Exercised by both unit and real-GeoServer integration suites on 2.27.4 LTS and 2.28.0 stable. Public API may still refine before `v2.0.0` — no production guarantees yet.
 
   Design themes (now realized in code):
   - Resource sub-clients (`c.Workspaces.Get(ctx, name)`, `c.Datastores.InWorkspace(ws).Get(...)`, `c.FeatureTypes.InWorkspace(ws).InDatastore(ds).Get(...)`).

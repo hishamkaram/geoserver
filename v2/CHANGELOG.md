@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — OWS clients (2/3, 3/3)
+
+- **`v2/ows/wfs/` package** — WFS GetCapabilities. Hand-written subset of WFS 1.1.0 / 2.0 schemas (ServiceIdentification, ServiceProvider, OperationsMetadata, FeatureTypeList with WGS84BoundingBox + DefaultSRS / OtherSRS / OutputFormats). New free function `wfs.ParseCapabilities(io.Reader)` and `c.WFS.GetCapabilities(ctx, opts)` — global by default; `c.WFS.InWorkspace(ws)` for a workspace-scoped capabilities view. Default version 2.0.0; 1.1.0 supported as well (same root element).
+- **`v2/ows/wcs/` package** — WCS GetCapabilities for WCS 2.0.x. Hand-written subset (ServiceIdentification, ServiceProvider, OperationsMetadata, ServiceMetadata with formats + CRSes, Contents with CoverageSummary). New free function `wcs.ParseCapabilities(io.Reader)` and `c.WCS.GetCapabilities(ctx, opts)` with workspace scoping. Default version 2.0.1. WCS 1.0.0 / 1.1.1 use a different root element (`WCS_Capabilities`) and are not in scope here.
+
+### Added (tests)
+
+- `v2/ows/wfs/wfs_test.go` and `v2/ows/wcs/wcs_test.go` — fixture-based parse tests with realistic GeoServer namespace declarations, httptest tests for global + workspace scope, version override, and 404 → sentinel mapping.
+- `v2/ows/wfs/wfs_integration_test.go` and `v2/ows/wcs/wcs_integration_test.go` — real GeoServer assertions (capabilities document non-empty for both global and a fresh empty workspace; WFS 1.1.0 version-override path).
+- Godoc `Example_*` for both packages.
+
 ## [2.0.0-alpha.2] — 2026-05-03
 
 Second alpha. Closes the last v1-parity gap (WMS GetCapabilities + system reload/cache reset), adds full pkg.go.dev godoc Example_* coverage across every sub-client, and refreshes the public-facing docs (READMEs, ROADMAP). No breaking changes from `alpha.1`; existing callers can `go get @v2.0.0-alpha.2` and recompile. Public API may still refine before `v2.0.0` — no production guarantees yet.

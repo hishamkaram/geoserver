@@ -27,6 +27,8 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/system"
 	"github.com/hishamkaram/geoserver/v2/rest/workspaces"
 
+	"github.com/hishamkaram/geoserver/v2/ows/wcs"
+	"github.com/hishamkaram/geoserver/v2/ows/wfs"
 	"github.com/hishamkaram/geoserver/v2/ows/wms"
 )
 
@@ -125,8 +127,20 @@ type Client struct {
 	// WMS is the entry point for WMS service operations — currently
 	// GetCapabilities (XML, decoded into [wms.Capabilities]). Use
 	// [wms.Client.InWorkspace] for a workspace-scoped capabilities
-	// document. WFS / WCS land alongside under v2/ows/ in follow-ups.
+	// document.
 	WMS *wms.Client
+
+	// WFS is the entry point for WFS service operations — currently
+	// GetCapabilities (XML, decoded into [wfs.Capabilities]). Use
+	// [wfs.Client.InWorkspace] for a workspace-scoped capabilities
+	// document.
+	WFS *wfs.Client
+
+	// WCS is the entry point for WCS service operations — currently
+	// GetCapabilities (XML, decoded into [wcs.Capabilities]). Use
+	// [wcs.Client.InWorkspace] for a workspace-scoped capabilities
+	// document.
+	WCS *wcs.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -198,6 +212,8 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.ACL = acl.New(adapter)
 	c.System = system.New(adapter)
 	c.WMS = wms.New(adapter)
+	c.WFS = wfs.New(adapter)
+	c.WCS = wcs.New(adapter)
 	return c, nil
 }
 

@@ -35,12 +35,11 @@ Lives at module path `github.com/hishamkaram/geoserver/v2` (subdir form). Idioma
 - [x] **Resource port (2/3)** — `layers`, `layergroups`, `styles`.
 - [x] **Resource port (3/3)** — `namespaces`, `settings`, `security`, `acl`, `about`.
 - [x] **System endpoints** — `c.System.Reload` / `c.System.ResetCache` (port of v1's `configuration.go`).
-- [x] **OWS clients (1/3)** — `ows/wms/` (GetCapabilities + workspace scope). `ows/wfs/` and `ows/wcs/` still pending; same wire-shape pattern.
+- [x] **OWS clients (1/3, 2/3, 3/3)** — `ows/wms/`, `ows/wfs/`, `ows/wcs/` (GetCapabilities + workspace scope on each). All three follow the same shape: free-function `ParseCapabilities(io.Reader)` plus a sub-client method routed through `transport.DoXML`.
 - [x] **Migration guide** — `docs/migration-v1-to-v2.md` populated with concrete v1 → v2 mappings for every resource.
 - [x] **v1 parity at `master`** — every v1 surface (REST + OWS) has a v2 equivalent.
 - [ ] **v2.0.0-alpha.2** (or later alpha) — re-tag to publish the post-`alpha.1` work (godoc Examples, README refresh, OWS WMS port, system reload/reset). Tag is an explicit user action.
-- [ ] **OWS clients (2/3, 3/3)** — `ows/wfs/`, `ows/wcs/`. Same shape as `ows/wms/` (XML types + `ParseCapabilities` + sub-client method). May slip to a later alpha.
-- [ ] **v2.0.0-beta.1** — REST + OWS surface complete, integration matrix on 2.27 + 2.28, public API frozen for review.
+- [ ] **v2.0.0-beta.1** — REST + OWS surface complete (achieved at `master`), integration matrix on 2.27 + 2.28, public API frozen for review.
 - [ ] **v2.0.0** — final tag.
 
 ## GeoServer 3.0 support
