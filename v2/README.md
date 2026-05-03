@@ -1,6 +1,6 @@
 # geoserver/v2
 
-> ⚠️ **In development.** v2 is a clean redesign of `github.com/hishamkaram/geoserver` for 2026-era idiomatic Go. The public API is not yet stable; `Workspaces`, `Datastores`, and `FeatureTypes` are implemented today and the rest port in subsequent PRs. **For production use today, use the v1 line:**
+> ⚠️ **In development.** v2 is a clean redesign of `github.com/hishamkaram/geoserver` for 2026-era idiomatic Go. The public API is not yet stable; `Workspaces`, `Datastores`, `FeatureTypes`, `CoverageStores`, and `Coverages` are implemented today and the rest port in subsequent PRs. **For production use today, use the v1 line:**
 >
 > ```go
 > import "github.com/hishamkaram/geoserver"          // v1 — stable, full surface
@@ -84,9 +84,9 @@ stores, _ := ds.List(ctx, datastores.ListOptions{})
 _ = ds.Delete(ctx, "states", datastores.DeleteOptions{Recurse: true})
 ```
 
-### 2-level scoped resources (feature types)
+### 2-level scoped resources (feature types, coverages)
 
-Resources nested under both a workspace and a datastore (feature types now, coverages later) drill in through two `In…` calls:
+Resources nested under both a workspace and a parent store drill in through two `In…` calls:
 
 ```go
 import "github.com/hishamkaram/geoserver/v2/rest/featuretypes"
@@ -105,6 +105,19 @@ _ = ft.Create(ctx, &featuretypes.FeatureType{
 })
 ```
 
+The same shape applies to coverages under a coverage store (raster side):
+
+```go
+import "github.com/hishamkaram/geoserver/v2/rest/coverages"
+
+cov := c.Coverages.InWorkspace("ne").InCoverageStore("states_tiff")
+
+// Publish a configured coverage from the underlying GeoTIFF.
+_ = cov.Create(ctx, &coverages.Coverage{
+    Name: "states_published", NativeCoverageName: "states.tif",
+})
+```
+
 ## Resource status
 
 | Resource | v1 | v2 |
@@ -112,7 +125,8 @@ _ = ft.Create(ctx, &featuretypes.FeatureType{
 | Workspaces | full | **ported** (flat reference resource) |
 | Datastores | full | **ported** (workspace-scoped reference; `c.Datastores.InWorkspace(ws)`) |
 | Feature types | full | **ported** (2-level hierarchy reference; `c.FeatureTypes.InWorkspace(ws).InDatastore(ds)`) |
-| Coverages, coverage stores | full | not yet ported |
+| Coverage stores | full | **ported** (workspace-scoped; `c.CoverageStores.InWorkspace(ws)`) |
+| Coverages | full | **ported** (2-level hierarchy; `c.Coverages.InWorkspace(ws).InCoverageStore(cs)`) |
 | Layers, layer groups | full | not yet ported |
 | Styles | full | not yet ported |
 | Namespaces | full | not yet ported |
