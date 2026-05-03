@@ -94,43 +94,87 @@ type Styles struct {
 	Style []Ref `json:"style,omitempty"`
 }
 
-// UnmarshalJSON tolerates GeoServer's mixed-shape `style` array.
+// UnmarshalJSON tolerates GeoServer's wire-format quirks for the
+// per-member style list. GeoServer can emit any of these shapes:
+//
+//   - bare string at the top level: "styles":"" (no overrides at all)
+//   - object with bare-string style: {"style": ""} (1 member, default)
+//   - object with single-object style: {"style": {"name": "polygon"}}
+//   - object with mixed array: {"style": ["", {"name": "polygon"}]}
+//
+// The single-vs-array collapsing is GeoServer's "convenience" shape for
+// single-member groups; the bare-string forms appear when no explicit
+// style is set. All of them decode into the same []Ref shape.
 func (s *Styles) UnmarshalJSON(data []byte) error {
 	if len(data) == 0 || string(data) == "null" {
 		return nil
 	}
+	// Empty-collection sentinel: GeoServer emits `"styles":""`
+	// (the entire styles field is a bare string).
+	if data[0] == '"' {
+		return nil
+	}
+	// Inner `style` field can be: array, bare string, or single object.
 	type rawWrapper struct {
-		Style []json.RawMessage `json:"style,omitempty"`
+		Style json.RawMessage `json:"style,omitempty"`
 	}
 	var raw rawWrapper
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return fmt.Errorf("layergroups: decode styles wrapper: %w", err)
 	}
-	out := make([]Ref, 0, len(raw.Style))
-	for i, elem := range raw.Style {
-		if len(elem) == 0 || string(elem) == "null" {
-			out = append(out, Ref{})
-			continue
-		}
-		switch elem[0] {
-		case '"':
-			var name string
-			if err := json.Unmarshal(elem, &name); err != nil {
-				return fmt.Errorf("layergroups: decode style[%d] string: %w", i, err)
-			}
-			out = append(out, Ref{Name: name})
-		case '{':
-			var r Ref
-			if err := json.Unmarshal(elem, &r); err != nil {
-				return fmt.Errorf("layergroups: decode style[%d] object: %w", i, err)
-			}
-			out = append(out, r)
-		default:
-			return fmt.Errorf("layergroups: unexpected style[%d] JSON shape: %s", i, string(elem))
-		}
+	if len(raw.Style) == 0 || string(raw.Style) == "null" {
+		return nil
 	}
-	s.Style = out
-	return nil
+	switch raw.Style[0] {
+	case '"':
+		// Single-member default-style: "style":"".
+		var name string
+		if err := json.Unmarshal(raw.Style, &name); err != nil {
+			return fmt.Errorf("layergroups: decode style string: %w", err)
+		}
+		s.Style = []Ref{{Name: name}}
+		return nil
+	case '{':
+		// Single-member explicit-style: "style":{"name":"polygon",...}.
+		var r Ref
+		if err := json.Unmarshal(raw.Style, &r); err != nil {
+			return fmt.Errorf("layergroups: decode style object: %w", err)
+		}
+		s.Style = []Ref{r}
+		return nil
+	case '[':
+		var elems []json.RawMessage
+		if err := json.Unmarshal(raw.Style, &elems); err != nil {
+			return fmt.Errorf("layergroups: decode style array: %w", err)
+		}
+		out := make([]Ref, 0, len(elems))
+		for i, elem := range elems {
+			if len(elem) == 0 || string(elem) == "null" {
+				out = append(out, Ref{})
+				continue
+			}
+			switch elem[0] {
+			case '"':
+				var name string
+				if err := json.Unmarshal(elem, &name); err != nil {
+					return fmt.Errorf("layergroups: decode style[%d] string: %w", i, err)
+				}
+				out = append(out, Ref{Name: name})
+			case '{':
+				var r Ref
+				if err := json.Unmarshal(elem, &r); err != nil {
+					return fmt.Errorf("layergroups: decode style[%d] object: %w", i, err)
+				}
+				out = append(out, r)
+			default:
+				return fmt.Errorf("layergroups: unexpected style[%d] JSON shape: %s", i, string(elem))
+			}
+		}
+		s.Style = out
+		return nil
+	default:
+		return fmt.Errorf("layergroups: unexpected style JSON shape: %s", string(raw.Style))
+	}
 }
 
 // Bounds is the layer-group geographic extent.
