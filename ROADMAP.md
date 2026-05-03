@@ -33,7 +33,7 @@ Lives at module path `github.com/hishamkaram/geoserver/v2` (subdir form). Idioma
 - [ ] **v2.0.0-alpha.1** — scaffold tag, signals public API direction.
 - [x] **Resource port (1/3)** — `datastores`, `feature_types`, `coverage_stores`, `coverages`.
 - [x] **Resource port (2/3)** — `layers`, `layergroups`, `styles`.
-- [ ] **Resource port (3/3)** — `namespaces`, `settings`, `security`, `acl`, `about`, `capabilities`.
+- [x] **Resource port (3/3)** — `namespaces`, `settings`, `security`, `acl`, `about`. (`capabilities` deferred to a v2.x point release once `ows/wms/` lands.)
 - [ ] **v2.0.0-beta.1** — REST surface complete, integration matrix on 2.27 + 2.28, public API frozen for review.
 - [ ] **OWS clients** — `ows/wms/`, `ows/wfs/`, `ows/wcs/` subpackages. (May slip to v2.x point release.)
 - [ ] **Migration guide** — `docs/migration-v1-to-v2.md` filled out with concrete mappings.

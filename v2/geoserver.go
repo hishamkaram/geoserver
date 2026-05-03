@@ -13,6 +13,7 @@ import (
 
 	"github.com/hishamkaram/geoserver/v2/internal/transport"
 	"github.com/hishamkaram/geoserver/v2/rest/about"
+	"github.com/hishamkaram/geoserver/v2/rest/acl"
 	"github.com/hishamkaram/geoserver/v2/rest/coverages"
 	"github.com/hishamkaram/geoserver/v2/rest/coveragestores"
 	"github.com/hishamkaram/geoserver/v2/rest/datastores"
@@ -49,6 +50,7 @@ const (
 //	Settings       — singleton global settings document (Get / Update)
 //	About          — health check + version info (Ping / Version)
 //	Security       — users, groups, roles, user-role assignment
+//	ACL            — access-control rules (Layers; future: Services, Catalog)
 //	(more sub-clients as resources port; see ROADMAP.md)
 type Client struct {
 	core *clientCore
@@ -105,6 +107,12 @@ type Client struct {
 	// user-role assignment under /rest/security. See
 	// [security.Client] for the nested sub-client surface.
 	Security *security.Client
+
+	// ACL is the entry point for access-control-list rules under
+	// /rest/security/acl. Currently exposes layer ACLs via
+	// [acl.Client.Layers]; service-level and catalog-level ACL
+	// endpoints can be added in follow-up PRs.
+	ACL *acl.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -173,6 +181,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.Settings = settings.New(adapter)
 	c.About = about.New(adapter)
 	c.Security = security.New(adapter)
+	c.ACL = acl.New(adapter)
 	return c, nil
 }
 

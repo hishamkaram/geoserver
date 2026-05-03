@@ -1,6 +1,6 @@
 # geoserver/v2
 
-> ⚠️ **In development.** v2 is a clean redesign of `github.com/hishamkaram/geoserver` for 2026-era idiomatic Go. The public API is not yet stable; the catalog surface (Workspaces, Datastores, FeatureTypes, CoverageStores, Coverages, Layers, LayerGroups, Styles, Namespaces) plus Settings, About, and Security are implemented today; ACL and WMS capabilities are still pending. **For production use today, use the v1 line:**
+> ⚠️ **In development.** v2 has feature parity with v1 today (catalog, security, ACL, settings, about, namespaces) — only WMS GetCapabilities is deferred to a v2.x point release once the `ows/wms/` XML subpackage lands. The public API is not yet stable; expect refinement before `v2.0.0-beta.1`. **For production use today, use the v1 line:**
 >
 > ```go
 > import "github.com/hishamkaram/geoserver"          // v1 — stable, full surface
@@ -134,6 +134,8 @@ _ = cov.Create(ctx, &coverages.Coverage{
 | Settings | full | **ported** (singleton; `c.Settings.Get` / `Update`) |
 | About | full | **ported** (`c.About.Ping`, `c.About.Version`) |
 | Security (users, groups, roles) | full | **ported** (`c.Security.Users()`, `c.Security.Groups()`, `c.Security.Roles`) |
+| ACL (layer rules) | full | **ported** (`c.ACL.Layers()`) |
+| WMS GetCapabilities | partial (XML) | not yet ported (deferred to v2.x; needs `ows/wms/`) |
 | Namespaces | full | not yet ported |
 | Settings | full | not yet ported |
 | Security (users, groups, roles) | full | not yet ported |
