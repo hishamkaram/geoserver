@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — layer–style associations
+
+- **`v2/rest/layers.WorkspaceClient.ListStyles(ctx, layer)`** and **`AddStyle(ctx, layer, styleName, opts)`** — dedicated sub-resource for managing a layer's alternative-style list (`/workspaces/{ws}/layers/{l}/styles`). `AddStyleOptions{Default: true}` atomically promotes the new style to the layer's default in one wire round-trip, replacing the previous GET + mutate + PUT dance. Removing an alternative style is not exposed as a dedicated method (GeoServer doesn't document a DELETE on this sub-resource); use `Update()` with the unwanted reference removed from `Layer.Styles`.
+
 ### Added — OWS describe operations
 
 - **`v2/ows/wfs.Client.DescribeFeatureType(ctx, opts)`** — fetches the XSD schema describing one or more published feature types and decodes it into a `*FeatureSchema`. The schema's `Attributes(typeName)` helper walks the typical `complexType > complexContent > extension > sequence > element*` shape and surfaces a flat `[]Attribute` list. Send multiple type names in `DescribeFeatureTypeOptions.TypeNames` (comma-joined for the WFS 2.0 `typeNames` query plus the WFS 1.1.0 `typeName` alias for cross-version compatibility). Companion free function `wfs.ParseFeatureSchema(io.Reader)` for out-of-band parsing.

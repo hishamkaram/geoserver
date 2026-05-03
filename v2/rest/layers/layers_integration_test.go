@@ -84,6 +84,43 @@ func TestLayers_AfterPublish_Integration(t *testing.T) {
 		t.Fatalf("Update layer: %v", err)
 	}
 
+	// AddStyle — attach a built-in alternate style (default GeoServer
+	// install ships with `line`, `point`, `polygon`, `raster`, etc.).
+	if err := c.Layers.InWorkspace(wsName).AddStyle(ctx, ftName, "line",
+		layers.AddStyleOptions{}); err != nil {
+		t.Fatalf("AddStyle line: %v", err)
+	}
+
+	// ListStyles — confirm the new alternate is present.
+	got, err := c.Layers.InWorkspace(wsName).ListStyles(ctx, ftName)
+	if err != nil {
+		t.Fatalf("ListStyles: %v", err)
+	}
+	foundLine := false
+	for _, s := range got {
+		if s.Name == "line" {
+			foundLine = true
+			break
+		}
+	}
+	if !foundLine {
+		t.Errorf("style %q not present in ListStyles after AddStyle: %+v", "line", got)
+	}
+
+	// AddStyle with Default=true — promotes the new style to the
+	// layer's default style atomically. Verify by re-reading the layer.
+	if err := c.Layers.InWorkspace(wsName).AddStyle(ctx, ftName, "point",
+		layers.AddStyleOptions{Default: true}); err != nil {
+		t.Fatalf("AddStyle point default: %v", err)
+	}
+	updated, err := c.Layers.InWorkspace(wsName).Get(ctx, ftName)
+	if err != nil {
+		t.Fatalf("Get after AddStyle default: %v", err)
+	}
+	if updated.DefaultStyle == nil || updated.DefaultStyle.Name != "point" {
+		t.Errorf("DefaultStyle = %+v, want name=point", updated.DefaultStyle)
+	}
+
 	// Delete with Recurse (drops the underlying feature type too).
 	if err := c.Layers.InWorkspace(wsName).Delete(ctx, ftName, layers.DeleteOptions{Recurse: true}); err != nil {
 		t.Fatalf("Delete layer: %v", err)

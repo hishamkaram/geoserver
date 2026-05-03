@@ -36,6 +36,35 @@ func ExampleWorkspaceClient_Iter() {
 	}
 }
 
+// ExampleWorkspaceClient_AddStyle attaches a second renderer to a
+// layer. WMS callers can then request the alternate via
+// `?styles=line`. Pass [layers.AddStyleOptions]{Default: true} to
+// also promote the new style to the layer's default — a single
+// atomic call replacing the GET + mutate + PUT dance.
+func ExampleWorkspaceClient_AddStyle() {
+	c, _ := geoserver.New("http://localhost:8080/geoserver",
+		geoserver.WithBasicAuth("admin", "geoserver"))
+
+	_ = c.Layers.InWorkspace("topp").AddStyle(context.Background(),
+		"states", "line", layers.AddStyleOptions{})
+}
+
+// ExampleWorkspaceClient_ListStyles enumerates the alternative
+// styles registered for a layer (the layer's default style is read
+// separately via [WorkspaceClient.Get]).
+func ExampleWorkspaceClient_ListStyles() {
+	c, _ := geoserver.New("http://localhost:8080/geoserver",
+		geoserver.WithBasicAuth("admin", "geoserver"))
+
+	styles, err := c.Layers.InWorkspace("topp").ListStyles(context.Background(), "states")
+	if err != nil {
+		return
+	}
+	for _, s := range styles {
+		fmt.Println(s.Name)
+	}
+}
+
 // ExampleWorkspaceClient_Update reassigns a layer's default style.
 // Useful after [styles.Client.Create]+UploadSLD to make the new SLD
 // the default rendering for a layer.

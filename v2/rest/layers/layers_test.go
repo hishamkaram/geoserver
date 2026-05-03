@@ -219,6 +219,145 @@ func TestDelete_500(t *testing.T) {
 	}
 }
 
+func TestListStyles_OK(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		expectBasicAuth(t, r)
+		if r.Method != http.MethodGet {
+			t.Errorf("Method = %q, want GET", r.Method)
+		}
+		if r.URL.Path != "/rest/layers/topp:states/styles" {
+			t.Errorf("Path = %q (expected global form with qualified name)", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"styles":{"style":[
+            {"name":"polygon","href":"http://example.com/styles/polygon.json"},
+            {"name":"line","href":"http://example.com/styles/line.json"}
+        ]}}`)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	got, err := c.Layers.InWorkspace("topp").ListStyles(context.Background(), "states")
+	if err != nil {
+		t.Fatalf("ListStyles: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected 2 styles, got %d", len(got))
+	}
+	if got[0].Name != "polygon" || got[1].Name != "line" {
+		t.Errorf("names = %+v", got)
+	}
+}
+
+func TestListStyles_EmptyValidation(t *testing.T) {
+	c, _ := geoserver.New("http://localhost:8080", geoserver.WithBasicAuth("u", "p"))
+
+	if _, err := c.Layers.InWorkspace("").ListStyles(context.Background(), "states"); err == nil {
+		t.Errorf("expected error for empty workspace")
+	}
+	if _, err := c.Layers.InWorkspace("topp").ListStyles(context.Background(), ""); err == nil {
+		t.Errorf("expected error for empty layer name")
+	}
+}
+
+func TestListStyles_NotFound(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "no such layer", http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	_, err := c.Layers.InWorkspace("topp").ListStyles(context.Background(), "missing")
+	if !errors.Is(err, geoserver.ErrNotFound) {
+		t.Fatalf("err = %v, want ErrNotFound", err)
+	}
+}
+
+func TestAddStyle_OK(t *testing.T) {
+	var capturedBody string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		expectBasicAuth(t, r)
+		if r.Method != http.MethodPost {
+			t.Errorf("Method = %q, want POST", r.Method)
+		}
+		if r.URL.Path != "/rest/layers/topp:states/styles" {
+			t.Errorf("Path = %q (expected global form with qualified name)", r.URL.Path)
+		}
+		// No `default` query when opts.Default=false.
+		if r.URL.Query().Get("default") != "" {
+			t.Errorf("unexpected default=%q", r.URL.Query().Get("default"))
+		}
+		body, _ := io.ReadAll(r.Body)
+		capturedBody = string(body)
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	if err := c.Layers.InWorkspace("topp").AddStyle(context.Background(), "states", "polygon",
+		layers.AddStyleOptions{}); err != nil {
+		t.Fatalf("AddStyle: %v", err)
+	}
+	if !strings.Contains(capturedBody, `"name":"polygon"`) {
+		t.Errorf("body missing style name: %q", capturedBody)
+	}
+	if !strings.Contains(capturedBody, `"style":`) {
+		t.Errorf("body missing style envelope: %q", capturedBody)
+	}
+}
+
+func TestAddStyle_DefaultFlag(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("default") != "true" {
+			t.Errorf("default = %q, want true", r.URL.Query().Get("default"))
+		}
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	if err := c.Layers.InWorkspace("topp").AddStyle(context.Background(), "states", "polygon",
+		layers.AddStyleOptions{Default: true}); err != nil {
+		t.Fatalf("AddStyle: %v", err)
+	}
+}
+
+func TestAddStyle_EmptyValidation(t *testing.T) {
+	c, _ := geoserver.New("http://localhost:8080", geoserver.WithBasicAuth("u", "p"))
+
+	cases := []struct {
+		name             string
+		ws, layer, style string
+	}{
+		{"empty workspace", "", "states", "polygon"},
+		{"empty layer", "topp", "", "polygon"},
+		{"empty style", "topp", "states", ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := c.Layers.InWorkspace(tc.ws).AddStyle(context.Background(),
+				tc.layer, tc.style, layers.AddStyleOptions{})
+			if err == nil {
+				t.Errorf("expected error for %s", tc.name)
+			}
+		})
+	}
+}
+
+func TestAddStyle_NotFound(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "style not found", http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	err := c.Layers.InWorkspace("topp").AddStyle(context.Background(), "states", "missing-style",
+		layers.AddStyleOptions{})
+	if !errors.Is(err, geoserver.ErrNotFound) {
+		t.Fatalf("err = %v, want ErrNotFound", err)
+	}
+}
+
 func TestGet_URLEscaping(t *testing.T) {
 	var capturedURI string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

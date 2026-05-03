@@ -70,6 +70,35 @@ type DeleteOptions struct {
 	Recurse bool
 }
 
+// AddStyleOptions controls a [WorkspaceClient.AddStyle] call.
+type AddStyleOptions struct {
+	// Default also promotes the added style to the layer's default
+	// style atomically. Without this flag, the style is added as an
+	// alternative renderer that callers can request via WMS
+	// `?styles=<name>` but the layer's default style is unchanged.
+	Default bool
+}
+
+// stylesListResponse mirrors GeoServer's `{"styles":{"style":[…]}}`
+// returned by GET /layers/{l}/styles. Empty-collection envelope
+// (`{"styles":""}`) is handled by the caller via the same idiom v2
+// uses for the global styles list.
+type stylesListResponse struct {
+	Styles struct {
+		Style []Ref `json:"style"`
+	} `json:"styles"`
+}
+
+// addStyleRequest mirrors the wire body for POST /layers/{l}/styles —
+// `{"style":{"name":"<style>"}}`.
+type addStyleRequest struct {
+	Style addStylePayload `json:"style"`
+}
+
+type addStylePayload struct {
+	Name string `json:"name"`
+}
+
 // listResponse mirrors GeoServer's `{"layers":{"layer":[…]}}`.
 type listResponse struct {
 	Layers struct {
