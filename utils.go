@@ -1,8 +1,8 @@
 package geoserver
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -26,6 +26,7 @@ type HTTPRequest struct {
 // UtilsInterface contains common function used to help you deal with data and geoserver api
 type UtilsInterface interface {
 	DoRequest(request HTTPRequest) (responseText []byte, statusCode int)
+	DoRequestContext(ctx context.Context, request HTTPRequest) (responseText []byte, statusCode int)
 	SerializeStruct(structObj interface{}) ([]byte, error)
 	DeSerializeJSON(response []byte, structObj interface{}) (err error)
 	ParseURL(urlParts ...string) (parsedURL string)
@@ -38,7 +39,17 @@ type UtilsInterface interface {
 //
 // Backward-compatibility note: prior versions of this method panicked on
 // transport errors. Panics are now translated to (nil, 0) returns.
+//
+// DoRequest uses context.Background. Use [GeoServer.DoRequestContext] when
+// you need cancellation, deadlines, or trace propagation.
 func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusCode int) {
+	return g.DoRequestContext(context.Background(), request)
+}
+
+// DoRequestContext is the context-aware variant of [GeoServer.DoRequest]. The
+// supplied context is attached to the underlying *http.Request and honoured
+// by transport, including cancellation and deadlines.
+func (g *GeoServer) DoRequestContext(ctx context.Context, request HTTPRequest) (responseText []byte, statusCode int) {
 	defer func() {
 		// Belt-and-suspenders: in case any code path below still panics,
 		// translate to the historical (string-of-panic, 0) contract that
@@ -49,20 +60,28 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 		}
 	}()
 
-	var req *http.Request
+	var (
+		req    *http.Request
+		reqErr error
+	)
 	switch request.Method {
 	case getMethod, deleteMethod:
-		req = g.GetGeoserverRequest(request.URL, request.Method, request.Accept, nil, "")
+		req, reqErr = g.GetGeoserverRequestE(request.URL, request.Method, request.Accept, nil, "")
 	case postMethod, putMethod:
-		req = g.GetGeoserverRequest(request.URL, request.Method, request.Accept, request.Data, request.DataType)
+		req, reqErr = g.GetGeoserverRequestE(request.URL, request.Method, request.Accept, request.Data, request.DataType)
 	default:
 		g.logger.Errorf("DoRequest: unsupported HTTP method %q", request.Method)
+		return nil, 0
+	}
+	if reqErr != nil {
+		g.logger.Errorf("DoRequest: build request %s %s: %v", request.Method, request.URL, reqErr)
 		return nil, 0
 	}
 	if req == nil {
 		g.logger.Errorf("DoRequest: failed to construct request for %s %s", request.Method, request.URL)
 		return nil, 0
 	}
+	req = req.WithContext(ctx)
 
 	if len(request.Query) != 0 {
 		q := req.URL.Query()
@@ -88,18 +107,18 @@ func (g *GeoServer) DoRequest(request HTTPRequest) (responseText []byte, statusC
 	return body, response.StatusCode
 }
 
-// GetError returns a string-formatted error for the given GeoServer HTTP
-// response. The returned error preserves the historical
-// "abstract:%s\ndetails:%s\n" format for backward compatibility; in v1.1+
-// it is also matchable against typed sentinels via errors.Is — see errors.go.
+// GetError returns a typed [*Error] for the given GeoServer HTTP response.
+//
+// The returned error's Error() string preserves the v1.0
+// "abstract:%s\ndetails:%s\n" format for backward compatibility, while new
+// callers can match it against package sentinel errors:
+//
+//	err := gs.CreateWorkspace("topp")
+//	if errors.Is(err, geoserver.ErrNotFound) { ... }
+//	var apiErr *geoserver.Error
+//	if errors.As(err, &apiErr) { ... apiErr.StatusCode ... apiErr.Body ... }
 func (g *GeoServer) GetError(statusCode int, text []byte) (err error) {
-	geoserverErr, ok := statusErrorMapping[statusCode]
-	if !ok {
-		geoserverErr = fmt.Errorf("unexpected error with status code %d", statusCode)
-	}
-	errDetails := string(text)
-	fullMSG := fmt.Sprintf("abstract:%s\ndetails:%s\n", geoserverErr, errDetails)
-	return errors.New(fullMSG)
+	return newError("", "", statusCode, text)
 }
 
 // IsEmpty helper function to check if obj/struct is nil/empty

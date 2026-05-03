@@ -1,9 +1,6 @@
 package geoserver
 
-import (
-	"net/http"
-	"time"
-)
+import "time"
 
 // defaultHTTPTimeout is applied to the http.Client constructed by GetCatalog
 // when no override is supplied. It is intentionally generous so that large
@@ -41,12 +38,5 @@ type Catalog interface {
 // Deprecated: prefer [New], which takes functional options for HTTP client,
 // timeout, logger, etc. GetCatalog will be removed in v2.
 func GetCatalog(geoserverURL string, username string, password string) (catalog *GeoServer) {
-	geoserver := GeoServer{
-		ServerURL:  geoserverURL,
-		Username:   username,
-		Password:   password,
-		HttpClient: &http.Client{Timeout: defaultHTTPTimeout},
-		logger:     GetLogger(),
-	}
-	return &geoserver
+	return New(geoserverURL, username, password)
 }

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -23,7 +22,7 @@ type GeoServer struct {
 	Username      string `yaml:"username"`
 	Password      string `yaml:"password"`
 	HttpClient    *http.Client
-	logger        *logrus.Logger
+	logger        *Logger
 }
 
 // LoadConfig load geoserver config from yaml file

@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -33,6 +34,17 @@ type LayerService interface {
 	PublishPostgisLayer(workspaceName string, datastoreName string, publishName string, tableName string) (published bool, err error)
 
 	PublishGeoTiffLayer(workspaceName string, coveragestoreName string, publishName string, fileName string) (published bool, err error)
+}
+
+// LayerServiceWithContext is the context-aware sibling of [LayerService].
+type LayerServiceWithContext interface {
+	GetLayersContext(ctx context.Context, workspaceName string) (layers []*Resource, err error)
+	UploadShapeFileContext(ctx context.Context, fileURI string, workspaceName string, datastoreName string) (uploaded bool, err error)
+	GetLayerContext(ctx context.Context, workspaceName string, layerName string) (layer *Layer, err error)
+	UpdateLayerContext(ctx context.Context, workspaceName string, layerName string, layer Layer) (modified bool, err error)
+	DeleteLayerContext(ctx context.Context, workspaceName string, layerName string, recurse bool) (deleted bool, err error)
+	PublishPostgisLayerContext(ctx context.Context, workspaceName string, datastoreName string, publishName string, tableName string) (published bool, err error)
+	PublishGeoTiffLayerContext(ctx context.Context, workspaceName string, coveragestoreName string, publishName string, fileName string) (published bool, err error)
 }
 
 // Resource geoserver resource
@@ -95,8 +107,13 @@ func (g *GeoServer) GetshpFiledsName(filename string) string {
 	return name
 }
 
-// UploadShapeFile upload shapefile to geoserver
+// UploadShapeFile uploads a shapefile using context.Background.
 func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datastoreName string) (uploaded bool, err error) {
+	return g.UploadShapeFileContext(context.Background(), fileURI, workspaceName, datastoreName)
+}
+
+// UploadShapeFileContext is the context-aware variant of [GeoServer.UploadShapeFile].
+func (g *GeoServer) UploadShapeFileContext(ctx context.Context, fileURI string, workspaceName string, datastoreName string) (uploaded bool, err error) {
 	filename := filepath.Base(fileURI)
 	if datastoreName == "" {
 		datastoreName = g.GetshpFiledsName(filename)
@@ -108,14 +125,14 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 		return
 	}
 
-	exists, existsErr := g.WorkspaceExists(workspaceName)
+	exists, existsErr := g.WorkspaceExistsContext(ctx, workspaceName)
 	if existsErr != nil {
 		// Don't fail outright — proceed to attempt the upload, which will
 		// surface the underlying error with full context if it persists.
 		g.logger.Warnf("UploadShapeFile: WorkspaceExists(%q) returned %v; attempting upload anyway", workspaceName, existsErr)
 	}
 	if !exists {
-		if _, createErr := g.CreateWorkspace(workspaceName); createErr != nil {
+		if _, createErr := g.CreateWorkspaceContext(ctx, workspaceName); createErr != nil {
 			return false, fmt.Errorf("UploadShapeFile: create workspace %q: %w", workspaceName, createErr)
 		}
 	}
@@ -127,7 +144,7 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 		URL:      targetURL,
 		Query:    nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusCreated {
 		g.logger.Error(string(response))
 		uploaded = false
@@ -138,9 +155,13 @@ func (g *GeoServer) UploadShapeFile(fileURI string, workspaceName string, datast
 	return
 }
 
-// GetLayers  get all layers from workspace in geoserver else return error,
-// if workspace is "" the it will return all public layers in geoserver
+// GetLayers lists layers using context.Background.
 func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err error) {
+	return g.GetLayersContext(context.Background(), workspaceName)
+}
+
+// GetLayersContext is the context-aware variant of [GeoServer.GetLayers].
+func (g *GeoServer) GetLayersContext(ctx context.Context, workspaceName string) (layers []*Resource, err error) {
 	targetURL := g.layersURL(workspaceName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -148,7 +169,7 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err err
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		layers = nil
@@ -167,9 +188,13 @@ func (g *GeoServer) GetLayers(workspaceName string) (layers []*Resource, err err
 	return
 }
 
-// GetLayer get specific Layer in a workspace from geoserver else return error,
-// if workspace is "" the it will return geoserver public layer with ${layerName}
+// GetLayer fetches a layer using context.Background.
 func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Layer, err error) {
+	return g.GetLayerContext(context.Background(), workspaceName, layerName)
+}
+
+// GetLayerContext is the context-aware variant of [GeoServer.GetLayer].
+func (g *GeoServer) GetLayerContext(ctx context.Context, workspaceName string, layerName string) (layer *Layer, err error) {
 	targetURL := g.layersURL(workspaceName, layerName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -177,7 +202,7 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Lay
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		layer = &Layer{}
@@ -194,9 +219,13 @@ func (g *GeoServer) GetLayer(workspaceName string, layerName string) (layer *Lay
 	return
 }
 
-// UpdateLayer partial update geoserver layer else return error,
-// if workspace is "" the it will update  public layer with name ${layerName} in geoserver
+// UpdateLayer partially updates a layer using context.Background.
 func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer Layer) (modified bool, err error) {
+	return g.UpdateLayerContext(context.Background(), workspaceName, layerName, layer)
+}
+
+// UpdateLayerContext is the context-aware variant of [GeoServer.UpdateLayer].
+func (g *GeoServer) UpdateLayerContext(ctx context.Context, workspaceName string, layerName string, layer Layer) (modified bool, err error) {
 	targetURL := g.layersURL(workspaceName, layerName)
 	data := LayerRequestBody{Layer: layer}
 
@@ -212,7 +241,7 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 		URL:      targetURL,
 		Query:    nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		modified = false
@@ -223,8 +252,13 @@ func (g *GeoServer) UpdateLayer(workspaceName string, layerName string, layer La
 	return
 }
 
-// PublishPostgisLayer publish postgis table to geoserver
+// PublishPostgisLayer publishes a postgis table using context.Background.
 func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName string, publishName string, tableName string) (published bool, err error) {
+	return g.PublishPostgisLayerContext(context.Background(), workspaceName, datastoreName, publishName, tableName)
+}
+
+// PublishPostgisLayerContext is the context-aware variant of [GeoServer.PublishPostgisLayer].
+func (g *GeoServer) PublishPostgisLayerContext(ctx context.Context, workspaceName string, datastoreName string, publishName string, tableName string) (published bool, err error) {
 	parts := []string{"rest"}
 	if workspaceName != "" {
 		parts = append(parts, "workspaces", workspaceName)
@@ -249,7 +283,7 @@ func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName stri
 		URL:      targetURL,
 		Query:    nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusCreated {
 		g.logger.Error(string(response))
 		published = false
@@ -260,9 +294,13 @@ func (g *GeoServer) PublishPostgisLayer(workspaceName string, datastoreName stri
 	return
 }
 
-// DeleteLayer delete geoserver layer and its reources else return error,
-// if workspace is "" will delete public layer with name ${layerName} if exists
+// DeleteLayer deletes a layer using context.Background.
 func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse bool) (deleted bool, err error) {
+	return g.DeleteLayerContext(context.Background(), workspaceName, layerName, recurse)
+}
+
+// DeleteLayerContext is the context-aware variant of [GeoServer.DeleteLayer].
+func (g *GeoServer) DeleteLayerContext(ctx context.Context, workspaceName string, layerName string, recurse bool) (deleted bool, err error) {
 	targetURL := g.layersURL(workspaceName, layerName)
 	httpRequest := HTTPRequest{
 		Method: deleteMethod,
@@ -270,7 +308,7 @@ func (g *GeoServer) DeleteLayer(workspaceName string, layerName string, recurse 
 		URL:    targetURL,
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		deleted = false

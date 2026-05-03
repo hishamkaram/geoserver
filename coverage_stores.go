@@ -2,6 +2,7 @@ package geoserver
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strconv"
 )
@@ -13,6 +14,15 @@ type CoverageStoresService interface {
 	CreateCoverageStore(workspaceName string, coverageStore CoverageStore) (created bool, err error)
 	UpdateCoverageStore(workspaceName string, coverageStore CoverageStore) (modified bool, err error)
 	DeleteCoverageStore(workspaceName string, coverageStore string, recurse bool) (deleted bool, err error)
+}
+
+// CoverageStoresServiceWithContext is the context-aware sibling of [CoverageStoresService].
+type CoverageStoresServiceWithContext interface {
+	GetCoverageStoresContext(ctx context.Context, workspaceName string) (coverageStores []*Resource, err error)
+	GetCoverageStoreContext(ctx context.Context, workspaceName string, gridName string) (coverageStore *CoverageStore, err error)
+	CreateCoverageStoreContext(ctx context.Context, workspaceName string, coverageStore CoverageStore) (created bool, err error)
+	UpdateCoverageStoreContext(ctx context.Context, workspaceName string, coverageStore CoverageStore) (modified bool, err error)
+	DeleteCoverageStoreContext(ctx context.Context, workspaceName string, coverageStore string, recurse bool) (deleted bool, err error)
 }
 
 // CoverageStore geoserver coverage store
@@ -32,9 +42,14 @@ type CoverageStoreRequestBody struct {
 	CoverageStore *CoverageStore `json:"coverageStore,omitempty"`
 }
 
-// GetCoverageStores return all coverage store as resources,
-// err is an error if error occurred else err is nil
+// GetCoverageStores returns all coverage stores in workspaceName as resources
+// using context.Background.
 func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*Resource, err error) {
+	return g.GetCoverageStoresContext(context.Background(), workspaceName)
+}
+
+// GetCoverageStoresContext is the context-aware variant of [GeoServer.GetCoverageStores].
+func (g *GeoServer) GetCoverageStoresContext(ctx context.Context, workspaceName string) (coverageStores []*Resource, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores")
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -42,7 +57,7 @@ func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*R
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		coverageStores = nil
@@ -61,9 +76,13 @@ func (g *GeoServer) GetCoverageStores(workspaceName string) (coverageStores []*R
 	return
 }
 
-// GetCoverageStore return  coverage store from a workspace,
-// err is an error if error occurred else err is nil
+// GetCoverageStore returns a single coverage store using context.Background.
 func (g *GeoServer) GetCoverageStore(workspaceName string, gridName string) (coverageStore *CoverageStore, err error) {
+	return g.GetCoverageStoreContext(context.Background(), workspaceName, gridName)
+}
+
+// GetCoverageStoreContext is the context-aware variant of [GeoServer.GetCoverageStore].
+func (g *GeoServer) GetCoverageStoreContext(ctx context.Context, workspaceName string, gridName string) (coverageStore *CoverageStore, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", gridName)
 	httpRequest := HTTPRequest{
 		Method: getMethod,
@@ -71,7 +90,7 @@ func (g *GeoServer) GetCoverageStore(workspaceName string, gridName string) (cov
 		URL:    targetURL,
 		Query:  nil,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		coverageStore = nil
@@ -88,8 +107,13 @@ func (g *GeoServer) GetCoverageStore(workspaceName string, gridName string) (cov
 	return
 }
 
-// CreateCoverageStore create coverage store in geoserver and return created one else return error
+// CreateCoverageStore creates a coverage store using context.Background.
 func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore CoverageStore) (created bool, err error) {
+	return g.CreateCoverageStoreContext(context.Background(), workspaceName, coverageStore)
+}
+
+// CreateCoverageStoreContext is the context-aware variant of [GeoServer.CreateCoverageStore].
+func (g *GeoServer) CreateCoverageStoreContext(ctx context.Context, workspaceName string, coverageStore CoverageStore) (created bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores")
 	data := CoverageStoreRequestBody{
 		CoverageStore: &coverageStore,
@@ -105,7 +129,7 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 		Accept:   jsonType,
 		URL:      targetURL,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusCreated {
 		g.logger.Error(string(response))
 		created = false
@@ -116,8 +140,13 @@ func (g *GeoServer) CreateCoverageStore(workspaceName string, coverageStore Cove
 	return
 }
 
-// UpdateCoverageStore  parital update coverage store in geoserver else return error
+// UpdateCoverageStore performs a partial update on a coverage store using context.Background.
 func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore CoverageStore) (modified bool, err error) {
+	return g.UpdateCoverageStoreContext(context.Background(), workspaceName, coverageStore)
+}
+
+// UpdateCoverageStoreContext is the context-aware variant of [GeoServer.UpdateCoverageStore].
+func (g *GeoServer) UpdateCoverageStoreContext(ctx context.Context, workspaceName string, coverageStore CoverageStore) (modified bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", coverageStore.Name)
 	data := CoverageStoreRequestBody{CoverageStore: &coverageStore}
 	serializedData, serErr := g.SerializeStruct(data)
@@ -131,7 +160,7 @@ func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore Cove
 		Accept:   jsonType,
 		URL:      targetURL,
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		modified = false
@@ -142,8 +171,13 @@ func (g *GeoServer) UpdateCoverageStore(workspaceName string, coverageStore Cove
 	return
 }
 
-// DeleteCoverageStore delete coverage store from geoserver else return error
+// DeleteCoverageStore deletes a coverage store using context.Background.
 func (g *GeoServer) DeleteCoverageStore(workspaceName string, coverageStore string, recurse bool) (deleted bool, err error) {
+	return g.DeleteCoverageStoreContext(context.Background(), workspaceName, coverageStore, recurse)
+}
+
+// DeleteCoverageStoreContext is the context-aware variant of [GeoServer.DeleteCoverageStore].
+func (g *GeoServer) DeleteCoverageStoreContext(ctx context.Context, workspaceName string, coverageStore string, recurse bool) (deleted bool, err error) {
 	targetURL := g.ParseURL("rest", "workspaces", workspaceName, "coveragestores", coverageStore)
 	httpRequest := HTTPRequest{
 		Method: deleteMethod,
@@ -151,7 +185,7 @@ func (g *GeoServer) DeleteCoverageStore(workspaceName string, coverageStore stri
 		URL:    targetURL,
 		Query:  map[string]string{"recurse": strconv.FormatBool(recurse)},
 	}
-	response, responseCode := g.DoRequest(httpRequest)
+	response, responseCode := g.DoRequestContext(ctx, httpRequest)
 	if responseCode != statusOk {
 		g.logger.Error(string(response))
 		deleted = false
