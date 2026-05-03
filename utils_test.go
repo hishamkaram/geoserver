@@ -29,15 +29,19 @@ func TestSerializeStruct(t *testing.T) {
 }
 func TestDoRequest(t *testing.T) {
 	gsCatalog := GetCatalog("http://localhost:8080/geoserver/", "admin", "geoserver")
+	// v1.1: DoRequest with an unsupported method now logs and returns
+	// (nil, 0) rather than recovering from a panic and returning the
+	// panic message bytes.
 	responseText, statusCode := gsCatalog.DoRequest(HTTPRequest{Method: "dummy_method",
 		Accept: jsonType,
 		URL:    "http://localhost:8080/geoserver/"})
-	assert.Equal(t, statusCode, 0)
-	assert.NotNil(t, responseText)
+	assert.Equal(t, 0, statusCode)
+	assert.Nil(t, responseText)
+	// Real GET hits the WFS endpoint; we expect a non-zero status code.
 	responseText, statusCode = gsCatalog.DoRequest(HTTPRequest{Method: getMethod,
 		Accept: jsonType,
 		URL:    "http://localhost:8080/geoserver/wfs"})
-	assert.NotEqual(t, statusCode, 0)
+	assert.NotEqual(t, 0, statusCode)
 	assert.NotNil(t, responseText)
 }
 
