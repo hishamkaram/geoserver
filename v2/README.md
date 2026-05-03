@@ -1,5 +1,11 @@
 # geoserver/v2
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/hishamkaram/geoserver/v2.svg)](https://pkg.go.dev/github.com/hishamkaram/geoserver/v2)
+[![CI](https://github.com/hishamkaram/geoserver/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/hishamkaram/geoserver/actions/workflows/ci.yml)
+[![Integration tests](https://github.com/hishamkaram/geoserver/actions/workflows/integration.yml/badge.svg?branch=master)](https://github.com/hishamkaram/geoserver/actions/workflows/integration.yml)
+[![License: MIT](https://img.shields.io/github/license/hishamkaram/geoserver.svg)](../LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/hishamkaram/geoserver?include_prereleases&sort=semver)](https://github.com/hishamkaram/geoserver/releases)
+
 > 🧪 **`v2.0.0-alpha.4` is published.** v2 closes the gap-analysis plan's "everyone needs it" surface. Coverage at `master`:
 >
 > - **Catalog**: workspaces, datastores, feature types, coverage stores, coverages, layers (incl. add-style sub-resource), layer groups, styles, namespaces.
@@ -11,19 +17,45 @@
 > - **Importer extension**: `c.Imports` (sessions + tasks). The dev/test docker image bakes the plugin in for CI integration coverage.
 > - **OWS**: `c.WMS` / `c.WFS` / `c.WCS` GetCapabilities; WFS `DescribeFeatureType`; WCS `DescribeCoverage`.
 >
-> Public API may still change before `v2.0.0` based on early-adopter feedback — no production guarantees yet. **For stable production use, stay on the v1 line:**
->
-> ```go
-> import "github.com/hishamkaram/geoserver"          // v1.1.x — stable, full surface
-> import "github.com/hishamkaram/geoserver/v2"       // v2.0.0-alpha.4 — preview
-> ```
->
-> Install:
-> ```sh
-> go get github.com/hishamkaram/geoserver/v2@v2.0.0-alpha.4
-> ```
+> Public API may still change before `v2.0.0` based on early-adopter feedback — no production guarantees yet. **For stable production use, stay on the [v1 line](../README.md).**
 
 This module ships with its own `go.mod` at `/v2/`; v1 and v2 release independently (`v1.x.y` / `v2.x.y` tags).
+
+## Contents
+
+- [Install](#install)
+- [Why v2 over v1?](#why-v2-over-v1)
+- [Design tenets](#design-tenets)
+- [Quick start](#quick-start)
+- [Runnable examples](#runnable-examples)
+- [Resource status](#resource-status)
+- [Contributing to v2](#contributing-to-v2)
+
+## Install
+
+```bash
+go get github.com/hishamkaram/geoserver/v2@v2.0.0-alpha.4
+```
+
+```go
+import geoserver "github.com/hishamkaram/geoserver/v2"
+```
+
+> v2 is a separate Go module under `/v2/`; v1 and v2 release independently. Public API may still refine before `v2.0.0` based on early-adopter feedback. For stable production use today, stay on the [v1 line](../README.md).
+
+Requirements: Go 1.25+. Tested against GeoServer 2.27.4 LTS and 2.28.0 stable on every PR.
+
+## Why v2 over v1?
+
+If you're starting a new integration today, v2 is the better foundation. It gives you:
+
+- **Sub-clients per resource.** `c.Workspaces.Get(ctx, name)`, `c.Datastores.InWorkspace(ws).Create(ctx, ...)`, `c.FeatureTypes.InWorkspace(ws).InDatastore(ds).Discover(ctx, ...)` — instead of v1's monolithic ~90-method `*GeoServer`.
+- **Immutable client; concurrency-safe by construction.** All fields private; configured via functional options at construction; no post-construction mutation. Auth is layered on as an `http.RoundTripper` so OpenTelemetry, Vault-rotated creds, and retry libs compose naturally.
+- **Mandatory `context.Context` first arg on every method.** No `Background()` shims, no twin pairs.
+- **`iter.Seq2` pagination** on every `List` endpoint. `for ws, err := range c.Workspaces.Iter(ctx, opts) { ... }`.
+- **Surfaces v1 doesn't have** — per-service OWS settings (`c.Services.WMS()`/`WFS()`/`WCS()`/`WMTS()`), file-upload publishing on stores (`c.Datastores.UploadFile`, `c.CoverageStores.UploadFile`/`HarvestGranule`), GeoWebCache (`c.GWC.Layers()`/`Seed()`/`DiskQuota()`), the Importer extension (`c.Imports`), WFS `DescribeFeatureType`, and WCS `DescribeCoverage`.
+
+If you're already on v1 and don't need any of the above, there is no rush — v1.x is non-breaking and continues to receive security and bug-fix patches. See [`../docs/migration-v1-to-v2.md`](../docs/migration-v1-to-v2.md) for the per-resource migration mapping.
 
 ## Design tenets
 
