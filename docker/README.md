@@ -9,8 +9,8 @@ This directory builds the GeoServer container the project's integration tests ru
 | Base | `tomcat:9-jdk17-temurin` | GeoServer 2.x uses the `javax.*` servlet namespace and does not run on Tomcat 10/11 (which moved to `jakarta.*`). GeoServer 3.0 will be the Tomcat 11 / Jakarta EE target — see [`../ROADMAP.md`](../ROADMAP.md). |
 | GeoServer | 2.28.0 by default; 2.27.4 LTS for the test leg | The supported matrix. CI runs both legs on every PR. Override with `--build-arg GEOSERVER_VERSION=...`. |
 | Layout | WAR pre-extracted into `webapps/geoserver/` | Lets the Dockerfile drop extension JARs into `WEB-INF/lib/`. Tomcat happily runs the unpacked form. |
-| Importer extension | Baked in | Required for the v2 SDK's `c.Imports` integration tests. Without it `GET /rest/imports` returns 404 and the suite skips silently. With the bake-in, CI exercises the full `v2/rest/imports` surface against a real server on both 2.27.4 and 2.28.0. |
-| Monitor extension | Baked in | Required for the v2 SDK's `c.Monitor` integration tests (request audit log). Without it `GET /rest/monitor/requests.csv` returns 404. With the bake-in, CI exercises the full `v2/rest/monitor` surface. |
+| Importer extension | Baked in | Required for the SDK's `c.Imports` integration tests. Without it `GET /rest/imports` returns 404 and the suite skips silently. With the bake-in, CI exercises the full `rest/imports` surface against a real server on both 2.27.4 and 2.28.0. |
+| Monitor extension | Baked in | Required for the SDK's `c.Monitor` integration tests (request audit log). Without it `GET /rest/monitor/requests.csv` returns 404. With the bake-in, CI exercises the full `rest/monitor` surface. |
 | Healthcheck | `curl -fsS http://localhost:8080/geoserver/web/` every 30s after a 120s start period | Compose `depends_on` waits on this before starting the test runner. |
 
 The Importer and Monitor extensions are the only non-vanilla pieces. Everything else is the upstream GeoServer WAR + standard Tomcat config.

@@ -29,7 +29,7 @@ Lives at module path `github.com/hishamkaram/geoserver/v2` (subdir form). Idioma
 
 **Milestones (checklist; tags applied as each is reached):**
 
-- [x] **Scaffold** — `/v2/` skeleton + `Workspaces` reference resource + transport layer + `internal/transport/` algorithms.
+- [x] **Scaffold** — initial v2 skeleton + `Workspaces` reference resource + transport layer + `internal/transport/` algorithms (originally landed under `/v2/` subdirectory; promoted to repo root post-`v2.0.0`).
 - [x] **v2.0.0-alpha.1** — scaffold tag, signals public API direction. *Tagged 2026-05-03.*
 - [x] **Resource port (1/3)** — `datastores`, `feature_types`, `coverage_stores`, `coverages`.
 - [x] **Resource port (2/3)** — `layers`, `layergroups`, `styles`.
@@ -49,7 +49,8 @@ Lives at module path `github.com/hishamkaram/geoserver/v2` (subdir form). Idioma
 - [x] **v2.0.0-beta.2** — closes the original tier-2 gap-analysis backlog (eight new sub-clients on top of beta.1). *Tagged 2026-05-04.*
 - [x] **Longer-tail surfaces** — fonts (`c.Fonts`), master + self password rotation (`c.Security.MasterPassword` / `SelfPassword`), GWC additions (`c.GWC.Global` / `Gridsets` / `MassTruncate`), monitoring (`c.Monitor` + `gs-monitor` baked into dev/test docker image). Documented `c.WFSTransforms` extension status: `gs-xslt-wfs` was removed from upstream in 2.24 and is not shipped on supported versions; surface preserved for legacy / custom builds only.
 - [x] **v2.0.0-beta.3** — bundles the four longer-tail surfaces + the XSLT extension-status note. *Tagged 2026-05-04.*
-- [ ] **v2.0.0** — final tag. **Gated on adopter feedback on the beta line.** No code changes planned for v2.0.0; it's a CHANGELOG graduation + tag once real-world use of `beta.1`/`.2`/`.3` returns no breaking-change-required signal. Do not auto-tag — wait for an external trigger (issues, discussions, or explicit user instruction).
+- [x] **v2.0.0** — first stable release. Public API locked; no breaking changes will land in v2.x. *Tagged 2026-05-04.*
+- [x] **Repo restructure: v2 promoted to root, v1 archived to `release/v1`** — master is now a single-module repo (root `go.mod` declares `module github.com/hishamkaram/geoserver/v2`). v1 source preserved on the `release/v1` branch for security patches; tagged `v1.1.2` with a `// Deprecated:` directive on the module line. Existing `v1.x.y` and `v2.x.y` tags continue to resolve correctly via the proxy because tags are commit-pinned. *Landed 2026-05-04.*
 
 ## GeoServer 3.0 support
 

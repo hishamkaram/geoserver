@@ -76,7 +76,7 @@ test-unit: ## unit tests (no Docker)
 
 .PHONY: test-integration
 test-integration: ## integration tests against compose stack
-	$(GO) test -race -tags=$(INT_TAG) -timeout=10m $(PKG)
+	$(GO) test -race -tags=$(INT_TAG) -timeout=15m $(PKG)
 
 .PHONY: cover
 cover: ## unit tests with coverage profile
@@ -111,27 +111,10 @@ compose-test-down: ## tear down integration-test compose
 examples: ## compile-check every example under examples/
 	$(GO) build -o /dev/null ./examples/...
 
-.PHONY: examples-v2
-examples-v2: ## compile-check every example under v2/examples/
-	cd v2 && $(GO) build -o /dev/null ./examples/...
-
-.PHONY: test-v2-unit
-test-v2-unit: ## v2 module unit tests (no Docker)
-	cd v2 && $(GO) test -race -short -timeout=60s ./...
-
-.PHONY: test-v2-integration
-test-v2-integration: ## v2 module integration tests (requires `make compose-up`)
-	cd v2 && $(GO) test -race -tags=$(INT_TAG) -timeout=15m ./...
-
-.PHONY: build-v2
-build-v2: ## v2 module build + vet
-	cd v2 && $(GO) build ./... && $(GO) vet ./...
-
 .PHONY: docs-check
 docs-check: ## sanity-check that README and docs/ cross-reference each other
-	@grep -q 'docs/architecture.md' README.md || { echo "README.md should link to docs/architecture.md"; exit 1; }
+	@grep -q 'docs/migration-v1-to-v2.md' README.md || { echo "README.md should link to docs/migration-v1-to-v2.md"; exit 1; }
 	@grep -q 'examples/' README.md || { echo "README.md should mention examples/"; exit 1; }
-	@grep -q 'geoserver-rest-quirks.md' docs/architecture.md || { echo "docs/architecture.md should link to geoserver-rest-quirks.md"; exit 1; }
 	@echo "docs cross-references OK"
 
 .PHONY: clean
