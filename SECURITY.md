@@ -4,10 +4,9 @@
 
 | Version | Supported |
 |---|---|
-| 1.1.x   | ✅ Active development and security fixes |
-| 1.0.x   | ⚠️ Security fixes only |
-| < 1.0   | ❌ No support |
-| 2.x     | 🧪 Beta at `github.com/hishamkaram/geoserver/v2` (latest `v2.0.0-beta.1`); security fixes accepted; public API frozen for review until `v2.0.0` final |
+| 2.x     | ✅ Active development and security fixes — `github.com/hishamkaram/geoserver/v2` on `master` (latest `v2.0.0`) |
+| 1.1.x   | ⚠️ Security fixes only — `github.com/hishamkaram/geoserver` on the `release/v1` branch (latest `v1.1.2`; end-of-feature) |
+| ≤ 1.0   | ❌ No support |
 
 ## Reporting a vulnerability
 
