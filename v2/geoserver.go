@@ -18,6 +18,7 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/coveragestores"
 	"github.com/hishamkaram/geoserver/v2/rest/datastores"
 	"github.com/hishamkaram/geoserver/v2/rest/featuretypes"
+	"github.com/hishamkaram/geoserver/v2/rest/fonts"
 	"github.com/hishamkaram/geoserver/v2/rest/gwc"
 	"github.com/hishamkaram/geoserver/v2/rest/imports"
 	"github.com/hishamkaram/geoserver/v2/rest/layergroups"
@@ -230,6 +231,13 @@ type Client struct {
 	// log4j profile (DEFAULT_LOGGING, VERBOSE_LOGGING, etc.) and
 	// the stdout-mirror toggle without bouncing the server.
 	Logging *logging.Client
+
+	// Fonts is the entry point for the read-only /rest/fonts
+	// endpoint — list of font families the JVM exposes to GeoServer's
+	// SLD labelling pipeline. Sanity-check before publishing styles
+	// that reference specific fonts; typos would otherwise surface as
+	// silent label-rendering fallbacks.
+	Fonts *fonts.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -315,6 +323,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.WMTSLayers = wmtslayers.New(adapter)
 	c.WFSTransforms = wfstransforms.New(adapter)
 	c.Logging = logging.New(adapter)
+	c.Fonts = fonts.New(adapter)
 	return c, nil
 }
 

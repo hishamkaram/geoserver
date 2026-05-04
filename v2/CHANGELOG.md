@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — Fonts list
+
+Closes the fonts longer-tail item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Sanity-check before publishing styles that reference specific fonts — typos would otherwise surface as silent label-rendering fallbacks.
+
+- **`c.Fonts.List(ctx)`** at `/rest/fonts` — returns the list of font families the JVM exposes to GeoServer's SLD labelling pipeline as `[]string`. The result reflects whatever is on the server's classpath at call time (system fonts plus anything dropped into the data directory's `styles/` subdirectory).
+
 ## [2.0.0-beta.2] — 2026-05-04
 
 Second beta. **Closes the original tier-2 gap-analysis backlog from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md)** — eight new sub-clients land on top of beta.1's frozen surface: mosaic granules, FTL templates, auth providers / filters / chains, URL checks, cascaded WMS / WMTS stores + layers, WFS XSLT transforms, manifests + system status, and runtime logging. No breaking changes from `beta.1`; existing callers can `go get @v2.0.0-beta.2` and recompile. Public API stays frozen for review through the beta line — breaking changes will not land without a strong reason.
