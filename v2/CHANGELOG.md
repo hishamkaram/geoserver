@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — Templates (FTL) sub-client
+
+Closes the templates tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). FreeMarker (FTL) templates customize GetFeatureInfo HTML output, WMS HTML capabilities, and other text outputs; GeoServer scopes them at six nested levels and looks up most-specific to global at request time.
+
+- **`c.Templates`** is the global root. Fluent scoping narrows to `InWorkspace(ws)` → `InDatastore(ds)` → `InFeatureType(ft)`, or `InWorkspace(ws)` → `InCoverageStore(cs)` → `InCoverage(cov)`.
+- **`List(ctx)`** returns `[]TemplateRef` decoded from the class-name-wrapped envelope (`{"org.geoserver.rest.catalog.TemplateInfos":{"org.geoserver.rest.catalog.TemplateInfo":[...]}}`).
+- **`Get(ctx, name)`** streams the FTL body and returns it as a string.
+- **`Put(ctx, name, body io.Reader)`** / **`PutString(ctx, name, body string)`** write or overwrite a template (PUT with `Content-Type: text/plain`).
+- **`Delete(ctx, name)`** removes a template at this scope.
+- **`.ftl` suffix is auto-normalized.** `Get(ctx, "foo")` and `Get(ctx, "foo.ftl")` both target the same resource. List returns names with the suffix preserved.
+
 ### Added — Mosaic / structured-coverage granules
 
 Closes the mosaic-granules tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Read-side companion to the existing `c.CoverageStores.HarvestGranule` (which adds granules); the new surface lets callers list, inspect, and remove individual granules in image-mosaic / structured coverage stores.

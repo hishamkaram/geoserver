@@ -29,6 +29,7 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/settings"
 	"github.com/hishamkaram/geoserver/v2/rest/styles"
 	"github.com/hishamkaram/geoserver/v2/rest/system"
+	"github.com/hishamkaram/geoserver/v2/rest/templates"
 	"github.com/hishamkaram/geoserver/v2/rest/workspaces"
 
 	"github.com/hishamkaram/geoserver/v2/ows/wcs"
@@ -174,6 +175,14 @@ type Client struct {
 	// resources (FTL templates, SLD includes, icons), moving /
 	// copying files, and recursive deletion.
 	Resources *resources.Client
+
+	// Templates is the entry point for FreeMarker (FTL) templates
+	// that customize GetFeatureInfo HTML output, WMS HTML
+	// capabilities, and other text outputs. Six scope levels are
+	// supported — global, per workspace, per datastore, per feature
+	// type, per coverage store, per coverage — via fluent
+	// `c.Templates.InWorkspace(ws).In...()` chains.
+	Templates *templates.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -251,6 +260,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.GWC = gwc.New(adapter)
 	c.Imports = imports.New(adapter)
 	c.Resources = resources.New(adapter)
+	c.Templates = templates.New(adapter)
 	return c, nil
 }
 
