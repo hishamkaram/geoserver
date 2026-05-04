@@ -1,0 +1,58 @@
+name: Scorecard supply-chain security
+
+# Runs the OpenSSF Scorecard analysis on every push to master and once a
+# week. Publishes results to api.scorecard.dev (which deps.dev pulls from)
+# and uploads a SARIF report into the Security tab.
+#
+# Without this workflow, scorecard.dev only re-scans periodically (and as
+# of 2026-04-27 had stale data from a 2023 commit). With this workflow,
+# the score reflects current master HEAD on every push.
+
+on:
+  branch_protection_rule:
+  schedule:
+    - cron: "37 4 * * 1"  # Mondays 04:37 UTC
+  push:
+    branches: [master]
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write   # upload SARIF
+      id-token: write          # OIDC for publish_results: true (v2 requirement)
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Run Scorecard analysis
+        uses: ossf/scorecard-action@99c09fe975337306107572b4fdf4db224cf8e2f2  # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+          # To enable the Branch-Protection check, create a fine-grained
+          # PAT with `repo > Administration: read` and store it as the
+          # SCORECARD_TOKEN secret, then uncomment the line below. See:
+          # https://github.com/ossf/scorecard-action/blob/main/docs/authentication/fine-grained-auth-token.md
+          # repo_token: ${{ secrets.SCORECARD_TOKEN }}
+
+      - name: Upload SARIF artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: SARIF
+          path: results.sarif
+          retention-days: 14
+
+      - name: Upload SARIF to code-scanning
+        uses: github/codeql-action/upload-sarif@c3f298df8c1fea2fefe20c785e6aa00f32df8260  # v4.35.3
+        with:
+          sarif_file: results.sarif
