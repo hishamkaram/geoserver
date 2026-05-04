@@ -31,6 +31,7 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/system"
 	"github.com/hishamkaram/geoserver/v2/rest/templates"
 	"github.com/hishamkaram/geoserver/v2/rest/urlchecks"
+	"github.com/hishamkaram/geoserver/v2/rest/wfstransforms"
 	"github.com/hishamkaram/geoserver/v2/rest/wmslayers"
 	"github.com/hishamkaram/geoserver/v2/rest/wmsstores"
 	"github.com/hishamkaram/geoserver/v2/rest/wmtslayers"
@@ -216,6 +217,12 @@ type Client struct {
 	// WMTSLayers is the entry point for cascaded WMTS layers.
 	// Same scoping pattern as [Client.WMSLayers].
 	WMTSLayers *wmtslayers.Client
+
+	// WFSTransforms is the entry point for XSLT transforms that
+	// re-shape WFS GetFeature output (HTML reports, KML, custom XML).
+	// The endpoint is part of the gs-xslt-wfs extension; calls
+	// against an unequipped GeoServer return ErrNotFound.
+	WFSTransforms *wfstransforms.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -299,6 +306,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.WMSLayers = wmslayers.New(adapter)
 	c.WMTSStores = wmtsstores.New(adapter)
 	c.WMTSLayers = wmtslayers.New(adapter)
+	c.WFSTransforms = wfstransforms.New(adapter)
 	return c, nil
 }
 
