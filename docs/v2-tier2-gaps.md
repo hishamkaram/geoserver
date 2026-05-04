@@ -1,14 +1,12 @@
 # v2 — tier-2 gap-analysis backlog
 
-The v2 client closes every "everyone needs it" REST API surface plus two of the original tier-2 items (security ACL services / REST / catalog rules and the Resource API) in the published `v2.0.0-beta.1` (see [`../v2/CHANGELOG.md`](../v2/CHANGELOG.md)). What's documented here is the remaining tier-2 backlog — endpoint groups that real deployments do reach for, but that help a narrower audience than the surface already shipped.
+The v2 client closes every "everyone needs it" REST API surface plus the original tier-2 backlog as of `v2.0.0-beta.1` and the post-beta tier-2 PRs (see [`../v2/CHANGELOG.md`](../v2/CHANGELOG.md)). What's documented here is the **complete shipped tier-2 surface** plus the leftover narrow-audience endpoints not on the original list — each tractable as its own follow-up PR.
 
 Each entry below is independently tractable as its own follow-up PR. None block `v2.0.0`. Each is grounded in the official GeoServer REST docs (`https://docs.geoserver.org/latest/en/user/rest/`) and reuses the existing v2 plumbing (`internal/transport.BuildURL`, `transport.DoJSON` / `DoXML` / `DoRaw`, the per-resource `Core` interface, the `*Client → InWorkspace(ws) → *WorkspaceClient` scoping pattern). PRs welcome — open an issue first if the work touches a new wire-format quirk so the design conversation can happen in public.
 
-## Backlog (priority order)
+## Remaining backlog
 
-| # | Gap | Audience | Rough scope |
-|---|-----|----------|-------------|
-| 1 | **Logging** — `/logging` | Production debugging | Adjust log levels and configurations at runtime without bouncing the server. |
+The original tier-2 list is now closed. Beyond it, narrower-audience endpoints that may be added in later PRs include: CRS list, fonts list, monitoring, master password, self-admin password, usergroup-service registration, individual filter-chain editing, the OWS `oseo` (OpenSearch for Earth Observation) service settings, and any new endpoints introduced by GeoServer 2.29+. Each is a single endpoint or two and can ride along with whichever neighbor lands first.
 
 ## Already shipped
 
@@ -21,8 +19,7 @@ Each entry below is independently tractable as its own follow-up PR. None block 
 - **Cascaded WMS / WMTS stores + layers** — `c.WMSStores`, `c.WMSLayers`, `c.WMTSStores`, `c.WMTSLayers` (workspace-scoped stores; 2-level scoped layers via `InWorkspace(ws).InStore(s)`). Closed post-beta.1.
 - **WFS XSLT transforms** — `c.WFSTransforms` List / Get / Create / Update / Delete + GetXSLT / PutXSLT / CreateWithXSLT against `/rest/services/wfs/transforms`. Requires the `gs-xslt-wfs` extension on the server. Closed post-beta.1.
 - **Manifests + system status** — `c.About.Manifests` and `c.About.SystemStatus` against `/rest/about/manifest` and `/rest/about/system-status`. Closed post-beta.1.
-
-Beyond these: CRS list, fonts list, monitoring, master password, self-admin password, usergroup-service registration, individual filter-chain editing, and the OWS `oseo` (OpenSearch for Earth Observation) service settings. Each is a single endpoint or two and can ride along with whichever neighbor lands first.
+- **Logging** — `c.Logging.Get` / `Update` against `/rest/logging` for runtime log-level adjustments. Closed post-beta.1.
 
 ## How to contribute
 
