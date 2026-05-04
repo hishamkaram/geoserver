@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/github/license/hishamkaram/geoserver.svg)](../LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/hishamkaram/geoserver?include_prereleases&sort=semver)](https://github.com/hishamkaram/geoserver/releases)
 
-> 🧪 **`v2.0.0-beta.3` is published — public API frozen for review.** v2 covers the gap-analysis plan's "everyone needs it" surface, every tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md), plus four longer-tail surfaces (fonts, password rotation, GWC additions, monitoring). Coverage at `master`:
+> 🚀 **`v2.0.0` is published — first stable release.** v2 covers the gap-analysis plan's "everyone needs it" surface, every tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md), plus four longer-tail surfaces (fonts, password rotation, GWC additions, monitoring). Public API is locked; no breaking changes will land in v2.x. Coverage:
 >
 > - **Catalog**: workspaces, datastores, feature types, coverage stores, coverages, layers (incl. add-style sub-resource), layer groups, styles, namespaces. **Fonts**: `c.Fonts.List` (JVM-exposed font families).
 > - **Settings**: global `c.Settings` + per-service `c.Services.WMS()`/`WFS()`/`WCS()`/`WMTS()` (global + per-workspace overrides).
@@ -20,7 +20,7 @@
 > - **Importer extension**: `c.Imports` (sessions + tasks). The dev/test docker image bakes the plugin in for CI integration coverage.
 > - **OWS**: `c.WMS` / `c.WFS` / `c.WCS` GetCapabilities; WFS `DescribeFeatureType`; WCS `DescribeCoverage`. **WFS XSLT transforms**: `c.WFSTransforms` — surface preserved for legacy / custom builds; the `gs-xslt-wfs` extension was removed from upstream in 2.24 and is not shipped for 2.27 / 2.28.
 >
-> Surface is locked — breaking changes will not land in subsequent betas without a strong reason. v1.x remains the recommended import for production code.
+> Surface is locked — no breaking changes will land in v2.x. v1.x is end-of-feature; security patches only on the `release/v1` branch (post-restructure). New integrations should target v2.
 
 This module ships with its own `go.mod` at `/v2/`; v1 and v2 release independently (`v1.x.y` / `v2.x.y` tags).
 
@@ -37,14 +37,14 @@ This module ships with its own `go.mod` at `/v2/`; v1 and v2 release independent
 ## Install
 
 ```bash
-go get github.com/hishamkaram/geoserver/v2@v2.0.0-beta.3
+go get github.com/hishamkaram/geoserver/v2@v2.0.0
 ```
 
 ```go
 import geoserver "github.com/hishamkaram/geoserver/v2"
 ```
 
-> v2 is a separate Go module under `/v2/`; v1 and v2 release independently. Public API may still refine before `v2.0.0` based on early-adopter feedback. For stable production use today, stay on the [v1 line](../README.md).
+> v2 is a separate Go module under `/v2/`; v1 and v2 release independently (`v1.x.y` / `v2.x.y` tags). v2 is the recommended line for new integrations.
 
 Requirements: Go 1.25+. Tested against GeoServer 2.27.4 LTS and 2.28.0 stable on every PR.
 
