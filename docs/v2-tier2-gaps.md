@@ -6,7 +6,7 @@ Each entry below is independently tractable as its own follow-up PR. None block 
 
 ## Remaining backlog
 
-The original tier-2 list is now closed. Beyond it, narrower-audience endpoints that may be added in later PRs include: monitoring (requires the `gs-monitor` extension), master password, self-admin password, the OWS `oseo` (OpenSearch for Earth Observation) service settings (requires `gs-oseo`), and any new endpoints introduced by GeoServer 2.29+. Each is a single endpoint or two and can ride along with whichever neighbor lands first. Items that turned out to have no public REST surface on stock GeoServer (CRS list, usergroup-service registration) are dropped from the backlog.
+The original tier-2 list is now closed. Beyond it, narrower-audience endpoints that may be added in later PRs include: monitoring (requires the `gs-monitor` extension), the OWS `oseo` (OpenSearch for Earth Observation) service settings (requires `gs-oseo`), and any new endpoints introduced by GeoServer 2.29+. Each is a single endpoint or two and can ride along with whichever neighbor lands first. Items that turned out to have no public REST surface on stock GeoServer (CRS list, usergroup-service registration) are dropped from the backlog.
 
 ## Already shipped
 
@@ -21,6 +21,7 @@ The original tier-2 list is now closed. Beyond it, narrower-audience endpoints t
 - **Manifests + system status** — `c.About.Manifests` and `c.About.SystemStatus` against `/rest/about/manifest` and `/rest/about/system-status`. Shipped in beta.2.
 - **Logging** — `c.Logging.Get` / `Update` against `/rest/logging` for runtime log-level adjustments. Shipped in beta.2.
 - **Fonts list** — `c.Fonts.List` against `/rest/fonts`. Shipped post-beta.2.
+- **Master password & self password** — `c.Security.MasterPassword.Get`/`Update` against `/rest/security/masterpw` and `c.Security.SelfPassword.Change` against `/rest/security/self/password`. Shipped post-beta.2.
 
 ## How to contribute
 

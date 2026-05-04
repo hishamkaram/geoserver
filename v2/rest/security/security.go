@@ -20,8 +20,8 @@ type Core interface {
 	SynthesizeError(op, method, requestURL string, statusCode int, bodyHint string) error
 }
 
-// Client is the v2 security sub-client. It carries six nested
-// surfaces:
+// Client is the v2 security sub-client. It carries the nested surfaces
+// listed below:
 //
 //	c.Security.Users()                       // default user/group service
 //	c.Security.UsersInService("custom-jdbc") // custom service
@@ -31,6 +31,8 @@ type Core interface {
 //	c.Security.AuthProviders                 // /security/authproviders
 //	c.Security.AuthFilters                   // /security/authfilters
 //	c.Security.FilterChains                  // /security/filterchain
+//	c.Security.MasterPassword                // /security/masterpw  (keystore)
+//	c.Security.SelfPassword                  // /security/self/password (auth'd user)
 type Client struct {
 	core Core
 
@@ -56,16 +58,29 @@ type Client struct {
 	// chain binds a URL pattern (e.g. "/web/**") to an ordered list
 	// of [AuthFiltersClient] filter names.
 	FilterChains *FilterChainsClient
+
+	// MasterPassword is the entry point for the master password
+	// singleton at /security/masterpw — the keystore unlock secret
+	// (distinct from the admin user's login password).
+	MasterPassword *MasterPasswordClient
+
+	// SelfPassword is the entry point for the authenticated user's
+	// own password rotation at /security/self/password. PUT-only by
+	// design; auth header proves possession in lieu of an old-password
+	// field.
+	SelfPassword *SelfPasswordClient
 }
 
 // New constructs the security sub-client.
 func New(core Core) *Client {
 	return &Client{
-		core:          core,
-		Roles:         &RolesClient{core: core},
-		AuthProviders: &AuthProvidersClient{core: core},
-		AuthFilters:   &AuthFiltersClient{core: core},
-		FilterChains:  &FilterChainsClient{core: core},
+		core:           core,
+		Roles:          &RolesClient{core: core},
+		AuthProviders:  &AuthProvidersClient{core: core},
+		AuthFilters:    &AuthFiltersClient{core: core},
+		FilterChains:   &FilterChainsClient{core: core},
+		MasterPassword: &MasterPasswordClient{core: core},
+		SelfPassword:   &SelfPasswordClient{core: core},
 	}
 }
 
