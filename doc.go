@@ -1,33 +1,31 @@
-// Package geoserver is a Go client for the GeoServer REST API (v2 line).
+// Package geoserver is a Go client for the GeoServer REST API.
 //
-// # Status
+// GeoServer is an open-source Java server that publishes geographic
+// data via OGC web standards (WMS, WFS, WCS, WMTS). This package lets
+// a Go program drive a GeoServer instance: provision workspaces,
+// register data sources (PostGIS, GeoTIFF, Shapefile, ...), publish
+// layers, manage styles, configure security, drive GeoWebCache, and
+// run the Importer extension.
 //
-// v2 has full v1 feature parity at master and exceeds it. The
-// package covers every "everyone needs it" endpoint group identified
-// in the gap analysis: catalog (workspaces, datastores, feature
-// types, coverage stores, coverages, layers, layer groups, styles,
-// namespaces), settings, system (reload + cache reset), about,
-// security (users / groups / roles + layer ACL), per-service OWS
-// configuration (WMS / WFS / WCS / WMTS), file-upload publishing on
-// stores, layer–style associations, GeoWebCache (per-layer cache
-// config + seed/reseed/truncate + diskquota), the Importer
-// extension (batch ingest), and the OWS read-only trio
-// (GetCapabilities + DescribeFeatureType + DescribeCoverage).
+// # Quick start
 //
-// Public API is stable as of v2.0.0 — no breaking changes will land
-// in v2.x. v2 is the recommended line for new integrations; v1 is
-// end-of-feature on the release/v1 branch (security patches only):
+//	c, err := geoserver.New("http://localhost:8080/geoserver/",
+//	    geoserver.WithBasicAuth("admin", "geoserver"),
+//	    geoserver.WithTimeout(10*time.Second),
+//	)
+//	if err != nil {
+//	    return err
+//	}
 //
-//	import "github.com/hishamkaram/geoserver/v2"     // v2: stable
-//	import "github.com/hishamkaram/geoserver"        // v1: end-of-feature
-//
-// See ROADMAP.md for v2.x milestones and docs/migration-v1-to-v2.md
-// for the v1 → v2 migration guide.
+//	ctx := context.Background()
+//	wss, err := c.Workspaces.List(ctx, workspaces.ListOptions{})
+//	if errors.Is(err, geoserver.ErrUnauthorized) {
+//	    // handle bad credentials
+//	}
 //
 // # Design tenets
 //
-// v2 is a clean redesign that breaks v1's monolithic *GeoServer surface
-// into a sub-client per resource:
+// The package shape follows a sub-client per resource:
 //
 //   - Immutable [*Client]. All fields private. Configured via functional
 //     options at construction; no post-construction mutation. Concurrent
@@ -55,19 +53,12 @@
 //     encoding/json, encoding/xml, log/slog, context, iter only.
 //     Test deps allowed.
 //
-// # Quick start
+// # Status
 //
-//	c, err := geoserver.New("http://localhost:8080/geoserver/",
-//	    geoserver.WithBasicAuth("admin", "geoserver"),
-//	    geoserver.WithTimeout(10*time.Second),
-//	)
-//	if err != nil {
-//	    return err
-//	}
+// Public API is stable as of v2.0.0 — no breaking changes will land
+// in v2.x. v1 is end-of-feature on the release/v1 branch (security
+// patches only). See docs/migration-v1-to-v2.md for the v1 → v2
+// upgrade guide and ROADMAP.md for v2.x milestones.
 //
-//	ctx := context.Background()
-//	wss, err := c.Workspaces.List(ctx, workspaces.ListOptions{})
-//	if errors.Is(err, geoserver.ErrUnauthorized) {
-//	    // handle bad credentials
-//	}
+//	import "github.com/hishamkaram/geoserver/v2"
 package geoserver
