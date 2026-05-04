@@ -8,73 +8,57 @@ A Go client for the GeoServer REST API.
 [![License: MIT](https://img.shields.io/github/license/hishamkaram/geoserver.svg)](LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/hishamkaram/geoserver?sort=semver)](https://github.com/hishamkaram/geoserver/releases)
 
-> **v2.0.0 is the current stable line.** v1 is end-of-feature on the [`release/v1` branch](https://github.com/hishamkaram/geoserver/tree/release/v1) — security patches only. New integrations should target v2. See [`docs/migration-v1-to-v2.md`](docs/migration-v1-to-v2.md) for the v1 → v2 mapping.
-
-> 🚀 **`v2.0.0` is published — first stable release.** v2 covers the gap-analysis plan's "everyone needs it" surface, every tier-2 item from [`docs/v2-tier2-gaps.md`](docs/v2-tier2-gaps.md), plus four longer-tail surfaces (fonts, password rotation, GWC additions, monitoring). Public API is locked; no breaking changes will land in v2.x. Coverage:
->
-> - **Catalog**: workspaces, datastores, feature types, coverage stores, coverages, layers (incl. add-style sub-resource), layer groups, styles, namespaces. **Fonts**: `c.Fonts.List` (JVM-exposed font families).
-> - **Settings**: global `c.Settings` + per-service `c.Services.WMS()`/`WFS()`/`WCS()`/`WMTS()` (global + per-workspace overrides).
-> - **System**: `c.System.Reload` and `ResetCache`. **About**: ping, version, manifests, system status. **Logging**: `c.Logging.Get`/`Update` for runtime log-level changes. **Monitoring** (`gs-monitor` ext baked into dev/test image): `c.Monitor.List`/`ListRaw`/`Get` for the request audit log.
-> - **Security**: users, groups, roles, role-user assignment + ACL `Layers()`/`Services()`/`REST()`/`Catalog()` + auth providers / filters / filter chains + URL checks (SSRF allow-list) + `c.Security.MasterPassword` (keystore) + `c.Security.SelfPassword` (auth'd user rotation).
-> - **Resources**: `c.Resources` Get / List / Stat / Exists / Put / Move / Copy / Delete against `/rest/resource/{path}` — read or write any file in the data dir. **Templates (FTL)**: `c.Templates` global + six fluent scopes.
-> - **File-upload publishing**: `c.Datastores.UploadFile` (Shapefile / GeoPackage / external) and `c.CoverageStores.UploadFile` + `HarvestGranule` (GeoTIFF / ImageMosaic / mosaic granules).
-> - **Mosaic granules**: `c.Coverages.InWorkspace(ws).InCoverageStore(cs).Granules(cov)` — Schema / List / Get / Delete / DeleteByFilter for image-mosaic / structured coverages.
-> - **Cascaded stores + layers**: `c.WMSStores` / `c.WMSLayers` / `c.WMTSStores` / `c.WMTSLayers` for federation / proxy setups.
-> - **GeoWebCache**: `c.GWC.Layers()` (cache config), `Seed()` (seed/reseed/truncate), `DiskQuota()`, `Global()` (singleton config), `Gridsets()` (named tile-matrix sets), `MassTruncate()` (bulk cache invalidation).
-> - **Importer extension**: `c.Imports` (sessions + tasks). The dev/test docker image bakes the plugin in for CI integration coverage.
-> - **OWS**: `c.WMS` / `c.WFS` / `c.WCS` GetCapabilities; WFS `DescribeFeatureType`; WCS `DescribeCoverage`. **WFS XSLT transforms**: `c.WFSTransforms` — surface preserved for legacy / custom builds; the `gs-xslt-wfs` extension was removed from upstream in 2.24 and is not shipped for 2.27 / 2.28.
->
-> Surface is locked — no breaking changes will land in v2.x. v1.x is end-of-feature; security patches only on the `release/v1` branch (post-restructure). New integrations should target v2.
-
-v2 lives at the repo root with module path `github.com/hishamkaram/geoserver/v2` (the `/v2` suffix is required by Go's semantic import versioning rule for v2+ modules). v1 is preserved on the [`release/v1` branch](https://github.com/hishamkaram/geoserver/tree/release/v1) for security patches only.
+> Provision workspaces, register PostGIS / GeoTIFF / Shapefile data sources, publish layers, manage styles, configure security, drive GeoWebCache, and run the Importer extension — all from idiomatic Go, with mandatory `context.Context`, typed errors, and zero runtime third-party dependencies.
 
 ## Contents
 
+- [What is GeoServer?](#what-is-geoserver)
+- [What this client does](#what-this-client-does)
 - [Install](#install)
-- [Why v2 over v1?](#why-v2-over-v1)
-- [Design tenets](#design-tenets)
 - [Quick start](#quick-start)
-- [Runnable examples](#runnable-examples)
-- [Resource status](#resource-status)
-- [Contributing to v2](#contributing-to-v2)
+- [Worked example: publish a PostGIS layer](#worked-example-publish-a-postgis-layer)
+- [Errors](#errors)
+- [Authentication & advanced configuration](#authentication--advanced-configuration)
+- [Examples & further reading](#examples--further-reading)
+- [Version compatibility](#version-compatibility)
+- [Contributing](#contributing)
+
+## What is GeoServer?
+
+[GeoServer](https://geoserver.org/) is an open-source Java server that publishes geographic data via the OGC web standards: WMS (rendered map images), WFS (vector features), WCS (raster coverages), and WMTS (pre-rendered tiles). It's deployed by mapping companies, government agencies, and GIS teams to put PostGIS tables, GeoTIFFs, Shapefiles, and remote services behind a single web-services endpoint.
+
+This package is for Go programs that need to **provision or operate** a GeoServer — typically pipelines that publish new data, infrastructure code that manages workspaces and security, or back-office tools that drive the Importer or seed GeoWebCache.
+
+## What this client does
+
+The client surface is broken into typed sub-clients on `*geoserver.Client`. Each bullet below names what you'd accomplish; the trailing fields are the entry points.
+
+- **Catalog & publishing** — workspaces, datastores, feature types, coverage stores, coverages, layers, layer groups, styles, namespaces; file-upload publishing for Shapefile / GeoPackage / GeoTIFF / mosaic granules; layer–style associations.
+  *Entry points:* `c.Workspaces`, `c.Datastores`, `c.FeatureTypes`, `c.CoverageStores`, `c.Coverages`, `c.Layers`, `c.LayerGroups`, `c.Styles`, `c.Namespaces`.
+- **OGC services** — per-service WMS / WFS / WCS / WMTS configuration (global + per-workspace overrides), `GetCapabilities`, `DescribeFeatureType`, `DescribeCoverage`, cascaded WMS/WMTS stores + layers, WFS XSLT transforms.
+  *Entry points:* `c.Services.WMS()` / `WFS()` / `WCS()` / `WMTS()`, `c.WMS`, `c.WFS`, `c.WCS`, `c.WMSStores`, `c.WMSLayers`, `c.WMTSStores`, `c.WMTSLayers`, `c.WFSTransforms`.
+- **Tile caching** — GeoWebCache layer config, seed / reseed / truncate, disk quota, gridsets, mass-truncate, global GWC settings.
+  *Entry point:* `c.GWC.Layers()` / `Seed()` / `DiskQuota()` / `Global()` / `Gridsets()` / `MassTruncate()`.
+- **Security** — users, groups, roles, full ACL surface (layers, services, REST, catalog), auth providers / filters / chains, URL checks (SSRF allow-list), master & self password rotation.
+  *Entry points:* `c.Security`, `c.ACL.Layers()` / `Services()` / `REST()` / `Catalog()`, `c.URLChecks`.
+- **Operations** — system reload, cache reset, runtime logging, monitoring (`gs-monitor`), manifests, system status, fonts, global settings.
+  *Entry points:* `c.System`, `c.Settings`, `c.About`, `c.Logging`, `c.Monitor`, `c.Fonts`.
+- **Data plane & extras** — Resource API (read/write any file under the data dir), FTL templates, Importer extension (batch ingest).
+  *Entry points:* `c.Resources`, `c.Templates`, `c.Imports`.
+
+The full method-level reference lives at [pkg.go.dev](https://pkg.go.dev/github.com/hishamkaram/geoserver/v2).
 
 ## Install
 
 ```bash
-go get github.com/hishamkaram/geoserver/v2@v2.0.0
+go get github.com/hishamkaram/geoserver/v2@latest
 ```
 
 ```go
 import geoserver "github.com/hishamkaram/geoserver/v2"
 ```
 
-> v2 is the current stable line. v1 and v2 release independently (`v1.x.y` / `v2.x.y` tags). v2 is the recommended line for new integrations.
-
 Requirements: Go 1.25+. Tested against GeoServer 2.27.4 LTS and 2.28.0 stable on every PR.
-
-## Why v2 over v1?
-
-If you're starting a new integration today, v2 is the better foundation. It gives you:
-
-- **Sub-clients per resource.** `c.Workspaces.Get(ctx, name)`, `c.Datastores.InWorkspace(ws).Create(ctx, ...)`, `c.FeatureTypes.InWorkspace(ws).InDatastore(ds).Discover(ctx, ...)` — instead of v1's monolithic ~90-method `*GeoServer`.
-- **Immutable client; concurrency-safe by construction.** All fields private; configured via functional options at construction; no post-construction mutation. Auth is layered on as an `http.RoundTripper` so OpenTelemetry, Vault-rotated creds, and retry libs compose naturally.
-- **Mandatory `context.Context` first arg on every method.** No `Background()` shims, no twin pairs.
-- **`iter.Seq2` pagination** on every `List` endpoint. `for ws, err := range c.Workspaces.Iter(ctx, opts) { ... }`.
-- **Surfaces v1 doesn't have** — per-service OWS settings (`c.Services.WMS()`/`WFS()`/`WCS()`/`WMTS()`), file-upload publishing on stores (`c.Datastores.UploadFile`, `c.CoverageStores.UploadFile`/`HarvestGranule`), GeoWebCache (`c.GWC.Layers()`/`Seed()`/`DiskQuota()`), the Importer extension (`c.Imports`), the Resource API (`c.Resources`), the full ACL surface (`c.ACL.Layers()`/`Services()`/`REST()`/`Catalog()`), WFS `DescribeFeatureType`, and WCS `DescribeCoverage`.
-
-If you're already on v1, see [`docs/migration-v1-to-v2.md`](docs/migration-v1-to-v2.md) for the per-resource migration mapping. v1 is end-of-feature; security patches land on the [`release/v1` branch](https://github.com/hishamkaram/geoserver/tree/release/v1).
-
-## Design tenets
-
-v2 breaks v1's monolithic `*GeoServer` surface into a sub-client per resource, with a few lock-in decisions documented in [`ROADMAP.md`](ROADMAP.md):
-
-- **Immutable `*Client`.** All fields private; no post-construction mutation. Concurrent use is safe.
-- **Mandatory `context.Context`** as first arg on every public method. No `Background` shims.
-- **Sub-client pattern.** `c.Workspaces.List(ctx, opts)` instead of v1's `gs.GetWorkspacesContext(ctx)`.
-- **Single error type** (`*APIError`) with package sentinels (`ErrNotFound`, `ErrConflict`, …). `errors.Is` and `errors.As` are the supported match styles.
-- **Auth via `http.RoundTripper`.** Basic / bearer auth attaches at construction; per-call paths don't re-authenticate. Custom RoundTrippers (OpenTelemetry, Vault-rotated creds, retry libs) layer naturally.
-- **Pagination via `iter.Seq2`.** `c.Workspaces.Iter(ctx, opts)` returns a `iter.Seq2[Workspace, error]`. Non-paginating endpoints fall back to single-page Seq2.
-- **Zero runtime third-party deps.** stdlib `net/http`, `encoding/json`, `encoding/xml`, `log/slog`, `context`, `iter` only.
 
 ## Quick start
 
@@ -121,130 +105,154 @@ func main() {
 }
 ```
 
-### Workspace-scoped resources
+`*Client` is immutable after construction and safe for concurrent use across goroutines. Sub-clients hold no shared mutable state of their own.
 
-Resources nested under a workspace (datastores, feature types, coverages, …) are accessed via an `InWorkspace` scope:
+## Worked example: publish a PostGIS layer
+
+The canonical end-to-end flow — create a workspace, register a PostGIS datastore, publish a feature type, fetch the auto-created layer back. Compile-checked from [`examples/publish-postgis/main.go`](examples/publish-postgis/main.go); run it with `go run ./examples/publish-postgis` against a `make compose-up` stack.
 
 ```go
-import "github.com/hishamkaram/geoserver/v2/rest/datastores"
+import (
+    geoserver "github.com/hishamkaram/geoserver/v2"
+    "github.com/hishamkaram/geoserver/v2/rest/datastores"
+    "github.com/hishamkaram/geoserver/v2/rest/featuretypes"
+    "github.com/hishamkaram/geoserver/v2/rest/workspaces"
+)
 
-ds := c.Datastores.InWorkspace("topp")
+// 1. Workspace.
+_ = c.Workspaces.Create(ctx, &workspaces.Workspace{Name: "demo"})
 
+// 2. PostGIS datastore (workspace-scoped via InWorkspace).
+ds := c.Datastores.InWorkspace("demo")
 _ = ds.Create(ctx, datastores.PostGIS{
-    Name: "states", Host: "db", Port: 5432, Database: "gis",
-    User: "u", Password: "p",
+    Name:     "lbldyt_pg",
+    Host:     "postgis",
+    Port:     5432,
+    Database: "geoserver",
+    User:     "postgres",
+    Password: "postgres",
 })
 
-stores, _ := ds.List(ctx, datastores.ListOptions{})
-_ = ds.Delete(ctx, "states", datastores.DeleteOptions{Recurse: true})
-```
+// 3. 2-level scope: feature types live under (workspace, datastore).
+ft := c.FeatureTypes.InWorkspace("demo").InDatastore("lbldyt_pg")
 
-### 2-level scoped resources (feature types, coverages)
-
-Resources nested under both a workspace and a parent store drill in through two `In…` calls:
-
-```go
-import "github.com/hishamkaram/geoserver/v2/rest/featuretypes"
-
-ft := c.FeatureTypes.InWorkspace("topp").InDatastore("states_pg")
-
-// Discover tables in the datastore not yet configured.
-names, _ := ft.Discover(ctx, featuretypes.DiscoverOptions{
+// 4. Discover available tables not yet configured.
+available, _ := ft.Discover(ctx, featuretypes.DiscoverOptions{
     Kind: featuretypes.DiscoverAvailableWithGeometry,
 })
+fmt.Println("available:", available)
 
-// Publish one of them as a feature type.
+// 5. Publish one as a feature type — NativeName must match the DB table.
 _ = ft.Create(ctx, &featuretypes.FeatureType{
-    Name: "states", NativeName: "states",
+    Name: "lbldyt", NativeName: "lbldyt",
     SRS: "EPSG:4326", Enabled: true,
 })
+
+// 6. Fetch the auto-created layer.
+layer, _ := c.Layers.InWorkspace("demo").Get(ctx, "lbldyt")
+fmt.Printf("layer: %s (queryable=%t)\n", layer.Name, layer.Queryable)
 ```
 
-The same shape applies to coverages under a coverage store (raster side):
+The same `InWorkspace(...).In<Parent>(...)` pattern applies to coverages under a coverage store (see [`rest/coverages/`](rest/coverages/)).
+
+## Errors
+
+Every non-2xx GeoServer response surfaces as `*geoserver.APIError` and wraps one of twelve package sentinels — `ErrBadRequest`, `ErrUnauthorized`, `ErrForbidden`, `ErrNotFound`, `ErrMethodNotAllowed`, `ErrConflict`, `ErrUnsupportedMediaType`, `ErrRateLimited`, `ErrServerError`, `ErrBadGateway`, `ErrServiceUnavailable`, `ErrGatewayTimeout`. Match with `errors.Is`; inspect status code, op, method, URL, and the (8 KiB-capped) response body via `errors.As`.
 
 ```go
-import "github.com/hishamkaram/geoserver/v2/rest/coverages"
-
-cov := c.Coverages.InWorkspace("ne").InCoverageStore("states_tiff")
-
-// Publish a configured coverage from the underlying GeoTIFF.
-_ = cov.Create(ctx, &coverages.Coverage{
-    Name: "states_published", NativeCoverageName: "states.tif",
-})
+var apiErr *geoserver.APIError
+switch {
+case errors.Is(err, geoserver.ErrNotFound):
+    // 404 — workspace, layer, etc. not present.
+case errors.Is(err, geoserver.ErrConflict):
+    // 409 — resource already exists.
+case errors.As(err, &apiErr):
+    log.Printf("op=%s status=%d body=%s", apiErr.Op, apiErr.StatusCode, apiErr.Body)
+}
 ```
 
-## Runnable examples
+Never compare error strings — only `errors.Is` / `errors.As` are supported. See [`examples/error-handling/main.go`](examples/error-handling/main.go) for a runnable demo of all twelve sentinels.
 
-The [`examples/`](examples/) directory contains self-contained `main` packages demonstrating each idiom:
+## Authentication & advanced configuration
 
-- [`workspaces/`](examples/workspaces/) — flat sub-client CRUD; `errors.Is` matching.
-- [`publish-postgis/`](examples/publish-postgis/) — end-to-end workspace → datastore → feature type → layer flow with the hierarchical sub-clients.
-- [`style-upload/`](examples/style-upload/) — two-step style publish via `Create` + `UploadSLD`.
-- [`error-handling/`](examples/error-handling/) — full sentinel set + `*APIError` inspection via `errors.As`.
+All transport-level concerns are configured at construction via functional options. The constructor returns immediately; nothing in `*Client` is mutable after `New` returns.
+
+```go
+c, _ := geoserver.New(serverURL,
+    // Auth — pick one (or compose your own RoundTripper):
+    geoserver.WithBasicAuth("admin", "geoserver"),
+    geoserver.WithBearerToken(os.Getenv("GS_TOKEN")),
+
+    // Transport / observability:
+    geoserver.WithHTTPClient(myClient),                 // bring your own *http.Client
+    geoserver.WithTransport(otelhttp.NewTransport(...)), // custom http.RoundTripper
+    geoserver.WithTimeout(30 * time.Second),
+    geoserver.WithUserAgent("my-pipeline/1.4"),
+    geoserver.WithHeader("X-Trace-Id", traceID),
+
+    // Logging — defaults to slog.DiscardHandler.
+    geoserver.WithLogger(slog.New(slog.NewTextHandler(os.Stderr, nil))),
+)
+```
+
+`WithTransport` is the natural integration point for OpenTelemetry, Vault-rotated credentials, and retry libraries — anything that satisfies `http.RoundTripper` composes without re-authenticating per call.
+
+**Pagination.** Every `List` endpoint has a sibling `Iter` returning `iter.Seq2[T, error]` for range-over-func streaming:
+
+```go
+for ws, err := range c.Workspaces.Iter(ctx, workspaces.ListOptions{}) {
+    if err != nil {
+        return err
+    }
+    fmt.Println(ws.Name)
+}
+```
+
+## Examples & further reading
+
+Self-contained `main` packages under [`examples/`](examples/):
+
+- [`workspaces/`](examples/workspaces/) — flat sub-client CRUD; `errors.Is` matching; `Iter` range-over-func.
+- [`publish-postgis/`](examples/publish-postgis/) — end-to-end workspace → datastore → feature type → layer flow.
+- [`style-upload/`](examples/style-upload/) — two-step style publish (`Create` metadata + `UploadSLD` body).
+- [`error-handling/`](examples/error-handling/) — every sentinel + `*APIError` inspection via `errors.As`.
 
 Run any with `go run ./examples/<name>` against a `make compose-up` stack, or compile-check all with `make examples`.
 
-## Resource status
+Reference docs:
 
-| Resource | v1 | v2 |
-|---|---|---|
-| Workspaces | full | **ported** (flat; `c.Workspaces`) |
-| Datastores | full | **ported** (workspace-scoped; `c.Datastores.InWorkspace(ws)`) |
-| Feature types | full | **ported** (2-level hierarchy; `c.FeatureTypes.InWorkspace(ws).InDatastore(ds)`) |
-| Coverage stores | full | **ported** (workspace-scoped; `c.CoverageStores.InWorkspace(ws)`) |
-| Coverages | full | **ported** (2-level hierarchy; `c.Coverages.InWorkspace(ws).InCoverageStore(cs)`) |
-| Layers | full | **ported** + new add-style sub-resource (`c.Layers.InWorkspace(ws).AddStyle/ListStyles`) |
-| Layer groups | full | **ported** (`c.LayerGroups.InWorkspace(ws)`) |
-| Styles | full | **ported** (global + workspace scope; `UploadSLD` for body upload) |
-| Namespaces | full | **ported** (`c.Namespaces`) |
-| Global settings | full | **ported** (`c.Settings.Get` / `Update`) |
-| Per-service OWS settings | (none) | **new** in v2 (`c.Services.WMS()` / `WFS()` / `WCS()` / `WMTS()` — global + per-workspace overrides) |
-| System (reload + cache reset) | full | **ported** (`c.System.Reload`, `ResetCache`) |
-| About | full | **ported** (`c.About.Ping`, `c.About.Version`) |
-| Security (users, groups, roles) | full | **ported** (`c.Security.Users()`, `Groups()`, `Roles`) |
-| ACL — layer rules | full | **ported** (`c.ACL.Layers()`) |
-| ACL — service / REST / catalog rules | partial | **ported** in v2 (`c.ACL.Services()`, `c.ACL.REST()`, `c.ACL.Catalog()`) — REST DELETE has documented firewall caveat |
-| Resource API (data-dir byte-stream access) | (none) | **new** in v2 (`c.Resources` Get/List/Stat/Exists/Put/Move/Copy/Delete) |
-| File-upload publishing on stores | (none) | **new** in v2 (`c.Datastores.UploadFile`, `c.CoverageStores.UploadFile` / `HarvestGranule`) |
-| GeoWebCache (cache config + seed + diskquota) | (none) | **new** in v2 (`c.GWC.Layers()`, `Seed()`, `DiskQuota()`, `Global()`, `Gridsets()`, `MassTruncate()`) |
-| Importer extension (batch ingest) | (none) | **new** in v2 (`c.Imports`; dev/test docker image bakes the plugin in) |
-| WMS GetCapabilities | full | **ported** (`c.WMS.GetCapabilities` + `InWorkspace`) |
-| WFS GetCapabilities + DescribeFeatureType | (none — WMS only) | **new** in v2 (`c.WFS.GetCapabilities`, `DescribeFeatureType`) |
-| WCS GetCapabilities + DescribeCoverage | (none — WMS only) | **new** in v2 (`c.WCS.GetCapabilities`, `DescribeCoverage`) |
-| Mosaic / structured-coverage granules | (none) | **new** in v2 (`c.Coverages.InWorkspace(ws).InCoverageStore(cs).Granules(cov)` — Schema / List / Get / Delete / DeleteByFilter) |
-| FTL templates | (none) | **new** in v2 (`c.Templates` + six fluent scopes; List / Get / Put / Delete) |
-| Auth providers / filters / chains | (none) | **new** in v2 (`c.Security.AuthProviders`, `AuthFilters`, `FilterChains`) |
-| URL checks (SSRF allow-list) | (none) | **new** in v2 (`c.URLChecks`) |
-| Cascaded WMS / WMTS stores + layers | (none) | **new** in v2 (`c.WMSStores`, `c.WMSLayers`, `c.WMTSStores`, `c.WMTSLayers`) |
-| WFS XSLT transforms | (none) | **new** in v2 (`c.WFSTransforms`) — surface preserved for legacy / custom builds; the `gs-xslt-wfs` extension was removed from upstream in 2.24 and is not shipped for 2.27 / 2.28 |
-| About — manifests + system status | (none) | **new** in v2 (`c.About.Manifests`, `c.About.SystemStatus`) |
-| Logging (runtime log-level config) | (none) | **new** in v2 (`c.Logging.Get` / `Update`) |
-| Fonts list | (none) | **new** in v2 (`c.Fonts.List`) |
-| Master password & self password | (none) | **new** in v2 (`c.Security.MasterPassword.Get`/`Update`, `c.Security.SelfPassword.Change`) |
-| Monitoring (request audit log) | (none) | **new** in v2 (`c.Monitor.List`/`ListRaw`/`Get`; dev/test docker image bakes the `gs-monitor` plugin in) |
+- [pkg.go.dev godoc](https://pkg.go.dev/github.com/hishamkaram/geoserver/v2) — full method-level API reference.
+- [`docs/architecture.md`](docs/architecture.md) — sub-client pattern, transport layer, error model.
+- [`docs/geoserver-rest-quirks.md`](docs/geoserver-rest-quirks.md) — public catalog of GeoServer 2.x REST API edge cases this client works around.
+- [`docs/version-compat.md`](docs/version-compat.md) — Go and GeoServer version matrix.
+- [`ROADMAP.md`](ROADMAP.md) and [`CHANGELOG.md`](CHANGELOG.md).
 
-See [`ROADMAP.md`](ROADMAP.md) for the milestone checklist. The original tier-2 gap-analysis backlog is closed and the longer-tail surfaces above are also done; remaining longer-tail endpoints (`opensearch-eo` is community / SNAPSHOT-only on 2.27 / 2.28; revisit when stable) are tracked in [`docs/v2-tier2-gaps.md`](docs/v2-tier2-gaps.md).
+## Version compatibility
 
-## Contributing to v2
+- **Go**: 1.25+.
+- **GeoServer**: 2.27 LTS and 2.28 stable. Both legs run on every PR via the integration matrix in [`.github/workflows/integration.yml`](.github/workflows/integration.yml).
+- **Module path**: `github.com/hishamkaram/geoserver/v2`. The `/v2` suffix is required by Go's semantic import versioning rule for v2+ modules.
+- **API stability**: v2's public API is locked — no breaking changes will land in v2.x.
+- **v1**: end-of-feature on the [`release/v1` branch](https://github.com/hishamkaram/geoserver/tree/release/v1) (security patches only). Existing v1 users: see [`docs/migration-v1-to-v2.md`](docs/migration-v1-to-v2.md) for the per-resource upgrade mapping.
 
-The "everyone needs it" surface and the tier-2 backlog are both closed; remaining work is the longer-tail list above plus wire-quirk fixes when adopters report them.
+## Contributing
 
-To add a new sub-client:
+To add a new sub-client, pick the reference shape that matches your resource and follow the existing layout:
 
-1. Pick a reference pattern that matches the shape:
-   - **Flat CRUD**: `rest/workspaces/`, `rest/namespaces/`.
-   - **Workspace-scoped**: `rest/datastores/`, `rest/coveragestores/`, `rest/layers/`.
-   - **2-level hierarchy**: `rest/featuretypes/`, `rest/coverages/`.
-   - **Generic-typed dispatch**: `rest/services/` (per-service WMS/WFS/WCS/WMTS).
-   - **Out-of-`/rest/` URL prefix**: `rest/gwc/` (paths under `/gwc/rest/`).
-   - **XML wire format**: `ows/wms/`, `ows/wfs/`, `ows/wcs/`.
-2. Define `types.go` — wire-format request/response structs, public option types, custom `(Un)MarshalJSON` for any wire quirks.
-3. Define `<resource>.go` — `type Client struct{ core Core }`, `func New(core Core)`, methods. Each subpackage's `Core` interface declares only the transport methods it actually uses (`Do` / `DoXML` / `DoRaw` / `DoStream`); add only what's needed.
-4. Define `<resource>_test.go` (httptest unit tests) and `<resource>_integration_test.go` with the `//go:build integration` tag.
-5. Wire into `*Client` in `geoserver.go`.
+- **Flat CRUD**: `rest/workspaces/`, `rest/namespaces/`.
+- **Workspace-scoped**: `rest/datastores/`, `rest/coveragestores/`, `rest/layers/`.
+- **2-level hierarchy**: `rest/featuretypes/`, `rest/coverages/`.
+- **Generic-typed dispatch**: `rest/services/` (per-service WMS/WFS/WCS/WMTS).
+- **Out-of-`/rest/` URL prefix**: `rest/gwc/` (paths under `/gwc/rest/`).
+- **XML wire format**: `ows/wms/`, `ows/wfs/`, `ows/wcs/`.
 
-**Run integration tests locally before push.** `make compose-up && cd v2 && go test -tags=integration ./rest/<resource>/`. CI's wire-format coverage runs on real GeoServer 2.27.4 LTS + 2.28.0 stable, but local-first catches quirks faster.
+Each sub-client is structured the same way:
 
-The `Core` interface in each subpackage is the abstraction over the parent `*Client`'s plumbing — it lets sub-clients issue requests without importing the root package (which would create an import cycle).
+1. `types.go` — wire-format request/response structs, public option types, custom `(Un)MarshalJSON` for any wire quirks.
+2. `<resource>.go` — `type Client struct{ core Core }`, `func New(core Core)`, methods. Each subpackage's `Core` interface declares only the transport methods it actually uses (`Do` / `DoXML` / `DoRaw` / `DoStream`).
+3. `<resource>_test.go` (httptest unit tests) and `<resource>_integration_test.go` with the `//go:build integration` tag.
+4. Wire into `*Client` in `geoserver.go`.
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the general PR workflow and [`docs/migration-v1-to-v2.md`](docs/migration-v1-to-v2.md) for the v1 → v2 migration guide.
+Run integration tests locally before pushing: `make compose-up && go test -tags=integration ./rest/<resource>/`. CI runs the full matrix on real GeoServer 2.27.4 LTS + 2.28.0 stable, but local-first catches wire-format quirks faster.
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the general PR workflow and [`docs/geoserver-rest-quirks.md`](docs/geoserver-rest-quirks.md) for the catalog of known REST API edge cases.
