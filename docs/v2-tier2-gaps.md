@@ -22,6 +22,7 @@ The original tier-2 list is now closed. Beyond it, narrower-audience endpoints t
 - **Logging** — `c.Logging.Get` / `Update` against `/rest/logging` for runtime log-level adjustments. Shipped in beta.2.
 - **Fonts list** — `c.Fonts.List` against `/rest/fonts`. Shipped post-beta.2.
 - **Master password & self password** — `c.Security.MasterPassword.Get`/`Update` against `/rest/security/masterpw` and `c.Security.SelfPassword.Change` against `/rest/security/self/password`. Shipped post-beta.2.
+- **GeoWebCache: global config, gridsets, mass-truncate** — `c.GWC.Global` (Get/Update at `/gwc/rest/global`), `c.GWC.Gridsets` (List/Get/Delete at `/gwc/rest/gridsets`), `c.GWC.MassTruncate` (TruncateLayer / Parameters / Orphans / Extent at `/gwc/rest/masstruncate`). Shipped post-beta.2.
 
 ## How to contribute
 
@@ -35,6 +36,6 @@ The original tier-2 list is now closed. Beyond it, narrower-audience endpoints t
 - **OGC API endpoints** (Tiles / Features / Maps / Styles / DGGS) — data-delivery endpoints, not config. v2 today is a config / admin client; whether to also be a *consumer* of OGC API services is a separate scoping conversation.
 - **GeoServer 3.0 support** — once Jakarta EE / Tomcat 11 / ImageN settle. Tracked in [`../ROADMAP.md`](../ROADMAP.md).
 - **WFS-T / GetMap / GetCoverage operations** — high-volume request-path operations, not admin operations. Different perf and streaming requirements.
-- **GeoWebCache endpoints not documented at `/latest/`** — masstruncate, blobstores, gridsets, statistics, global. Land once their source-of-truth docs URL is established.
+- **GeoWebCache: blobstores, statistics** — blobstores require non-default S3/Azure config to be meaningfully integration-tested; statistics is a per-layer read-only diagnostic. Land once adopters report needing them.
 
 See also [`../ROADMAP.md`](../ROADMAP.md) for v1.x maintenance, v2.x milestones, and GeoServer 3.0 timeline.
