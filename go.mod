@@ -1,3 +1,4 @@
+// Deprecated: v1 is end-of-feature; new development happens in github.com/hishamkaram/geoserver/v2.
 module github.com/hishamkaram/geoserver
 
 go 1.25

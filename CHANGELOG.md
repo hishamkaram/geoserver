@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] — 2026-05-04
+
+End-of-feature marker. The v1 line is no longer receiving feature work; new development happens in [`github.com/hishamkaram/geoserver/v2`](https://pkg.go.dev/github.com/hishamkaram/geoserver/v2) (stable as of `v2.0.0`, 2026-05-04). Security patches will continue to land on the `release/v1` branch.
+
+### Changed
+
+- **`go.mod`** carries a `// Deprecated:` directive on the `module` line. Tools that read module metadata (`go list -m -u`, `pkg.go.dev`) will surface this as a deprecation notice. There are no code changes.
+
+### Migration
+
+- See [`docs/migration-v1-to-v2.md`](docs/migration-v1-to-v2.md) for the per-resource v1 → v2 mapping. v2 is a clean redesign that breaks v1's monolithic `*GeoServer` API into per-resource sub-clients with mandatory `context.Context`, single typed-error system, and zero runtime third-party dependencies.
+
 ## [1.1.1] — 2026-05-03
 
 Patch release. Bug fix plus the internal restructure that landed in `master` after v1.1.0. No public API change. Existing v1.1.0 callers can upgrade with only a `go.mod` bump.
