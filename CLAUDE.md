@@ -48,9 +48,10 @@ Each service interface has a parallel `…WithContext` interface (e.g., `Workspa
 
 ## Concurrency
 
-- `*GeoServer` exported fields are **not safe for concurrent mutation.** Construct once with `New(...)` and treat as immutable.
-- Concurrent reads on the same instance are safe.
-- Don't add concurrency hardening (locks, atomic swaps) to v1 — that is a v2 redesign concern.
+- `*Client` is **immutable after `New(...)` returns.** All struct fields are private or pointers to sub-clients set once at construction and never reassigned. Concurrent use across goroutines is safe by design — no caller-side locking required.
+- Same posture for every sub-client (`workspaces.Client`, `datastores.Client`, etc.): they expose methods only, holding a single private `core Core` interface reference.
+- Don't introduce shared mutable state to `clientCore` or any sub-client (caches, counters, request-scoped buffers held as struct fields). If you need per-call state, allocate it inside the method. The race-proof guarantee is verified by `TestClient_ConcurrentRequests` running under `go test -race` in CI.
+- User-supplied transports (`WithHTTPClient`, `WithTransport`) are the caller's responsibility — if their `RoundTripper` mutates shared state, the race lives in their code, not ours.
 
 ## GeoServer version matrix
 
