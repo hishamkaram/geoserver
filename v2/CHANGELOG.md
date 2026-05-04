@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — Mosaic / structured-coverage granules
+
+Closes the mosaic-granules tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Read-side companion to the existing `c.CoverageStores.HarvestGranule` (which adds granules); the new surface lets callers list, inspect, and remove individual granules in image-mosaic / structured coverage stores.
+
+- **`c.Coverages.InWorkspace(ws).InCoverageStore(cs).Granules(coverage)`** returns a new `*GranulesClient` scoped to the granule index of one published coverage.
+- **`Schema(ctx)`** returns the granule attribute schema (`/index` endpoint), decoded from the `{"Schema":{"attributes":{"Attribute":[...]}}}` envelope.
+- **`List(ctx, ListGranulesOptions{Filter, Offset, Limit})`** returns granules as `[]Granule` — typed wrapper around the GeoJSON FeatureCollection wire shape; geometry is preserved as `json.RawMessage` so callers can decode into the GeoJSON library of their choice.
+- **`Get(ctx, granuleID)`** returns a single granule. Empty FeatureCollection (some 2.x versions' wire-quirk for "not found") surfaces as `(nil, nil)`; canonical 404 surfaces as `errors.Is(err, ErrNotFound)`.
+- **`Delete(ctx, granuleID, DeleteGranuleOptions{Purge, UpdateBBox})`** removes a single granule, with the `purge` and `updateBBox` query params.
+- **`DeleteByFilter(ctx, DeleteGranulesOptions{Filter, Purge, UpdateBBox})`** removes every granule matching the supplied CQL filter. Empty filter is rejected by the SDK to prevent accidental match-all wipes — pass `Filter:"INCLUDE"` to delete every granule deliberately.
+- **Typed enums and structs** — `PurgeMode` (`PurgeNone` / `PurgeMetadata` / `PurgeAll`), `Granule`, `GranuleSchema`, `GranuleAttribute`, plus the three options structs.
+
 ## [2.0.0-beta.1] — 2026-05-03
 
 First beta — the v2 public API surface is now considered **frozen for review**. Subsequent betas will tighten wire-format edge cases and absorb early-adopter feedback, but breaking changes to type names, method shapes, or constructor signatures will not land without a strong reason. v2 has been continuously verified against real GeoServer 2.27.4 LTS and 2.28.0 stable on every PR since alpha.1; this tag's surface is the candidate for `v2.0.0`.
