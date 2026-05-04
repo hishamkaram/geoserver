@@ -1,6 +1,6 @@
 # v2 — tier-2 gap-analysis backlog
 
-The v2 client closes every "everyone needs it" REST API surface plus the original tier-2 backlog as of `v2.0.0-beta.2` (see [`../v2/CHANGELOG.md`](../v2/CHANGELOG.md)). What's documented here is the **complete shipped tier-2 surface** plus the leftover narrow-audience endpoints not on the original list — each tractable as its own follow-up PR.
+The v2 client closes every "everyone needs it" REST API surface, the original tier-2 backlog, and the longer-tail surfaces (fonts, password rotation, GWC additions, monitoring) as of `v2.0.0-beta.3` (see [`../v2/CHANGELOG.md`](../v2/CHANGELOG.md)). What's documented here is the **complete shipped surface** plus the few extension-gated endpoints whose extensions aren't packaged in stable releases for 2.27 / 2.28.
 
 Each entry below is independently tractable as its own follow-up PR. None block `v2.0.0`. Each is grounded in the official GeoServer REST docs (`https://docs.geoserver.org/latest/en/user/rest/`) and reuses the existing v2 plumbing (`internal/transport.BuildURL`, `transport.DoJSON` / `DoXML` / `DoRaw`, the per-resource `Core` interface, the `*Client → InWorkspace(ws) → *WorkspaceClient` scoping pattern). PRs welcome — open an issue first if the work touches a new wire-format quirk so the design conversation can happen in public.
 
