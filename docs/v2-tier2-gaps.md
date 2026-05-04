@@ -8,11 +8,10 @@ Each entry below is independently tractable as its own follow-up PR. None block 
 
 | # | Gap | Audience | Rough scope |
 |---|-----|----------|-------------|
-| 1 | **URL checks** — `/urlchecks` | SSRF-conscious deployments | Allow / deny lists for external URL references in styles, mosaics, and remote stores. |
-| 2 | **Cascaded WMS / WMTS stores** — `/wmsstores`, `/wmtsstores` | Federation / proxy setups | Re-publish a remote WMS / WMTS through your own server. |
-| 3 | **XSLT transforms** — `/services/wfs/transforms` | WFS-T payload customizers | Upload XSLT for custom GetFeature output formats. |
-| 4 | **Manifests + system status** — `/about/manifest`, `/about/system-status` | Ops / capacity planning | Inspect installed plugins; live JVM and OS stats. |
-| 5 | **Logging** — `/logging` | Production debugging | Adjust log levels and configurations at runtime without bouncing the server. |
+| 1 | **Cascaded WMS / WMTS stores** — `/wmsstores`, `/wmtsstores` | Federation / proxy setups | Re-publish a remote WMS / WMTS through your own server. |
+| 2 | **XSLT transforms** — `/services/wfs/transforms` | WFS-T payload customizers | Upload XSLT for custom GetFeature output formats. |
+| 3 | **Manifests + system status** — `/about/manifest`, `/about/system-status` | Ops / capacity planning | Inspect installed plugins; live JVM and OS stats. |
+| 4 | **Logging** — `/logging` | Production debugging | Adjust log levels and configurations at runtime without bouncing the server. |
 
 ## Already shipped
 
@@ -21,6 +20,7 @@ Each entry below is independently tractable as its own follow-up PR. None block 
 - **Mosaic / structured-coverage granules** — `c.Coverages.InWorkspace(ws).InCoverageStore(cs).Granules(cov)` Schema / List / Get / Delete / DeleteByFilter. Closed post-beta.1.
 - **Templates (FTL)** — `c.Templates` (global) plus six fluent scopes (`InWorkspace`/`InDatastore`/`InFeatureType`/`InCoverageStore`/`InCoverage`); List / Get / Put / PutString / Delete. Closed post-beta.1.
 - **Auth providers + filter chains** — `c.Security.AuthProviders` / `c.Security.AuthFilters` / `c.Security.FilterChains` (each List / Get / Create / Update / Delete; AuthProviders + FilterChains also have SetOrder). Closed post-beta.1.
+- **URL checks** — `c.URLChecks` List / Get / Create / Update / Delete against `/rest/urlchecks`. Closed post-beta.1.
 
 Beyond these: CRS list, fonts list, monitoring, master password, self-admin password, usergroup-service registration, individual filter-chain editing, and the OWS `oseo` (OpenSearch for Earth Observation) service settings. Each is a single endpoint or two and can ride along with whichever neighbor lands first.
 

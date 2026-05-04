@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — URL checks (SSRF allow-list)
+
+Closes the URL-checks tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). URL External Access Checks are allow/deny lists for external URLs that GeoServer is permitted to fetch (SLD external graphics, image-mosaic remote rasters, cascaded WMS sources). SSRF-conscious deployments use them to constrain off-server URL fetching.
+
+- **`c.URLChecks`** at `/rest/urlchecks` — `List` / `Get` / `Create` / `Update` / `Delete`. Typed core: `Name`, `Description`, `Enabled`, `Regex`.
+- **Wire-quirk: POST/PUT bodies require the `regexUrlCheck` class-name envelope.** Flat JSON is rejected with 500. The `URLCheck.MarshalJSON` always wraps; `URLCheck.UnmarshalJSON` accepts both wrapped and flat (so callers don't need to special-case GET responses).
+- **Wire-quirk: empty list comes back as `{"urlChecks":""}`** (bare string instead of object) — same empty-collection pattern as styles, datastores, etc. `List` returns `nil` on the empty form.
+
 ### Added — Auth providers, auth filters, filter chains
 
 Closes the auth-providers + filter-chains tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Three new sub-clients on `c.Security` cover the security-pluggability surface for multi-IdP deployments.

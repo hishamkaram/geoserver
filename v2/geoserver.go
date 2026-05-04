@@ -30,6 +30,7 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/styles"
 	"github.com/hishamkaram/geoserver/v2/rest/system"
 	"github.com/hishamkaram/geoserver/v2/rest/templates"
+	"github.com/hishamkaram/geoserver/v2/rest/urlchecks"
 	"github.com/hishamkaram/geoserver/v2/rest/workspaces"
 
 	"github.com/hishamkaram/geoserver/v2/ows/wcs"
@@ -183,6 +184,13 @@ type Client struct {
 	// type, per coverage store, per coverage — via fluent
 	// `c.Templates.InWorkspace(ws).In...()` chains.
 	Templates *templates.Client
+
+	// URLChecks is the entry point for URL External Access Checks
+	// at /rest/urlchecks. Allow/deny lists for external URL
+	// references in styles, mosaics, and remote stores. Used by
+	// SSRF-conscious deployments to constrain which off-server
+	// URLs GeoServer is permitted to fetch.
+	URLChecks *urlchecks.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -261,6 +269,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.Imports = imports.New(adapter)
 	c.Resources = resources.New(adapter)
 	c.Templates = templates.New(adapter)
+	c.URLChecks = urlchecks.New(adapter)
 	return c, nil
 }
 
