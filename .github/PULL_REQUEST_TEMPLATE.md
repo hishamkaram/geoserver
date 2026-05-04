@@ -6,9 +6,10 @@
 
 ## Type of change
 
-- [ ] Bug fix (non-breaking)
-- [ ] New feature (non-breaking, additive)
-- [ ] Breaking change (must target `v2`, not `master`)
+- [ ] Bug fix
+- [ ] New feature (additive)
+- [ ] Breaking change (targets `master` — v2 line)
+- [ ] v1 security fix (must target `release/v1`, non-breaking)
 - [ ] Documentation only
 - [ ] Build / CI / chore
 
@@ -21,7 +22,7 @@
 - [ ] I added or updated unit tests for the change
 - [ ] I updated the CHANGELOG entry under `## [Unreleased]` if user-visible
 - [ ] I did not add new runtime dependencies (or I justified why in the description)
-- [ ] My change preserves backward compatibility (or this PR targets `v2`)
+- [ ] If this PR targets `release/v1`, my change preserves backward compatibility (deprecate via `// Deprecated:` and add a sibling rather than changing signatures); breaking changes belong on `master` (v2)
 
 ## Related issues
 
