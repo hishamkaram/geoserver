@@ -13,9 +13,14 @@ type Core interface {
 	URL(parts ...string) (string, error)
 	Do(ctx context.Context, op string, method, requestURL string, body any, query map[string]string, out any) error
 	DoStream(ctx context.Context, op string, method, requestURL string, query map[string]string) (io.ReadCloser, int, error)
+	// SynthesizeError surfaces a package-sentinel error (via the
+	// parent's *APIError) for wire responses that are 2xx but
+	// semantically failures — e.g. auth filters' `{"null":""}`
+	// "not found" wire shape.
+	SynthesizeError(op, method, requestURL string, statusCode int, bodyHint string) error
 }
 
-// Client is the v2 security sub-client. It carries three nested
+// Client is the v2 security sub-client. It carries six nested
 // surfaces:
 //
 //	c.Security.Users()                       // default user/group service
@@ -23,6 +28,9 @@ type Core interface {
 //	c.Security.Groups()
 //	c.Security.GroupsInService("custom-jdbc")
 //	c.Security.Roles                         // always global, no service scope
+//	c.Security.AuthProviders                 // /security/authproviders
+//	c.Security.AuthFilters                   // /security/authfilters
+//	c.Security.FilterChains                  // /security/filterchain
 type Client struct {
 	core Core
 
@@ -30,13 +38,34 @@ type Client struct {
 	// assignment. Roles are global — not scoped to a user/group
 	// service — so this is a single client, not a method.
 	Roles *RolesClient
+
+	// AuthProviders is the entry point for authentication-provider
+	// CRUD plus active-order management at /security/authproviders.
+	// Providers are how GeoServer delegates authentication to backends
+	// (UsernamePassword, LDAP, OAuth/OIDC, header-auth, etc.).
+	AuthProviders *AuthProvidersClient
+
+	// AuthFilters is the entry point for authentication-filter CRUD at
+	// /security/authfilters. Filters are individual auth steps
+	// (anonymous, basic, form, rememberme, oidc-test, …) that are
+	// composed into [FilterChainsClient] entries.
+	AuthFilters *AuthFiltersClient
+
+	// FilterChains is the entry point for security filter-chain CRUD
+	// plus chain-order management at /security/filterchain. A filter
+	// chain binds a URL pattern (e.g. "/web/**") to an ordered list
+	// of [AuthFiltersClient] filter names.
+	FilterChains *FilterChainsClient
 }
 
 // New constructs the security sub-client.
 func New(core Core) *Client {
 	return &Client{
-		core:  core,
-		Roles: &RolesClient{core: core},
+		core:          core,
+		Roles:         &RolesClient{core: core},
+		AuthProviders: &AuthProvidersClient{core: core},
+		AuthFilters:   &AuthFiltersClient{core: core},
+		FilterChains:  &FilterChainsClient{core: core},
 	}
 }
 
