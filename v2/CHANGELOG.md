@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — Logging configuration
+
+Closes the logging tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Adjust the active log4j profile and stdout-mirror toggle at runtime without bouncing the server — the daily-driver use case for production debugging.
+
+- **`c.Logging.Get(ctx)`** / **`c.Logging.Update(ctx, *Config)`** at `/rest/logging`. `Config` has `Level` (e.g. "DEFAULT_LOGGING", "VERBOSE_LOGGING", "QUIET_LOGGING", "PRODUCTION_LOGGING", "GEOSERVER_DEVELOPER_LOGGING"), `Location` (read-only since GeoServer 3.0), `StdOutLogging`.
+- Wire-quirk: PUT bodies use the `{"logging":{...}}` envelope; SDK marshal wraps automatically.
+
+This closes the original tier-2 gap-analysis backlog. The full "everyone needs it" + tier-2 surface from `docs/v2-tier2-gaps.md` is now covered. Remaining future work tracks new GeoServer endpoints as the upstream API grows.
+
 ### Added — About: manifests + system status
 
 Closes the manifests-and-system-status tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Two new methods on the existing `c.About` client surface ops / capacity-planning telemetry without leaving the SDK.

@@ -22,6 +22,7 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/imports"
 	"github.com/hishamkaram/geoserver/v2/rest/layergroups"
 	"github.com/hishamkaram/geoserver/v2/rest/layers"
+	"github.com/hishamkaram/geoserver/v2/rest/logging"
 	"github.com/hishamkaram/geoserver/v2/rest/namespaces"
 	"github.com/hishamkaram/geoserver/v2/rest/resources"
 	"github.com/hishamkaram/geoserver/v2/rest/security"
@@ -223,6 +224,12 @@ type Client struct {
 	// The endpoint is part of the gs-xslt-wfs extension; calls
 	// against an unequipped GeoServer return ErrNotFound.
 	WFSTransforms *wfstransforms.Client
+
+	// Logging is the entry point for the singleton logging
+	// configuration document at /rest/logging — adjust the active
+	// log4j profile (DEFAULT_LOGGING, VERBOSE_LOGGING, etc.) and
+	// the stdout-mirror toggle without bouncing the server.
+	Logging *logging.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -307,6 +314,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.WMTSStores = wmtsstores.New(adapter)
 	c.WMTSLayers = wmtslayers.New(adapter)
 	c.WFSTransforms = wfstransforms.New(adapter)
+	c.Logging = logging.New(adapter)
 	return c, nil
 }
 
