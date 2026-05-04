@@ -21,29 +21,28 @@ This file is auto-loaded by Claude Code at the start of every session in this re
 - The `make test-unit` and `make test-integration` targets are the canonical entry points; CI mirrors them exactly.
 - **Both unit and integration tests are mandatory on every PR.** Integration runs against GeoServer 2.27.4 LTS and 2.28.0 stable; both legs must pass for the PR to merge.
 
-## *Context twin pattern (mandatory for new exports)
+## Context handling (mandatory for new exports)
 
-Every exported method on `*GeoServer` has a `…Context(ctx context.Context, …)` sibling. The non-context form delegates with `context.Background()`. New methods MUST follow this. Canonical shape: `workspaces.go:16-38,57-79`.
+v2 is **context-first**: every exported method on every sub-client takes `ctx context.Context` as its first argument. No `*Context` twins, no `context.Background()` delegators — that pattern was a v1.x compat shim and does not exist in v2. Canonical shapes: `rest/workspaces/workspaces.go:38,73`, `rest/about/about.go:84,99`.
 
 ```go
-func (g *GeoServer) GetFoo(args...) (...)        { return g.GetFooContext(context.Background(), args...) }
-func (g *GeoServer) GetFooContext(ctx context.Context, args...) (...) { /* real impl uses ctx */ }
+func (c *Client) GetFoo(ctx context.Context, args...) (...) { /* real impl uses ctx */ }
 ```
 
-Each service interface has a parallel `…WithContext` interface (e.g., `WorkspaceServiceWithContext`). The legacy interface stays alongside.
+If you need a no-context entry point in caller code, use `context.Background()` at the call site — the library never papers over it.
 
 ## Typed errors
 
-- All HTTP errors return `*Error` (defined in `errors.go`).
-- Status codes map to sentinels via `errors.Is` (`ErrNotFound`, `ErrUnauthorized`, `ErrForbidden`, `ErrConflict`, `ErrBadRequest`, `ErrMethodNotAllowed`, `ErrUnsupportedMediaType`, `ErrRateLimited`, `ErrServerError`).
+- All non-2xx GeoServer responses surface as `*APIError` (defined in `errors.go`). Renamed from v1's `*Error` as part of the v2 clean break.
+- Status codes map to 12 sentinels via `errors.Is`: `ErrBadRequest`, `ErrUnauthorized`, `ErrForbidden`, `ErrNotFound`, `ErrMethodNotAllowed`, `ErrConflict`, `ErrUnsupportedMediaType`, `ErrRateLimited`, `ErrServerError`, `ErrBadGateway`, `ErrServiceUnavailable`, `ErrGatewayTimeout`.
 - **Never compare error strings.** `errors.Is(err, ErrNotFound)` is the only correct test.
-- The `*Error.Error()` string preserves v1.0's `"abstract:%s\ndetails:%s\n"` format so existing string-matchers don't break.
+- The `*APIError.Error()` string format is `"geoserver: <Op> <Method> <URL>: <status> <statusText>: <body-preview>"` — body capped at 8 KiB internally and previewed at ~120 bytes. v1's `"abstract:%s\ndetails:%s\n"` format was deliberately dropped at the v2 boundary.
 
 ## Logging
 
-- `g.logger` is a `*Logger` wrapper (defined in `logging.go`) over `*slog.Logger`.
-- Exposes printf-style: `Errorf`, `Warnf`, `Infof`, `Debugf`. Plus Sprint-style: `Error`, `Warn`, `Info`, `Debug`. This shape exists for v1.0-source compatibility.
-- Configure via the `WithLogger(slog.Handler)` option. **Never mutate fields** to swap the logger.
+- v2 uses `*slog.Logger` directly. The `*Logger` wrapper and `logging.go` from v1 do not exist — that wrapper was a v1.0-source-compat shim and was deliberately dropped.
+- Configure via `WithLogger(l *slog.Logger)`. Pass `slog.New(slog.DiscardHandler)` to silence; the default is the discard logger.
+- Internal call sites use structured logging — `logger.Debug(msg, args...)` with key/value pairs, not printf-style.
 - Library logs Debug for HTTP details, Warn for retry-exhausted, Error for protocol violations. No Info chatter.
 
 ## Concurrency
@@ -61,28 +60,28 @@ Each service interface has a parallel `…WithContext` interface (e.g., `Workspa
 
 ## Common GeoServer REST quirks (cross-reference)
 
-- Workspace-scoped `POST /workspaces/{ws}/styles` requires `Accept: */*`, not `application/json` — see `styles.go:178-186`.
-- Empty styles collection comes back as `{"styles":""}` (bare string, not object) — see `styles.go:93-104`.
-- `LayerGroup.styles.style` is a mixed `[string|object]` array — custom `UnmarshalJSON` in `layergroups.go`.
+- Workspace-scoped `POST /workspaces/{ws}/styles` requires `Accept: */*`, not `application/json` — see `rest/styles/styles.go`.
+- Empty styles collection comes back as `{"styles":""}` (bare string, not object) — see `rest/styles/styles.go:75,91`.
+- `LayerGroup.styles.style` is a mixed `[string|object]` array — custom `UnmarshalJSON` in `rest/layergroups/types.go:97-108`. The `Published` type has the same shape — `rest/layergroups/types.go:57-60`.
 - Full quirk reference: `/skill geoserver-rest-quirks` or read `.claude/skills/geoserver-rest-quirks/SKILL.md`.
 
 ## Build & lint surfaces
 
 - `make` is the canonical entry point. CI workflow names match Make targets exactly. Don't bypass `make` with raw `go test`/`golangci-lint` invocations in scripts.
 - `.golangci.yml` enables: errcheck, govet, staticcheck, ineffassign, unused, bodyclose, errorlint, noctx, copyloopvar, revive, gocritic, misspell, unconvert, prealloc, gosec.
-- Don't add `//nolint:` comments outside the existing exemptions in `.golangci.yml` (which cover v1.x compat-frozen field names like `HttpClient`/`Id`/`XmlPostRequestLogBufferSize` and historic error string capitalization in `vars.go`).
+- Don't add `//nolint:` comments outside the existing exemptions in `.golangci.yml`. The remaining live exemption for v2 covers `internal/transport/transport.go` G704 gosec (SSRF false-positive on URLs built from path-escaped configured segments).
 
 ## HTTP & URL hygiene
 
-- Every request goes through `g.DoRequestContext` (in `utils.go`). Don't call `http.Client.Do` directly outside `utils.go`.
-- URL building uses `g.ParseURL(parts...)` which path-escapes each segment. Never `fmt.Sprintf("%srest/%s...", ...)` — that pattern was the source of multiple v1.0 bugs.
+- Every sub-client call goes through `coreAdapter.Do(ctx, op, method, url, body, query, out)` (geoserver.go:429), which delegates to `transport.DoJSON / DoXML / DoRaw / DoStream` in `internal/transport/transport.go`. Don't call `http.Client.Do` directly outside `internal/transport/`.
+- URL building uses `coreAdapter.URL(parts...)` (geoserver.go:422) which delegates to `transport.BuildURL` (`internal/transport/url.go`); each segment is path-escaped. Never `fmt.Sprintf("%srest/%s...", ...)` — that pattern was the source of multiple v1.0 bugs.
 
 ## Conventions and don'ts
 
 - **Never commit directly to `master`.** Always create a feature branch, push it, open a PR, wait for CI to go green, then squash-merge.
 - **Never add Claude (or any AI assistant) as a git co-author.** Do not append `Co-Authored-By: Claude ...` trailers. Commit messages are authored by the user only.
 - **Never commit planning markdowns** — design docs, revival plans, research notes belong in `~/.claude/plans/`, not in this repo.
-- **No panics in library code.** The v1.0 audit removed five (`utils.go:49,60,119,134`; `wms/wms.go:213`); don't reintroduce. Tests may use `t.Fatalf` freely.
+- **No panics in library code.** v2 library code (root + `rest/` + `ows/` + `internal/`) currently contains zero `panic(` calls; don't reintroduce. Tests may use `t.Fatalf` freely.
 - **No new runtime dependencies** without prior discussion — keep `go.mod` minimal (currently only stdlib + `testify` test-only + `yaml.v3` for `LoadConfig`).
 - **Don't auto-tag releases** and don't merge a PR with red or pending CI — both are explicit user actions.
 
