@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — Cascaded WMS / WMTS stores and layers
+
+Closes the cascaded-WMS/WMTS tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Cascaded stores reference a remote WMS / WMTS server; cascaded layers re-publish that remote server's layers through the local GeoServer (federation / proxy setups).
+
+- **`c.WMSStores`** at `/rest/workspaces/{ws}/wmsstores` — workspace-scoped CRUD plus `Iter` for the (single-page) listing. `WMSStore` covers the daily-driver fields: `Name`, `Type`, `Enabled`, `CapabilitiesURL`, `User`/`Password`/`AuthKey`/`HeaderName`/`HeaderValue`, `MaxConnections`, `ReadTimeout`, `ConnectTimeout`, `UseHTTPConnPool`.
+- **`c.WMSLayers`** at `/rest/workspaces/{ws}/wmsstores/{store}/wmslayers` (canonical) and `/rest/workspaces/{ws}/wmslayers` (cross-store list) — 2-level scoped via `InWorkspace(ws).InStore(s)`. Daily-driver fields: `Name`, `NativeName`, `Title`, `Abstract`, `Keywords`, `NativeCRS`/`SRS`, bbox, `ProjectionPolicy`, `Enabled`, `ForcedRemoteStyle`, `PreferredFormat`, `MinScale`/`MaxScale`.
+- **`c.WMTSStores`** + **`c.WMTSLayers`** — parallel surface for cascaded WMTS.
+- **Wire shape:** all four packages MarshalJSON wrap in the documented per-type envelope (`{"wmsStore":{...}}` / `{"wmsLayer":{...}}` / `{"wmtsStore":{...}}` / `{"wmtsLayer":{...}}`); UnmarshalJSON accepts both wrapped and flat. List endpoints handle the empty-collection wire shape (`{"wmsStores":""}` etc.).
+
+Integration tests verify the empty-list and 404 paths against the live stack; full CRUD requires an upstream WMS/WMTS server to cascade FROM and isn't exercised in the test stack — the unit tests cover the wire-shape round-trip.
+
 ### Added — URL checks (SSRF allow-list)
 
 Closes the URL-checks tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). URL External Access Checks are allow/deny lists for external URLs that GeoServer is permitted to fetch (SLD external graphics, image-mosaic remote rasters, cascaded WMS sources). SSRF-conscious deployments use them to constrain off-server URL fetching.

@@ -31,6 +31,10 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/system"
 	"github.com/hishamkaram/geoserver/v2/rest/templates"
 	"github.com/hishamkaram/geoserver/v2/rest/urlchecks"
+	"github.com/hishamkaram/geoserver/v2/rest/wmslayers"
+	"github.com/hishamkaram/geoserver/v2/rest/wmsstores"
+	"github.com/hishamkaram/geoserver/v2/rest/wmtslayers"
+	"github.com/hishamkaram/geoserver/v2/rest/wmtsstores"
 	"github.com/hishamkaram/geoserver/v2/rest/workspaces"
 
 	"github.com/hishamkaram/geoserver/v2/ows/wcs"
@@ -191,6 +195,27 @@ type Client struct {
 	// SSRF-conscious deployments to constrain which off-server
 	// URLs GeoServer is permitted to fetch.
 	URLChecks *urlchecks.Client
+
+	// WMSStores is the entry point for cascaded WMS stores —
+	// references to remote WMS servers re-published through this
+	// GeoServer instance. Workspace-scoped via
+	// `c.WMSStores.InWorkspace(ws)`.
+	WMSStores *wmsstores.Client
+
+	// WMSLayers is the entry point for cascaded WMS layers —
+	// individual remote WMS layers published locally. 2-level
+	// scoped: `c.WMSLayers.InWorkspace(ws).InStore(s)` for the
+	// canonical CRUD path, `c.WMSLayers.InWorkspace(ws)` for the
+	// workspace-wide list / get / delete.
+	WMSLayers *wmslayers.Client
+
+	// WMTSStores is the entry point for cascaded WMTS stores.
+	// Same scoping pattern as [Client.WMSStores].
+	WMTSStores *wmtsstores.Client
+
+	// WMTSLayers is the entry point for cascaded WMTS layers.
+	// Same scoping pattern as [Client.WMSLayers].
+	WMTSLayers *wmtslayers.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -270,6 +295,10 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.Resources = resources.New(adapter)
 	c.Templates = templates.New(adapter)
 	c.URLChecks = urlchecks.New(adapter)
+	c.WMSStores = wmsstores.New(adapter)
+	c.WMSLayers = wmslayers.New(adapter)
+	c.WMTSStores = wmtsstores.New(adapter)
+	c.WMTSLayers = wmtslayers.New(adapter)
 	return c, nil
 }
 
