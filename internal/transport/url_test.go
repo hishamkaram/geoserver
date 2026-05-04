@@ -56,3 +56,21 @@ func TestBuildURL_InvalidBaseURL(t *testing.T) {
 		t.Fatalf("expected ErrInvalidBaseURL, got %v", err)
 	}
 }
+
+// FuzzBuildURL exercises the path-joining + escaping algorithm with
+// arbitrary string segments. The property under test is the safety
+// contract: BuildURL must not panic on any input — it should return an
+// error or a well-formed URL string. v1 had two production bugs in this
+// area (issue #22 and a separate URL-escaping regression); fuzzing here
+// is genuinely defensive, not just a Scorecard checkbox.
+func FuzzBuildURL(f *testing.F) {
+	f.Add("http://localhost:8080/geoserver/", "rest", "workspaces", "topp")
+	f.Add("https://geoserver.example.com/", "rest", "workspaces", "topp:states")
+	f.Add("http://localhost/", "rest", "workspaces", "my workspace")
+	f.Add("", "", "", "")
+	f.Add("://malformed", "rest", "x", "y")
+
+	f.Fuzz(func(t *testing.T, base, p1, p2, p3 string) {
+		_, _ = transport.BuildURL(base, []string{p1, p2, p3})
+	})
+}
