@@ -3,9 +3,32 @@
 //
 // Transforms let WFS-T producers register XSLT files that re-shape
 // GetFeature output into custom formats (HTML reports, KML,
-// site-specific XML schemas, etc.). The endpoint is part of the
-// `gs-xslt-wfs` extension and is NOT installed in default GeoServer
-// distributions — calls against an unequipped server return 404.
+// site-specific XML schemas, etc.).
+//
+// # Extension status
+//
+// The endpoint was originally part of the `gs-xslt-wfs` extension.
+// That extension was removed from upstream GeoServer in 2.24 and is
+// NOT shipped — neither in stable nor in community / SNAPSHOT
+// channels — for any 2.24+ release, including the supported 2.27 LTS
+// and 2.28 stable lines. The upstream OpenAPI YAML still documents
+// the surface, but a fresh install of any supported GeoServer
+// version returns 404 for every method on this client.
+//
+// This package is preserved for:
+//   - Custom GeoServer builds that re-introduce the xslt-wfs module.
+//   - Pre-2.24 deployments that still ship the extension.
+//   - Forward-compatibility if the upstream module is restored.
+//
+// The unit tests verify the wire format (POST envelope, body
+// encoding, header handling) without requiring the extension. The
+// integration test asserts only the "extension absent → ErrNotFound"
+// path against the standard dev/test docker image; for a full CRUD
+// round-trip against a custom-built server with the extension
+// reinstated, set GEOSERVER_HAS_XSLT_WFS=1 when running
+// integration tests.
+//
+// # Surface
 //
 // The flow is two-step:
 //
@@ -18,7 +41,8 @@
 //
 // Or, in a single shot, [Client.CreateWithXSLT] POSTs the XSLT
 // body directly with the metadata fields encoded as query
-// parameters. Either is supported by the upstream API.
+// parameters. Either is supported by the upstream API (when the
+// extension is present).
 package wfstransforms
 
 import (

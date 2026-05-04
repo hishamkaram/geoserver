@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0-beta.3] — 2026-05-04
+
+Third beta. Adds four longer-tail surfaces on top of beta.2's tier-2-complete state — fonts, master/self password rotation, GWC global config + gridsets + mass-truncate, and the monitoring (request audit log) extension. The dev/test docker image now bakes the `gs-monitor` plugin in alongside `gs-importer` so CI exercises the full audit-log surface against real GeoServer 2.27.4 LTS and 2.28.0 stable. No breaking changes from `beta.2`; existing callers can `go get @v2.0.0-beta.3` and recompile. Public API stays frozen for review through the beta line.
+
+### Documented — WFS XSLT transforms (`c.WFSTransforms`) extension status
+
+The `gs-xslt-wfs` extension that the beta.2 `c.WFSTransforms` surface targets was removed from upstream GeoServer in 2.24 and is NOT shipped — neither in stable nor in community / SNAPSHOT channels — for any 2.24+ release, including the supported 2.27 LTS and 2.28 stable lines. The upstream OpenAPI YAML still documents the surface. The package godoc now flags this clearly: the surface is preserved for custom builds and pre-2.24 deployments only; CI verifies the "extension absent → ErrNotFound" path.
+
 ### Added — Fonts list
 
 Closes the fonts longer-tail item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Sanity-check before publishing styles that reference specific fonts — typos would otherwise surface as silent label-rendering fallbacks.
