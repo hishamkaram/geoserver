@@ -8,8 +8,7 @@ Each entry below is independently tractable as its own follow-up PR. None block 
 
 | # | Gap | Audience | Rough scope |
 |---|-----|----------|-------------|
-| 1 | **Manifests + system status** — `/about/manifest`, `/about/system-status` | Ops / capacity planning | Inspect installed plugins; live JVM and OS stats. |
-| 2 | **Logging** — `/logging` | Production debugging | Adjust log levels and configurations at runtime without bouncing the server. |
+| 1 | **Logging** — `/logging` | Production debugging | Adjust log levels and configurations at runtime without bouncing the server. |
 
 ## Already shipped
 
@@ -21,6 +20,7 @@ Each entry below is independently tractable as its own follow-up PR. None block 
 - **URL checks** — `c.URLChecks` List / Get / Create / Update / Delete against `/rest/urlchecks`. Closed post-beta.1.
 - **Cascaded WMS / WMTS stores + layers** — `c.WMSStores`, `c.WMSLayers`, `c.WMTSStores`, `c.WMTSLayers` (workspace-scoped stores; 2-level scoped layers via `InWorkspace(ws).InStore(s)`). Closed post-beta.1.
 - **WFS XSLT transforms** — `c.WFSTransforms` List / Get / Create / Update / Delete + GetXSLT / PutXSLT / CreateWithXSLT against `/rest/services/wfs/transforms`. Requires the `gs-xslt-wfs` extension on the server. Closed post-beta.1.
+- **Manifests + system status** — `c.About.Manifests` and `c.About.SystemStatus` against `/rest/about/manifest` and `/rest/about/system-status`. Closed post-beta.1.
 
 Beyond these: CRS list, fonts list, monitoring, master password, self-admin password, usergroup-service registration, individual filter-chain editing, and the OWS `oseo` (OpenSearch for Earth Observation) service settings. Each is a single endpoint or two and can ride along with whichever neighbor lands first.
 

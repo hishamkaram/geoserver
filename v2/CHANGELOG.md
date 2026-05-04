@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — About: manifests + system status
+
+Closes the manifests-and-system-status tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Two new methods on the existing `c.About` client surface ops / capacity-planning telemetry without leaving the SDK.
+
+- **`c.About.Manifests(ctx, ListManifestsOptions{Manifest, Key, Value})`** at `/rest/about/manifest` — returns `[]ManifestEntry`, one per OSGi bundle / packaged JAR (`~150` on a stock install). `ListManifestsOptions` carries optional regex filters for bundle names, attribute keys, and attribute values. Each entry has a typed `Name` plus a free-form `Fields map[string]json.RawMessage` for the heterogeneous MANIFEST.MF attributes (`Bundle-Version`, `Build-Jdk`, `Implementation-Title`, etc.); helper `(ManifestEntry).String(field)` extracts a string value coercing JSON numbers/bools.
+- **`c.About.SystemStatus(ctx)`** at `/rest/about/system-status` — returns `[]SystemMetric`. Each metric is one OS / JVM / GeoServer telemetry point (`OPERATING_SYSTEM`, `CPU_LOAD`, `MEMORY_USED`, `GEOSERVER_THREADS`, …) categorized by `SYSTEM` / `CPU` / `MEMORY` / `SWAP` / `FILE_SYSTEM` / `NETWORK` / `SENSORS` / `GEOSERVER`. `Available=false` + `Value="NOT AVAILABLE"` is common on Linux containers without OSHI native libs; production hosts populate the values.
+- **Wire-quirk:** Manifest endpoint defaults to HTML; the SDK appends `.json` to the URL. Empty filter result comes back as `{"about":""}` (bare string instead of object) — normalized to a nil slice. Manifest responses commonly exceed 100 KB; `Manifests` streams the body via `DoStream` rather than buffering through the JSON Do path's 8 KiB cap.
+
 ### Added — WFS XSLT transforms
 
 Closes the WFS XSLT transforms tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Transforms let WFS-T producers register XSLT files that re-shape `GetFeature` output into custom formats (HTML reports, KML, site-specific XML schemas, etc.). Endpoints live at `/rest/services/wfs/transforms` under the `gs-xslt-wfs` extension; calls against an unequipped GeoServer return `ErrNotFound`.
