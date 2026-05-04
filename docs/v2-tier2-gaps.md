@@ -8,21 +8,21 @@ Each entry below is independently tractable as its own follow-up PR. None block 
 
 | # | Gap | Audience | Rough scope |
 |---|-----|----------|-------------|
-| 1 | **Mosaic / structured-coverage granules** — `/coveragestores/{cs}/coverages/{c}/index/granules` | Raster-mosaic users | Add / list / delete granules in image-mosaic stores. Companion to the existing `c.CoverageStores.HarvestGranule`. |
-| 2 | **Templates** — `/templates`, `/workspaces/{ws}/templates`, `/workspaces/{ws}/featuretypes/{ft}/templates` | GetFeatureInfo / WMS HTML customizers | Per-workspace and per-feature-type FTL upload. |
-| 3 | **Auth providers + filter chains** — `/security/auth/providers`, `/security/filters`, `/security/usergroup/{name}` | Multi-IdP deployments | LDAP / OAuth / header-auth provider registration; reorder filter chains. |
-| 4 | **URL checks** — `/urlchecks` | SSRF-conscious deployments | Allow / deny lists for external URL references in styles, mosaics, and remote stores. |
-| 5 | **Cascaded WMS / WMTS stores** — `/wmsstores`, `/wmtsstores` | Federation / proxy setups | Re-publish a remote WMS / WMTS through your own server. |
-| 6 | **XSLT transforms** — `/services/wfs/transforms` | WFS-T payload customizers | Upload XSLT for custom GetFeature output formats. |
-| 7 | **Manifests + system status** — `/about/manifest`, `/about/system-status` | Ops / capacity planning | Inspect installed plugins; live JVM and OS stats. |
-| 8 | **Logging** — `/logging` | Production debugging | Adjust log levels and configurations at runtime without bouncing the server. |
+| 1 | **Templates** — `/templates`, `/workspaces/{ws}/templates`, `/workspaces/{ws}/featuretypes/{ft}/templates` | GetFeatureInfo / WMS HTML customizers | Per-workspace and per-feature-type FTL upload. |
+| 2 | **Auth providers + filter chains** — `/security/auth/providers`, `/security/filters`, `/security/usergroup/{name}` | Multi-IdP deployments | LDAP / OAuth / header-auth provider registration; reorder filter chains. |
+| 3 | **URL checks** — `/urlchecks` | SSRF-conscious deployments | Allow / deny lists for external URL references in styles, mosaics, and remote stores. |
+| 4 | **Cascaded WMS / WMTS stores** — `/wmsstores`, `/wmtsstores` | Federation / proxy setups | Re-publish a remote WMS / WMTS through your own server. |
+| 5 | **XSLT transforms** — `/services/wfs/transforms` | WFS-T payload customizers | Upload XSLT for custom GetFeature output formats. |
+| 6 | **Manifests + system status** — `/about/manifest`, `/about/system-status` | Ops / capacity planning | Inspect installed plugins; live JVM and OS stats. |
+| 7 | **Logging** — `/logging` | Production debugging | Adjust log levels and configurations at runtime without bouncing the server. |
 
-## Already shipped (post-alpha.4, pre-beta.1)
+## Already shipped
 
 - **ACL services / REST / catalog rules** — `c.ACL.Services()` / `c.ACL.REST()` / `c.ACL.Catalog()`. Closed in beta.1.
 - **Resource API** — `c.Resources` Get / List / Stat / Exists / Put / Move / Copy / Delete against `/rest/resource/{path}`. Closed in beta.1.
+- **Mosaic / structured-coverage granules** — `c.Coverages.InWorkspace(ws).InCoverageStore(cs).Granules(cov)` Schema / List / Get / Delete / DeleteByFilter. Closed post-beta.1.
 
-Beyond these ten: CRS list, fonts list, monitoring, master password, self-admin password, usergroup-service registration, individual filter-chain editing, and the OWS `oseo` (OpenSearch for Earth Observation) service settings. Each is a single endpoint or two and can ride along with whichever neighbor lands first.
+Beyond these: CRS list, fonts list, monitoring, master password, self-admin password, usergroup-service registration, individual filter-chain editing, and the OWS `oseo` (OpenSearch for Earth Observation) service settings. Each is a single endpoint or two and can ride along with whichever neighbor lands first.
 
 ## How to contribute
 
