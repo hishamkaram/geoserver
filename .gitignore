@@ -27,3 +27,4 @@ coverage.html
 # .claude/skills, .claude/commands; only the local settings file is ignored)
 .claude/settings.local.json
 .claude/.cache/
+.claude/scheduled_tasks.lock
