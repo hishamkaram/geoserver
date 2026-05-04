@@ -12,7 +12,7 @@ If you're implementing a new REST resource client or debugging an integration-te
 
 **Workaround:** Send `Accept: "*/*"` to disable the dispatch and route to the metadata-creation path. The body's `Content-Type` should also be `application/json; charset=utf-8` — bare `application/json` 500s in some older 2.x versions.
 
-**Where:** `styles.go:178-186` (`CreateStyleContext`).
+**Where:** `rest/styles/styles.go:141-173` (`Create` — workspace-scoped branch sets `accept = "*/*"`).
 
 ## 2. Empty styles collection comes back as `{"styles":""}` (bare string)
 
@@ -20,7 +20,7 @@ If you're implementing a new REST resource client or debugging an integration-te
 
 **Workaround:** Decode into `json.RawMessage` first; branch on the first byte (`'"'` ⇒ empty list; `'{'` ⇒ decode as `{"style": [...]}`).
 
-**Where:** `styles.go:93-104` (`GetStylesContext`).
+**Where:** `rest/styles/styles.go:85` (`json.RawMessage` decode tolerates the empty-string shape).
 
 ## 3. `LayerGroup.styles.style` is a mixed `[string|object]` array
 
@@ -28,7 +28,7 @@ If you're implementing a new REST resource client or debugging an integration-te
 
 **Workaround:** Custom `UnmarshalJSON` on `LayerGroupStyles` that decodes the inner `style` array via `[]json.RawMessage`, then per-element handles `'"'` (string) vs `'{'` (object) and produces `[]*Resource`. String entries are stored as `&Resource{Name: stringValue}` to preserve the `[]*Resource` field type.
 
-**Where:** `layergroups.go` `LayerGroupStyles.UnmarshalJSON`.
+**Where:** `rest/layergroups/types.go:108` (`Styles.UnmarshalJSON`); the same trick handles the mixed `Published` shape at `rest/layergroups/types.go:60`.
 
 ## 4. POST style endpoints need explicit `; charset=utf-8`
 
@@ -36,7 +36,7 @@ If you're implementing a new REST resource client or debugging an integration-te
 
 **Workaround:** Send `Content-Type: application/json; charset=utf-8`.
 
-**Where:** Same site as quirk #1 — `styles.go:189` (`DataType: jsonType + "; charset=utf-8"`).
+**Where:** Same site as quirk #1 — `rest/styles/styles.go:173` (the body Content-Type is set to `"application/json; charset=utf-8"`).
 
 ## 5. PostGIS publish requires the table to exist with attributes
 
@@ -44,41 +44,39 @@ If you're implementing a new REST resource client or debugging an integration-te
 
 **Workaround:** Tests bootstrap a real PostGIS table via `docker/postgis/init/01-lbldyt.sql` (creates `public.lbldyt(gid, name, label, geom)` with sample rows + GIST index). Production callers must ensure their target table exists before publishing it.
 
-**Where:** `docker/postgis/init/01-lbldyt.sql`; tested in `feature_types_test.go` (integration).
+**Where:** `docker/postgis/init/01-lbldyt.sql`; tested in `rest/featuretypes/featuretypes_integration_test.go`.
 
-## 6. `Settings.Contact` is `interface{}` in v1
+## 6. `Settings.contact` returns the empty string when absent
 
-**Symptom:** Type assertions on `Settings.Contact` panic in v1.0; in v1.1 they return zero values silently.
+**Symptom:** `GET /rest/settings` on a freshly initialized GeoServer returns `"contact": ""` (bare string) instead of an empty object. Decoding into a `*Contact` field with the standard JSON decoder fails with `cannot unmarshal string into Go struct field`.
 
-**Root cause:** v1.0 modeled the contact subdocument loosely. The `Contact` *type* is defined in `settings.go:15` but never wired up; the field is `interface{}` (`settings.go:27`).
+**Workaround:** `*Contact` ships a custom `UnmarshalJSON` that treats both the empty-string and absent-field cases as a zero-value `Contact`, and decodes into the struct otherwise.
 
-**Workaround:** Don't trust the field type for new code. v2 will make this concrete.
-
-**Where:** `settings.go:27`.
+**Where:** `rest/settings/types.go` (`Contact.UnmarshalJSON`); regression-guarded by `rest/settings/settings_test.go:32` (`TestContact_UnmarshalEmptyString`).
 
 ## 7. Pagination drift across versions
 
 **Symptom:** `GET /rest/layers` and `GET /rest/styles` paginate via `?startIndex=&count=` on GeoServer 2.18+ but return everything on older versions.
 
-**Workaround:** Send pagination params and tolerate them being ignored on older servers. v2 wraps this in `iter.Seq2[T, error]` with single-page fallback.
+**Workaround:** Send pagination params and tolerate them being ignored on older servers. The client wraps this in `iter.Seq2[T, error]` with single-page fallback so callers iterate uniformly across versions.
 
-**Where:** Not currently mitigated in v1; documented for awareness.
+**Where:** `rest/styles/styles.go:104` (`Client.Iter`), `rest/layers/layers.go:83` (`WorkspaceClient.Iter`).
 
-## 8. `ParseURL` must escape per segment, not the whole path
+## 8. URL building must escape per segment, not the whole path
 
-**Symptom:** Workspace / layer names with spaces, slashes, or non-ASCII characters produced malformed URLs in v1.0. ACL rule strings carrying literal `*` wildcards were rejected by GeoServer's `StrictHttpFirewall` as "potentially malicious URL" with `%25` (double-encoded percent).
+**Symptom:** Workspace / layer names with spaces, slashes, or non-ASCII characters produce malformed URLs if a caller `fmt.Sprintf`s the path together. ACL rule strings carrying literal `*` wildcards are rejected by GeoServer's `StrictHttpFirewall` as "potentially malicious URL" if they end up double-encoded (`%25`).
 
-**Workaround:** `g.ParseURL(parts...)` applies `url.PathEscape` to each segment before `path.Join`, then preserves the encoding through `(*url.URL).String()` by setting `RawPath` alongside `Path`. Use multi-arg `ParseURL("rest", "workspaces", ws, "styles")` instead of `fmt.Sprintf("%srest/%s/styles", server, ws)`.
+**Workaround:** `transport.BuildURL(base, parts)` applies `url.PathEscape` to each segment before joining and preserves the encoding through `(*url.URL).String()` by setting `RawPath` alongside `Path`. Sub-clients reach it through `coreAdapter.URL(parts...)` (`geoserver.go:422`); never `fmt.Sprintf` REST paths.
 
-**Where:** `utils.go` `ParseURL`. Regression guarded by `utils_unit_test.go` `TestParseURL_NoDoubleEncoding`.
+**Where:** `internal/transport/url.go` (`BuildURL`); regression-guarded by `internal/transport/url_test.go`.
 
 ## 9. Empty `wfs:FeatureType` lists in capabilities
 
 **Symptom:** Older GeoServer versions emit `<FeatureTypeList></FeatureTypeList>` (empty) while newer ones omit the element entirely.
 
-**Workaround:** XML parser treats both as empty list; no caller-visible difference. WMS capabilities parser uses `wms.ParseCapabilitiesE` which returns `(*Capabilities, error)` — prefer it over the deprecated `ParseCapabilities` that swallowed errors.
+**Workaround:** The WFS capabilities XML decoder treats both as an empty `FeatureTypeList`; no caller-visible difference. The WMS side does the same for empty `Layer` lists.
 
-**Where:** `wms/wms.go` `ParseCapabilitiesE`.
+**Where:** `ows/wfs/types.go:106` (`FeatureTypeList`); `ows/wms/wms.go:114` (`ParseCapabilities`) returns `(*Capabilities, error)`.
 
 ## 10. Security service response keys differ across versions
 
@@ -86,7 +84,7 @@ If you're implementing a new REST resource client or debugging an integration-te
 
 **Workaround:** `GetRoles`, `GetUserRoles`, and `GetGroups` decode both shapes; whichever key has content wins.
 
-**Where:** `security.go` (`GetRolesContext`, `GetUserRolesContext`, `GetGroupsContext`).
+**Where:** `rest/security/security.go:246` (`GetRoles` decode), `rest/security/security.go:292` (`GetUserRoles` and `GetGroups` reuse the same shape-tolerant pattern); types live in `rest/security/types.go:64`.
 
 ---
 
