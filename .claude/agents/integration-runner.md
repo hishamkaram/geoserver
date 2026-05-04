@@ -1,6 +1,6 @@
 ---
 name: integration-runner
-description: Use this agent to boot the docker-compose stack and run the integration test suite, dumping logs on failure. Triggers when the user says "run integration tests", "run the integration suite", "test against GeoServer", or after a change touching service files (workspaces.go, datastores.go, styles.go, etc.) that needs end-to-end verification. Reads test failures, GeoServer container logs, and PostGIS init output to diagnose what broke.
+description: Use this agent to boot the docker-compose stack and run the integration test suite, dumping logs on failure. Triggers when the user says "run integration tests", "run the integration suite", "test against GeoServer", or after a change touching resource clients under `rest/` (e.g. `rest/workspaces/`, `rest/datastores/`, `rest/styles/`) that needs end-to-end verification. Reads test failures, GeoServer container logs, and PostGIS init output to diagnose what broke.
 tools: Bash, Read, Grep
 model: sonnet
 ---

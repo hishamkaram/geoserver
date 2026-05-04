@@ -61,7 +61,7 @@ If you need a no-context entry point in caller code, use `context.Background()` 
 ## Common GeoServer REST quirks (cross-reference)
 
 - Workspace-scoped `POST /workspaces/{ws}/styles` requires `Accept: */*`, not `application/json` — see `rest/styles/styles.go`.
-- Empty styles collection comes back as `{"styles":""}` (bare string, not object) — see `rest/styles/styles.go:75,91`.
+- Empty styles collection comes back as `{"styles":""}` (bare string, not object) — `json.RawMessage` decode at `rest/styles/styles.go:85` tolerates both shapes.
 - `LayerGroup.styles.style` is a mixed `[string|object]` array — custom `UnmarshalJSON` in `rest/layergroups/types.go:97-108`. The `Published` type has the same shape — `rest/layergroups/types.go:57-60`.
 - Full quirk reference: `/skill geoserver-rest-quirks` or read `.claude/skills/geoserver-rest-quirks/SKILL.md`.
 

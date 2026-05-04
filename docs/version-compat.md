@@ -24,7 +24,7 @@ CI uses `setup-go@v6` with `check-latest: true`, so the unit, vuln, and integrat
 | ≤ 2.17 | Unsupported | not in CI | Pre-modern security API; major drift in JSON response shapes. |
 | 3.0.x | Tracked for v2.x | not in CI | Jakarta EE / Tomcat 11 / ImageN raster engine. Validates only after the migration settles in production deploys. See [`../ROADMAP.md`](../ROADMAP.md). |
 
-**Integration coverage:** every PR runs the full integration suite against both 2.27.4 LTS and 2.28.0 stable. Both legs must pass before merge. Cross-version differences in REST response shapes are decoded transparently — `security.go` handles both `roles` and `roleNames` keys, both `groups` and `groupNames`, etc. See [`geoserver-rest-quirks.md`](geoserver-rest-quirks.md) for the full quirks catalog.
+**Integration coverage:** every PR runs the full integration suite against both 2.27.4 LTS and 2.28.0 stable. Both legs must pass before merge. Cross-version differences in REST response shapes are decoded transparently — `rest/security/security.go` handles both `roles` and `roleNames` keys, both `groups` and `groupNames`, etc. See [`geoserver-rest-quirks.md`](geoserver-rest-quirks.md) for the full quirks catalog.
 
 ## Tomcat / Java
 
@@ -40,9 +40,9 @@ The dev / test Docker stack uses **`postgis/postgis:16-3.4`**. Older PostGIS ver
 
 | Path | Status |
 |---|---|
-| `github.com/hishamkaram/geoserver` | v1.x — supported |
-| `github.com/hishamkaram/geoserver/v2` | v2.x — beta (latest `v2.0.0-beta.1`); public API frozen for review until `v2.0.0` final |
-| `gopkg.in/hishamkaram/geoserver.v1` | Legacy alias — deprecated; resolves to the same source. New code should import the canonical path. |
+| `github.com/hishamkaram/geoserver/v2` | v2.x — stable (latest `v2.0.0`); main line at the repo root on `master`. New code should import this. |
+| `github.com/hishamkaram/geoserver` | v1.x — end-of-feature on the `release/v1` branch (latest `v1.1.2`); security fixes only. |
+| `gopkg.in/hishamkaram/geoserver.v1` | Legacy alias — deprecated; resolves to the same v1 source. New code should not use it. |
 
 ## When this matrix changes
 

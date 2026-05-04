@@ -1,21 +1,23 @@
 ---
-description: Verifies that a change preserves the v1.1.x non-breaking contract. Run before opening a PR to master or before tagging a v1.1.x release. Walks through the exported-API surface, *Context twin pattern, deprecation discipline, and concurrency constraints.
+description: Verifies that a change preserves the v1.1.x non-breaking contract. Run before opening a PR to `release/v1` or before tagging a v1.1.x release. Walks through the exported-API surface, *Context twin pattern, deprecation discipline, and concurrency constraints. **For v2 PRs targeting `master`, this skill does not apply** — v2 is allowed to break.
 disable-model-invocation: true
 allowed-tools: Bash(git diff:*) Bash(git log:*) Bash(go doc:*) Bash(grep:*) Read Grep Glob
 ---
 
 # Non-breaking v1.1.x checklist
 
-Run this before opening a PR to `master` or before tagging a v1.1.x release. The contract: **a caller pinned to v1.0 must be able to upgrade to v1.1.x by changing only their `go.mod` version and running `go mod tidy`. No source edits.**
+Run this before opening a PR to `release/v1` or before tagging a v1.1.x release. The contract: **a caller pinned to v1.0 must be able to upgrade to v1.1.x by changing only their `go.mod` version and running `go mod tidy`. No source edits.**
+
+`master` is v2 and does not honor this contract — do not run this skill against PRs targeting `master`.
 
 This skill is manually-invoked (`/non-breaking-v1`) — Claude won't auto-trigger it because the workflow has timing implications (run it at PR / release time, not mid-edit).
 
 ## Steps
 
-### 1. Compute exported-API diff against `master`
+### 1. Compute exported-API diff against `release/v1`
 
 ```
-git diff master...HEAD -- '*.go' ':!*_test.go' | grep -E '^[-+](func|type|var|const)' || echo "no exported diffs"
+git diff release/v1...HEAD -- '*.go' ':!*_test.go' | grep -E '^[-+](func|type|var|const)' || echo "no exported diffs"
 ```
 
 If `gorelease` is available, prefer the authoritative tool:

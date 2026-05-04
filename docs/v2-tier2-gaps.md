@@ -28,7 +28,7 @@ The original tier-2 list is now closed. Beyond it, narrower-audience endpoints t
 ## How to contribute
 
 1. Pick an item, file an issue summarizing the surface you intend to add (URL paths, request shapes, return shapes — verify against the official docs and the upstream OpenAPI YAML at `geoserver/geoserver/doc/en/api/1.0.0/`).
-2. Match the existing v2 patterns — see [`../README.md#contributing-to-v2`](../README.md#contributing-to-v2) for the per-pattern reference subpackage to copy from.
+2. Match the existing v2 patterns — copy the closest existing sub-client under `rest/` (e.g. `rest/workspaces/` for a flat resource, `rest/datastores/` for a workspace-scoped resource, `rest/featuretypes/` for a workspace-and-store-scoped resource, `rest/styles/` for a sub-client with both flat and `InWorkspace` modes). See [`architecture.md`](architecture.md) for the layout rationale.
 3. Run integration locally before push — `make compose-up && go test -tags=integration ./rest/<resource>/`.
 4. CI's wire-format coverage runs on real GeoServer 2.27.4 LTS + 2.28.0 stable; both legs must pass.
 
