@@ -24,6 +24,7 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/layergroups"
 	"github.com/hishamkaram/geoserver/v2/rest/layers"
 	"github.com/hishamkaram/geoserver/v2/rest/logging"
+	"github.com/hishamkaram/geoserver/v2/rest/monitor"
 	"github.com/hishamkaram/geoserver/v2/rest/namespaces"
 	"github.com/hishamkaram/geoserver/v2/rest/resources"
 	"github.com/hishamkaram/geoserver/v2/rest/security"
@@ -238,6 +239,12 @@ type Client struct {
 	// that reference specific fonts; typos would otherwise surface as
 	// silent label-rendering fallbacks.
 	Fonts *fonts.Client
+
+	// Monitor is the entry point for the read-only audit log at
+	// /rest/monitor/requests, exposed by the gs-monitor extension.
+	// The dev/test docker image bakes the extension in; calls
+	// against an unequipped GeoServer return ErrNotFound.
+	Monitor *monitor.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -324,6 +331,7 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.WFSTransforms = wfstransforms.New(adapter)
 	c.Logging = logging.New(adapter)
 	c.Fonts = fonts.New(adapter)
+	c.Monitor = monitor.New(adapter)
 	return c, nil
 }
 

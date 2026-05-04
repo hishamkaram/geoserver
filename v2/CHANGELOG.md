@@ -12,6 +12,20 @@ Closes the fonts longer-tail item from [`../docs/v2-tier2-gaps.md`](../docs/v2-t
 
 - **`c.Fonts.List(ctx)`** at `/rest/fonts` — returns the list of font families the JVM exposes to GeoServer's SLD labelling pipeline as `[]string`. The result reflects whatever is on the server's classpath at call time (system fonts plus anything dropped into the data directory's `styles/` subdirectory).
 
+### Added — Monitoring (request audit log)
+
+Closes the monitoring longer-tail item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Read-only access to GeoServer's request audit log, served by the `gs-monitor` extension. The dev/test docker image now bakes the extension in so CI exercises the surface against a real server.
+
+- **`c.Monitor.List(ctx, ListOptions)`** at `/rest/monitor/requests.csv` — returns `[]Request` decoded from the CSV wire form. `Request` covers the daily-driver audit columns (ID / Path / Service / Operation / HTTPMethod / StartTime / EndTime / TotalTime / Status / ResponseStatus / ResponseLength / RemoteAddr / RemoteUser / Resources, …).
+- **`c.Monitor.ListRaw(ctx, ListOptions)`** returns the raw CSV `io.ReadCloser` for streaming-pipeline use cases or to access fields not promoted into the typed `Request`.
+- **`c.Monitor.Get(ctx, id)`** at `/rest/monitor/requests/{id}.csv` for a single audit entry.
+- **`ListOptions`** — `From` / `To` (ISO 8601 timestamps), `Filter` (`attributeName:OP:value`), `Order`, `Offset` / `Count`, `Live` (live-vs-completed), `Fields` (column projection).
+- **Wire-quirk:** `fields` parameter accepts only one column today (despite the docs). Multi-column projection trips a 500 `"No such property 'Id,Path' for object Request"`. Fetch all fields and discard client-side until upstream fixes the parser. Documented on `ListOptions.Fields`.
+
+### Docker image — Monitor extension baked in
+
+- **`docker/Dockerfile`** now downloads and installs the `gs-monitor` plugin during the image build. Without it `GET /rest/monitor/requests.csv` returns 404 and the audit-log integration suite would silently skip.
+
 ### Added — GeoWebCache: global config, gridsets, mass-truncate
 
 Three new sub-clients on `c.GWC` cover the GWC endpoints not in the original GWC port. All three are universal (work without any GeoServer extension) and integration-test against the dev/test docker stack.
