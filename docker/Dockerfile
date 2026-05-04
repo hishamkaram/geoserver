@@ -6,7 +6,8 @@
 # target and is tracked separately for v2 of this client library.
 
 ARG TOMCAT_TAG=9-jdk17-temurin
-FROM tomcat:${TOMCAT_TAG}
+ARG TOMCAT_DIGEST=sha256:57536fa59652ece9df8d744749fa5a424136388f2eb934ddc8741918a51afd56
+FROM tomcat:${TOMCAT_TAG}@${TOMCAT_DIGEST}
 
 LABEL maintainer="Hesham Karm<hishamwaleedkaram@gmail.com>"
 
