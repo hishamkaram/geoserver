@@ -12,6 +12,15 @@ Closes the fonts longer-tail item from [`../docs/v2-tier2-gaps.md`](../docs/v2-t
 
 - **`c.Fonts.List(ctx)`** at `/rest/fonts` — returns the list of font families the JVM exposes to GeoServer's SLD labelling pipeline as `[]string`. The result reflects whatever is on the server's classpath at call time (system fonts plus anything dropped into the data directory's `styles/` subdirectory).
 
+### Added — GeoWebCache: global config, gridsets, mass-truncate
+
+Three new sub-clients on `c.GWC` cover the GWC endpoints not in the original GWC port. All three are universal (work without any GeoServer extension) and integration-test against the dev/test docker stack.
+
+- **`c.GWC.Global().Get(ctx)` / `Update(ctx, *Global)`** at `/gwc/rest/global` — runtime stats toggle, WMTS CITE compliance flag, backend timeout. Wire envelope `{"global":{...}}`; PUT accepts JSON.
+- **`c.GWC.Gridsets()`** at `/gwc/rest/gridsets` — `List` (`[]string`), `Get(ctx, name) → *GridSet`, `Delete(ctx, name)`. `GridSet` covers the daily-driver fields (Name, SRS, Extent, Resolutions / Scales / ScaleNames, AlignTopLeft / YCoordinateFirst, MetersPerUnit, TileWidth, TileHeight). Create deferred — the XML wire shape for an arbitrary CRS extent is gnarly; the built-in gridsets (EPSG:4326, WebMercatorQuad, dozens of UTM tilings) cover the common case.
+- **`c.GWC.MassTruncate()`** at `/gwc/rest/masstruncate` — `Capabilities`, `TruncateLayer`, `TruncateParameters`, `TruncateOrphans`, `TruncateExtent`. Typed enums for the four documented operation kinds.
+- **Wire-quirk:** mass-truncate POST requires `Content-Type: text/xml`; the parser registered under `application/xml` rejects the body with `"Format extension unknown"`. The SDK always sends `text/xml`.
+
 ### Added — Master password & self password (security)
 
 Closes the master-password and self-admin-password longer-tail items from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Two new sub-clients on `c.Security` cover the daily-driver auth-rotation surface.
