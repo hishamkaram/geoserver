@@ -1,110 +1,122 @@
 # Architecture
 
-This document describes how `github.com/hishamkaram/geoserver` is laid out, the design tenets, and the trade-offs that drive the v1.x shape. It is reference material; release notes live in [`CHANGELOG.md`](../CHANGELOG.md), and the forward-looking direction lives in [`../ROADMAP.md`](../ROADMAP.md).
+This document describes how `github.com/hishamkaram/geoserver/v2` is laid out, the design tenets, and the trade-offs behind v2's shape. It is reference material; release notes live in [`../CHANGELOG.md`](../CHANGELOG.md), and the forward-looking direction lives in [`../ROADMAP.md`](../ROADMAP.md).
 
 ## Package shape
 
-The library is a single `package geoserver` at the module root, with one subpackage:
+The library is rooted at `package geoserver` (the public client surface) plus one resource-client subpackage per REST resource and one OWS subpackage per service. The HTTP transport is hidden in `internal/`.
 
 | Path | Purpose |
 |---|---|
-| `github.com/hishamkaram/geoserver` | Public API — `*GeoServer` client, all resource methods, options, errors |
-| `github.com/hishamkaram/geoserver/wms` | XML types and parser for WMS GetCapabilities responses |
-| `github.com/hishamkaram/geoserver/internal/transport` (v1.1.x+) | HTTP request building / dispatch and URL construction. Implementation detail — not importable by external code |
+| `github.com/hishamkaram/geoserver/v2` | Public surface — `*Client`, options, `*APIError`, sentinel errors. The constructor lives here; the resource methods live in their per-resource subpackages, surfaced via exported fields on `*Client`. |
+| `github.com/hishamkaram/geoserver/v2/rest/<resource>` | One subpackage per REST resource: `workspaces`, `datastores`, `featuretypes`, `coveragestores`, `coverages`, `layers`, `layergroups`, `styles`, `namespaces`, `settings`, `about`, `security`, `acl`, `system`, `imports`, `gwc`, `services`, `resources`, `templates`, `urlchecks`, `wmsstores`, `wmslayers`, `wmtsstores`, `wmtslayers`, `wfstransforms`, `logging`, `fonts`, `monitor`. Each exposes a `*Client` (and where applicable scoped `*WorkspaceClient`, `*DatastoreClient`, etc.). |
+| `github.com/hishamkaram/geoserver/v2/ows/{wms,wfs,wcs}` | OWS read-only clients: `GetCapabilities` + `DescribeFeatureType` (WFS) / `DescribeCoverage` (WCS). Separate from `rest/services` because OWS endpoints are XML-over-HTTP and live at different URL roots. |
+| `github.com/hishamkaram/geoserver/v2/internal/transport` | HTTP request building, URL construction, JSON/XML/raw/stream dispatch. Implementation detail — not importable by external code. |
+| `github.com/hishamkaram/geoserver/v2/internal/wire` | Internal helpers for the more delicate wire-format quirks (mixed-shape arrays, empty-collection string-vs-object payloads). Not importable. |
 
-A separate module exists at `github.com/hishamkaram/geoserver/v2` (latest tag `v2.0.0-beta.1` — public API frozen for review) with a different shape — sub-clients per resource (`c.Workspaces`, `c.Datastores.InWorkspace(ws)`, `c.Services.WMS()`, `c.GWC.Seed()`, `c.Imports`, `c.Resources`, etc.) and surfaces v1 never had. v1 and v2 ship independently. See [`migration-v1-to-v2.md`](./migration-v1-to-v2.md) for the side-by-side mapping.
+v1 is a separate, end-of-feature release line on the `release/v1` branch (security fixes only; latest tag `v1.1.2`). See [`migration-v1-to-v2.md`](./migration-v1-to-v2.md) for the side-by-side mapping.
 
 ## Public API entry points
 
-There is **one** type users construct: `*GeoServer`. There are **two** ways to construct it:
-
-1. **`New(serverURL, username, password string, opts ...Option) *GeoServer`** — recommended (v1.1+). Functional options for HTTP client, timeout, logger, user agent, basic auth.
-2. **`GetCatalog(serverURL, username, password string) *GeoServer`** — legacy v1.0 entry point. Marked `// Deprecated: prefer New(...)`. Internally a one-liner around `New`.
-
-`*GeoServer` exposes ~90 methods covering the GeoServer REST resource set: workspaces, datastores, coverage stores, coverages, feature types, layers, layer groups, styles, namespaces, settings, security (users / groups / roles), ACL, about, capabilities, configuration. See `pkg.go.dev/github.com/hishamkaram/geoserver` for the full list.
-
-## *Context twin pattern (mandatory for new exports)
-
-Every exported method on `*GeoServer` comes in a pair:
+There is **one** type users construct: `*Client`. The constructor is functional-options-only:
 
 ```go
-// Non-context wrapper — delegates with context.Background()
-func (g *GeoServer) GetWorkspaces() ([]*Resource, error) {
-    return g.GetWorkspacesContext(context.Background())
-}
-
-// Context-aware variant — does the actual work
-func (g *GeoServer) GetWorkspacesContext(ctx context.Context) ([]*Resource, error) {
-    // ...
-}
+func New(serverURL string, opts ...Option) (*Client, error)
 ```
 
-Reference: `workspaces.go:16-38,57-79`. The non-context form exists only for source-compatibility with v1.0 callers; **new code should always use the `*Context` form** so it can honor cancellation and deadlines.
+Options live in `options.go`: `WithHTTPClient`, `WithTransport`, `WithTimeout`, `WithLogger`, `WithUserAgent`, `WithBasicAuth`, `WithBearerToken`, `WithHeader`. Credentials are passed through options, not positional args — that's the v2 break with v1's `New(url, user, pass, opts...)` shape.
 
-When a contributor adds a new method on `*GeoServer`, both the non-context wrapper and the `*Context` sibling must land together, plus the corresponding entry in the parallel `*ServiceWithContext` interface.
+`*Client` exposes 31 sub-clients as exported pointer fields (`c.Workspaces`, `c.Datastores`, `c.FeatureTypes`, `c.Styles`, …). Sub-client methods do the actual REST work; the parent `*Client` only constructs and owns them.
+
+Hierarchical resources scope through fluent `In*` methods that return a new lightweight scoped client:
+
+```go
+// Datastore scoped to a workspace
+c.Datastores.InWorkspace("topp").Create(ctx, datastores.PostGIS{...})
+
+// Feature type scoped to a workspace + datastore
+c.FeatureTypes.InWorkspace("topp").InDatastore("nyc").Create(ctx, ft)
+
+// Coverage scoped to a workspace + coverage store
+c.Coverages.InWorkspace("nurc").InCoverageStore("dem").Get(ctx, "elev")
+```
+
+Scoped clients are immutable value-shaped wrappers around the parent's `Core` interface — cheap to allocate, safe to discard.
+
+## Context-first methods
+
+Every exported method on every sub-client takes `ctx context.Context` as its first argument. There are **no** `*Context` twin methods, and no `context.Background()` shims; v1's twin pattern was a v1.0 source-compat affordance and was deliberately dropped at the v2 boundary.
+
+```go
+func (c *Client) GetWorkspaces(ctx context.Context) ([]*workspaces.Workspace, error)
+```
+
+If a caller has no context, they pass `context.Background()` at the call site. The library itself never does.
 
 ## Errors
 
-Every HTTP error is a `*Error` (`errors.go`):
+Every non-2xx GeoServer response surfaces as `*APIError` (`errors.go`):
 
 ```go
-type Error struct {
-    Op         string  // operation name, e.g. "GetWorkspaces"
+type APIError struct {
+    Op         string  // operation name, e.g. "Workspaces.Create"
+    Method     string  // HTTP method
     URL        string  // request URL
     StatusCode int     // HTTP status
-    Body       []byte  // response body, truncated to 8 KiB
-    Err        error   // wrapped sentinel (one of ErrNotFound, ErrConflict, ...)
+    Body       []byte  // response body, capped at 8 KiB internally
 }
 ```
 
-Status codes map to package sentinel errors. The mapping (`errors.go:13-32`) covers `ErrBadRequest`, `ErrUnauthorized`, `ErrForbidden`, `ErrNotFound`, `ErrMethodNotAllowed`, `ErrConflict`, `ErrUnsupportedMediaType`, `ErrRateLimited`, `ErrServerError`. Match via `errors.Is`:
+`*APIError.Is(target)` matches a fixed set of 12 sentinels: `ErrBadRequest`, `ErrUnauthorized`, `ErrForbidden`, `ErrNotFound`, `ErrMethodNotAllowed`, `ErrConflict`, `ErrUnsupportedMediaType`, `ErrRateLimited`, `ErrServerError`, `ErrBadGateway`, `ErrServiceUnavailable`, `ErrGatewayTimeout`. Match via `errors.Is`:
 
 ```go
-_, err := gs.GetWorkspaceContext(ctx, "doesnotexist")
+_, err := c.Workspaces.Get(ctx, "doesnotexist")
 if errors.Is(err, geoserver.ErrNotFound) {
     // handle
 }
 ```
 
-The `*Error.Error()` string preserves v1.0's `"abstract:%s\ndetails:%s\n"` format so existing string-matching callers don't break.
+The `Error()` string is a stable, parseable form:
+
+```
+geoserver: <Op> <Method> <URL>: <statusCode> <statusText>: <body-preview>
+```
+
+Body preview is truncated to ~120 bytes. Don't parse error strings for control flow — use `errors.Is` (sentinel) or `errors.As` (inspect fields).
+
+The v2 type rename (`*Error` → `*APIError`) and the format break (v1's `"abstract:%s\ndetails:%s\n"` is gone) are deliberate v2-boundary changes; v1.x callers cannot port unmodified.
 
 ## Logging
 
-`g.logger` is a `*Logger` wrapper (`logging.go:11-71`) over stdlib `*slog.Logger`. The wrapper exists for v1.0 source-compat (preserves `Errorf`/`Warnf`/`Infof`/`Debugf` and `Error`/`Warn`/`Info`/`Debug` shapes from the original logrus-based API).
+The library uses `*slog.Logger` directly. There is no `*Logger` wrapper — that abstraction was a v1.0 source-compat shim and was dropped in v2.
 
-Configure via `New(url, u, p, WithLogger(handler))` where `handler` is any `slog.Handler`. Default is `slog.DiscardHandler` (silent).
+Configure via `WithLogger(l *slog.Logger)`. Default is `slog.New(slog.DiscardHandler)` (silent). Internal call sites use structured logging — `logger.Debug(msg, args...)` with key/value pairs, not printf-style.
 
 The library logs at:
 
 - **Debug** — HTTP details (URL, status, body length).
 - **Warn** — transport-level retry exhaustion, unexpected response shapes.
-- **Error** — protocol violations, deserialization failures, type-assertion mismatches.
+- **Error** — protocol violations, deserialization failures.
 
 There is no `Info` chatter.
 
 ## HTTP transport
 
-All REST calls funnel through `(g *GeoServer).DoRequestContext` (`utils.go`). Exported, but not the recommended call surface — resource methods (e.g., `GetWorkspacesContext`) are. Internal organization in v1.1.x splits the algorithm:
+Every sub-client call funnels through `coreAdapter.Do(ctx, op, method, url, body, query, out)` (`geoserver.go:429`), which delegates to `transport.DoJSON / DoXML / DoRaw / DoStream` in `internal/transport/transport.go`. Sub-clients never touch `*http.Client.Do` directly.
 
-- `*GeoServer.DoRequestContext` — the public method, kept for v1.0 source-compat.
-- `internal/transport/transport.go` — the actual algorithm.
+The `coreAdapter` is the bridge between resource-client subpackages and the private `clientCore` (configured `*http.Client`, base URL, headers, logger). Sub-clients consume only the `Core` interface, not `*Client` itself, so they can be composed and unit-tested in isolation.
 
-`*GeoServer.DoRequest` is the `context.Background()` shim around `DoRequestContext` (same twin pattern as resource methods).
-
-## URL building
-
-`g.ParseURL(parts ...string)` (`utils.go`) builds REST URLs from segments with two non-trivial bits of correctness:
-
-1. **`url.PathEscape` per segment** — workspace and layer names with spaces, slashes, or non-ASCII characters produce correctly-escaped URLs. v1.0 used `fmt.Sprintf` and produced malformed URLs for these inputs.
-2. **`RawPath` preservation** — the encoded path survives `(*url.URL).String()` instead of being re-encoded. Without this, a segment escaped to `%2A` would be re-encoded to `%252A` by `String()`, which GeoServer's `StrictHttpFirewall` rejects as potentially malicious. The bug surfaced when ACL `DELETE` paths started carrying literal `*` wildcards. Regression-guarded by `utils_unit_test.go` `TestParseURL_NoDoubleEncoding`.
+URL building goes through `coreAdapter.URL(parts ...string)` (`geoserver.go:422`), which delegates to `transport.BuildURL` (`internal/transport/url.go`). Each segment is path-escaped and `RawPath` is preserved, so workspace/layer names with spaces, slashes, or non-ASCII characters produce correctly-escaped URLs that survive `(*url.URL).String()` without double-encoding. Regression-guarded by `internal/transport/url_test.go`.
 
 ## Concurrency
 
-`*GeoServer` exported fields are **not safe for concurrent mutation**. Construct once with `New(...)` and treat the returned value as immutable. Concurrent reads are safe (the `*http.Client` underneath is concurrency-safe by stdlib contract; the `*Logger` is `*slog.Logger`-backed, also safe).
+`*Client` is **immutable after `New(...)` returns.** All struct fields are private or pointers to sub-clients set once at construction and never reassigned. Concurrent use across goroutines is safe by design — no caller-side locking required.
 
-Concurrent reads include concurrent calls to different resource methods on the same `*GeoServer`. These are routine; the test suite exercises them via `-race`.
+The same posture holds for every sub-client (`workspaces.Client`, `datastores.Client`, …): they expose methods only, holding a single private `Core` interface reference. Scoped clients (`*WorkspaceClient`, `*DatastoreClient`, …) are value-shaped and similarly stateless.
 
-The "exported fields, accept reads, document non-mutability" model is a v1.0 carryover. v2 fixes this with private fields; see [`migration-v1-to-v2.md`](migration-v1-to-v2.md).
+The race-safety guarantee is verified by `TestClient_ConcurrentRequests` (`geoserver_concurrent_test.go:17`) running under `go test -race` in CI.
+
+User-supplied transports passed via `WithHTTPClient` / `WithTransport` are the caller's responsibility — if their `RoundTripper` mutates shared state, the race lives in their code.
 
 ## Test split
 
@@ -112,20 +124,20 @@ Two test layers, distinguished by file naming and build tag:
 
 | Layer | Naming | Build tag | What it does |
 |---|---|---|---|
-| Unit | `*_unit_test.go` | none | `httptest.Server` mocks; covers each method's request shape, response decode, status-code → sentinel mapping. `make test-unit` runs them in <5s. No Docker required. |
-| Integration | `*_test.go` (no `_unit_` suffix) | `//go:build integration` | Real GeoServer + PostGIS via `docker compose`. Exercises end-to-end flows. `make test-integration` boots the stack first. |
+| Unit | `*_unit_test.go` | none | `httptest.Server` fakes; covers each method's request shape, response decode, status-code → sentinel mapping. `make test-unit` runs them in <5s, no Docker required. |
+| Integration | `*_integration_test.go` | `//go:build integration` | Real GeoServer + PostGIS via `docker compose`. Exercises end-to-end flows. `make test-integration` boots the stack first. |
 
-This split is non-standard for Go (idiomatic Go puts unit tests in `*_test.go` next to the code, period), but the deliberate naming makes the split greppable. Both layers are mandatory on every PR; CI runs unit on `Lint` and `Unit tests (Go 1.25)`, integration on `GeoServer 2.27.4` and `GeoServer 2.28.0`.
+Both layers are mandatory on every PR. CI runs unit on **Go 1.23 + 1.25** and integration on **GeoServer 2.27.4 LTS + 2.28.0 stable** — all four legs must go green.
 
 ## GeoServer REST quirks
 
-GeoServer's REST API has version-specific quirks that this client works around. See [`geoserver-rest-quirks.md`](geoserver-rest-quirks.md) for the catalog.
+GeoServer's REST API has version-specific quirks the client works around (mixed-shape JSON arrays, empty-collection string-vs-object payloads, workspace-scoped style-endpoint Accept-header dispatch, etc.). See [`geoserver-rest-quirks.md`](geoserver-rest-quirks.md) for the catalog with code locations.
 
 ## Cross-references
 
-- [`../README.md`](../README.md) — quickstart, install, examples
-- [`../ROADMAP.md`](../ROADMAP.md) — v1.x maintenance, v2.x design, GeoServer 3 timeline
+- [`../README.md`](../README.md) — quickstart, install, capability surface, worked example
+- [`../ROADMAP.md`](../ROADMAP.md) — v1 maintenance window, v2 evolution, GeoServer 3 timeline
 - [`../CONTRIBUTING.md`](../CONTRIBUTING.md) — dev setup, PR workflow, required CI checks
-- [`geoserver-rest-quirks.md`](geoserver-rest-quirks.md) — GeoServer 2.x REST quirks the client handles
-- [`version-compat.md`](version-compat.md) — Go × GeoServer version matrix
-- [`migration-v1-to-v2.md`](migration-v1-to-v2.md) — v1 → v2 migration (in progress)
+- [`migration-v1-to-v2.md`](migration-v1-to-v2.md) — v1 → v2 migration mapping
+- [`version-compat.md`](version-compat.md) — Go × GeoServer support matrix
+- [`geoserver-rest-quirks.md`](geoserver-rest-quirks.md) — wire-format quirks the client handles
