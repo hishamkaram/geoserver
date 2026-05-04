@@ -61,7 +61,7 @@ jobs:
           path: coverage.out
           retention-days: 14
       - name: Upload coverage to Codecov (v1)
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ./coverage.out
           flags: v1
@@ -98,7 +98,7 @@ jobs:
           path: v2/coverage.out
           retention-days: 14
       - name: Upload coverage to Codecov (v2)
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ./v2/coverage.out
           flags: v2
