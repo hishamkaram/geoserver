@@ -1,5 +1,5 @@
 ---
-description: Adds a Context-aware sibling method to a GeoServer client method, following the established v1.1 pattern. Use when adding a new exported method on *GeoServer or porting an old method that lacks a *Context variant. Outputs the full code shape (non-context wrapper + Context impl + interface entry + unit test stub) for the caller to apply.
+description: Adds a Context-aware sibling method to a GeoServer client method, following the established v1.1 pattern. Use ONLY when patching the `release/v1` branch (the v1 maintenance line) and adding a new exported method on `*GeoServer` or porting an old method that lacks a `*Context` variant. **Do not use on `master`** — v2 is context-first natively (every method already takes `ctx` first; there are no twins). Outputs the full code shape (non-context wrapper + Context impl + interface entry + unit test stub) for the caller to apply.
 argument-hint: [method-name] [resource-file]
 disable-model-invocation: true
 ---
@@ -17,7 +17,9 @@ This skill is manually invoked because it expects arguments. Run as:
 
 ## What this skill does
 
-Generates the four pieces every new `*GeoServer` method needs to comply with the v1.1.x *Context twin pattern. Read the canonical reference at `workspaces.go:16-38,57-79` (the `CreateWorkspace` / `CreateWorkspaceContext` pair) before applying.
+Generates the four pieces every new `*GeoServer` method needs to comply with the v1.1.x `*Context` twin pattern on the `release/v1` branch. Read the canonical reference at `workspaces.go:16-38,57-79` on `release/v1` (the `CreateWorkspace` / `CreateWorkspaceContext` pair) before applying.
+
+**Pre-flight:** confirm the working branch descends from `release/v1` — `git merge-base --is-ancestor release/v1 HEAD`. If the branch targets `master`, abort: v2 has no twin pattern and a new `*Context` method on `master` is wrong.
 
 ## 1. The non-context wrapper
 
