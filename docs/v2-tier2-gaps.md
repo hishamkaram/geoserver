@@ -1,6 +1,6 @@
 # v2 — tier-2 gap-analysis backlog
 
-The v2 client closes every "everyone needs it" REST API surface plus the original tier-2 backlog as of `v2.0.0-beta.1` and the post-beta tier-2 PRs (see [`../v2/CHANGELOG.md`](../v2/CHANGELOG.md)). What's documented here is the **complete shipped tier-2 surface** plus the leftover narrow-audience endpoints not on the original list — each tractable as its own follow-up PR.
+The v2 client closes every "everyone needs it" REST API surface plus the original tier-2 backlog as of `v2.0.0-beta.2` (see [`../v2/CHANGELOG.md`](../v2/CHANGELOG.md)). What's documented here is the **complete shipped tier-2 surface** plus the leftover narrow-audience endpoints not on the original list — each tractable as its own follow-up PR.
 
 Each entry below is independently tractable as its own follow-up PR. None block `v2.0.0`. Each is grounded in the official GeoServer REST docs (`https://docs.geoserver.org/latest/en/user/rest/`) and reuses the existing v2 plumbing (`internal/transport.BuildURL`, `transport.DoJSON` / `DoXML` / `DoRaw`, the per-resource `Core` interface, the `*Client → InWorkspace(ws) → *WorkspaceClient` scoping pattern). PRs welcome — open an issue first if the work touches a new wire-format quirk so the design conversation can happen in public.
 
@@ -10,16 +10,16 @@ The original tier-2 list is now closed. Beyond it, narrower-audience endpoints t
 
 ## Already shipped
 
-- **ACL services / REST / catalog rules** — `c.ACL.Services()` / `c.ACL.REST()` / `c.ACL.Catalog()`. Closed in beta.1.
-- **Resource API** — `c.Resources` Get / List / Stat / Exists / Put / Move / Copy / Delete against `/rest/resource/{path}`. Closed in beta.1.
-- **Mosaic / structured-coverage granules** — `c.Coverages.InWorkspace(ws).InCoverageStore(cs).Granules(cov)` Schema / List / Get / Delete / DeleteByFilter. Closed post-beta.1.
-- **Templates (FTL)** — `c.Templates` (global) plus six fluent scopes (`InWorkspace`/`InDatastore`/`InFeatureType`/`InCoverageStore`/`InCoverage`); List / Get / Put / PutString / Delete. Closed post-beta.1.
-- **Auth providers + filter chains** — `c.Security.AuthProviders` / `c.Security.AuthFilters` / `c.Security.FilterChains` (each List / Get / Create / Update / Delete; AuthProviders + FilterChains also have SetOrder). Closed post-beta.1.
-- **URL checks** — `c.URLChecks` List / Get / Create / Update / Delete against `/rest/urlchecks`. Closed post-beta.1.
-- **Cascaded WMS / WMTS stores + layers** — `c.WMSStores`, `c.WMSLayers`, `c.WMTSStores`, `c.WMTSLayers` (workspace-scoped stores; 2-level scoped layers via `InWorkspace(ws).InStore(s)`). Closed post-beta.1.
-- **WFS XSLT transforms** — `c.WFSTransforms` List / Get / Create / Update / Delete + GetXSLT / PutXSLT / CreateWithXSLT against `/rest/services/wfs/transforms`. Requires the `gs-xslt-wfs` extension on the server. Closed post-beta.1.
-- **Manifests + system status** — `c.About.Manifests` and `c.About.SystemStatus` against `/rest/about/manifest` and `/rest/about/system-status`. Closed post-beta.1.
-- **Logging** — `c.Logging.Get` / `Update` against `/rest/logging` for runtime log-level adjustments. Closed post-beta.1.
+- **ACL services / REST / catalog rules** — `c.ACL.Services()` / `c.ACL.REST()` / `c.ACL.Catalog()`. Shipped in beta.1.
+- **Resource API** — `c.Resources` Get / List / Stat / Exists / Put / Move / Copy / Delete against `/rest/resource/{path}`. Shipped in beta.1.
+- **Mosaic / structured-coverage granules** — `c.Coverages.InWorkspace(ws).InCoverageStore(cs).Granules(cov)` Schema / List / Get / Delete / DeleteByFilter. Shipped in beta.2.
+- **Templates (FTL)** — `c.Templates` (global) plus six fluent scopes (`InWorkspace`/`InDatastore`/`InFeatureType`/`InCoverageStore`/`InCoverage`); List / Get / Put / PutString / Delete. Shipped in beta.2.
+- **Auth providers + filter chains** — `c.Security.AuthProviders` / `c.Security.AuthFilters` / `c.Security.FilterChains` (each List / Get / Create / Update / Delete; AuthProviders + FilterChains also have SetOrder). Shipped in beta.2.
+- **URL checks** — `c.URLChecks` List / Get / Create / Update / Delete against `/rest/urlchecks`. Shipped in beta.2.
+- **Cascaded WMS / WMTS stores + layers** — `c.WMSStores`, `c.WMSLayers`, `c.WMTSStores`, `c.WMTSLayers` (workspace-scoped stores; 2-level scoped layers via `InWorkspace(ws).InStore(s)`). Shipped in beta.2.
+- **WFS XSLT transforms** — `c.WFSTransforms` List / Get / Create / Update / Delete + GetXSLT / PutXSLT / CreateWithXSLT against `/rest/services/wfs/transforms`. Requires the `gs-xslt-wfs` extension on the server. Shipped in beta.2.
+- **Manifests + system status** — `c.About.Manifests` and `c.About.SystemStatus` against `/rest/about/manifest` and `/rest/about/system-status`. Shipped in beta.2.
+- **Logging** — `c.Logging.Get` / `Update` against `/rest/logging` for runtime log-level adjustments. Shipped in beta.2.
 
 ## How to contribute
 
