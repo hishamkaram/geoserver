@@ -53,6 +53,20 @@ RUN set -eux; \
     cp importer-jars/*.jar /usr/local/tomcat/webapps/geoserver/WEB-INF/lib/; \
     rm -rf importer.zip importer-jars
 
+# Monitor extension — required for the v2 SDK's `c.Monitor`
+# integration tests. Without it `GET /rest/monitor/requests` returns
+# 404. Baked in here so CI exercises the read-only monitoring REST
+# surface against a real server. Default config (no persisted audit
+# log) is fine for testing — the test only asserts the API contract.
+ARG MONITOR_DOWNLOAD_URL=https://downloads.sourceforge.net/project/geoserver/GeoServer/${GEOSERVER_VERSION}/extensions/geoserver-${GEOSERVER_VERSION}-monitor-plugin.zip
+RUN set -eux; \
+    cd /tmp; \
+    curl -fsSL --proto '=https' --tlsv1.2 -o monitor.zip "${MONITOR_DOWNLOAD_URL}"; \
+    mkdir monitor-jars; \
+    unzip -q -j monitor.zip "*.jar" -d monitor-jars; \
+    cp monitor-jars/*.jar /usr/local/tomcat/webapps/geoserver/WEB-INF/lib/; \
+    rm -rf monitor.zip monitor-jars
+
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
