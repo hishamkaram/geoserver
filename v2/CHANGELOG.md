@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0] — 2026-05-04
+
+First stable release. The public API has been frozen for review since `beta.1`; there are no surface changes between `beta.3` and `2.0.0`. The module path remains `github.com/hishamkaram/geoserver/v2` and will not change in v2.x.
+
+The full feature set is described under earlier `[2.0.0-alpha.*]` and `[2.0.0-beta.*]` stanzas below — every "everyone needs it" REST surface, the original tier-2 backlog, and four longer-tail surfaces (fonts, master + self password rotation, GWC additions, monitoring with the `gs-monitor` extension baked into the dev/test docker image).
+
+Existing callers on `beta.3` can `go get @v2.0.0` and recompile without changes.
+
 ## [2.0.0-beta.3] — 2026-05-04
 
 Third beta. Adds four longer-tail surfaces on top of beta.2's tier-2-complete state — fonts, master/self password rotation, GWC global config + gridsets + mass-truncate, and the monitoring (request audit log) extension. The dev/test docker image now bakes the `gs-monitor` plugin in alongside `gs-importer` so CI exercises the full audit-log surface against real GeoServer 2.27.4 LTS and 2.28.0 stable. No breaking changes from `beta.2`; existing callers can `go get @v2.0.0-beta.3` and recompile. Public API stays frozen for review through the beta line.

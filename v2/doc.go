@@ -14,14 +14,12 @@
 // extension (batch ingest), and the OWS read-only trio
 // (GetCapabilities + DescribeFeatureType + DescribeCoverage).
 //
-// Public API is frozen for review through the v2.0.0-beta.* line —
-// breaking changes will not land without a strong reason. The latest
-// published preview tag is on the v2.0.0-beta.* line; see the v2 README
-// for the current pin. Until v2 reaches v2.0.0, the v1 line remains
-// the recommended import for production:
+// Public API is stable as of v2.0.0 — no breaking changes will land
+// in v2.x. v2 is the recommended line for new integrations; v1 is
+// end-of-feature on the release/v1 branch (security patches only):
 //
-//	import "github.com/hishamkaram/geoserver"        // v1: stable, full surface
-//	import "github.com/hishamkaram/geoserver/v2"     // v2: preview
+//	import "github.com/hishamkaram/geoserver/v2"     // v2: stable
+//	import "github.com/hishamkaram/geoserver"        // v1: end-of-feature
 //
 // See ../ROADMAP.md for the v2 milestones and ../docs/migration-v1-to-v2.md
 // for the v1 → v2 migration guide.
