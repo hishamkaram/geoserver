@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — WFS XSLT transforms
+
+Closes the WFS XSLT transforms tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Transforms let WFS-T producers register XSLT files that re-shape `GetFeature` output into custom formats (HTML reports, KML, site-specific XML schemas, etc.). Endpoints live at `/rest/services/wfs/transforms` under the `gs-xslt-wfs` extension; calls against an unequipped GeoServer return `ErrNotFound`.
+
+- **`c.WFSTransforms`** — `List` / `Get` / `Create` (metadata-only) / `Update` / `Delete`, plus `GetXSLT` / `PutXSLT` for the XSLT body, plus a single-shot `CreateWithXSLT` that POSTs the XSLT body directly with metadata as query parameters (per the upstream API's `application/xslt+xml` content-type path).
+- **`Transform`** typed core: `Name`, `SourceFormat`, `OutputFormat`, `OutputMimeType`, `FileExtension`, `XSLT` (the path on disk).
+- Wire-quirk: bodies use the `{"transform":{...}}` envelope GeoServer expects on POST/PUT.
+
+The integration test verifies the "extension absent" path against the dev/test docker stack (which doesn't bake in `gs-xslt-wfs`). To run the full CRUD round-trip, install the extension and set `GEOSERVER_HAS_XSLT_WFS=1`.
+
 ### Added — Cascaded WMS / WMTS stores and layers
 
 Closes the cascaded-WMS/WMTS tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Cascaded stores reference a remote WMS / WMTS server; cascaded layers re-publish that remote server's layers through the local GeoServer (federation / proxy setups).
