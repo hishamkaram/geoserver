@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added — Auth providers, auth filters, filter chains
+
+Closes the auth-providers + filter-chains tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Three new sub-clients on `c.Security` cover the security-pluggability surface for multi-IdP deployments.
+
+- **`c.Security.AuthProviders`** — `/security/authproviders`. `List` / `Get` / `Create` / `Update` / `Delete` plus `SetOrder` to replace the active provider order. Supports the four documented core fields (`ID`, `Name`, `ClassName`, `UserGroupServiceName`) plus a free-form `Extras map[string]interface{}` that carries provider-specific config (e.g. an LDAP provider's `serverURL`/`userFormat`, an OIDC provider's `clientId`/`clientSecret`). Custom `MarshalJSON` / `UnmarshalJSON` round-trip the extras flat alongside the typed fields.
+- **`c.Security.AuthFilters`** — `/security/authfilters`. `List` / `Get` / `Create` / `Update` / `Delete`. `AuthFilter` mirrors `AuthProvider`'s typed-core + `Extras` shape.
+- **`c.Security.FilterChains`** — `/security/filterchain`. `List` / `Get` / `Create` / `Update` / `Delete` plus `SetOrder`. Typed core covers the eleven `@`-prefixed JSON attributes (`@name`, `@class`, `@path`, `@disabled`, `@allowSessionCreation`, `@ssl`, `@matchHTTPMethod`, `@interceptorName`, `@exceptionTranslationName`, `@httpMethods`, `@roleFilterName`) plus the `filter` array of [AuthFilter] names.
+
+### Wire-format quirks (security: auth providers / filters)
+
+Discovered via local integration testing against live GeoServer 2.28.0 and confirmed by reading the upstream `restconfig` controllers:
+
+- **GET responses for individual auth providers / filters use a class-name-keyed envelope** — e.g. `{"o.g.s.config.AnonymousAuthenticationFilterConfig":{...}}` — instead of returning the entity flat. The SDK's `unwrapClassEnvelope` heuristic detects the single-key Java-FQN wrapper and unwraps transparently before flat-decoding.
+- **Auth providers' List endpoint returns either an array or a class-keyed map** — `{"authproviders":[...]}` (documented OpenAPI shape) or `{"authproviders":{"<className>":{...}}}` (single-element collapse). `List` accepts both.
+- **Auth filters' GET on a missing name returns `200 + {"null":""}`** instead of `404`. `AuthFilters.Get` detects the empty-Name result and synthesizes an `ErrNotFound`-bearing error so callers can use `errors.Is(err, geoserver.ErrNotFound)`. Auth providers and filter chains both correctly return 404.
+- **Filter chain `filter` field collapses to a scalar string** when there's exactly one filter. `FilterChain.UnmarshalJSON` accepts both shapes.
+- **Filter chain GET / Create / Update use a `{"filters":{...}}` body envelope** — note the field name is "filters" (plural) for a single chain entity. Required for both request and response bodies.
+
 ### Added — Templates (FTL) sub-client
 
 Closes the templates tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). FreeMarker (FTL) templates customize GetFeatureInfo HTML output, WMS HTML capabilities, and other text outputs; GeoServer scopes them at six nested levels and looks up most-specific to global at request time.
