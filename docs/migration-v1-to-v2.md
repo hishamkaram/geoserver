@@ -1,6 +1,6 @@
 # Migration from v1.x to v2.x
 
-> **Status: beta.** Latest published tag is `v2.0.0-beta.1` — public API now frozen for review. v2 has full v1 feature parity at `master` plus surfaces v1 never had — per-service OWS settings, file-upload publishing, layer–style associations, GeoWebCache, the Importer extension, the full ACL surface (`Layers`/`Services`/`REST`/`Catalog`), the Resource API (data-dir byte-stream access), and the OWS read-only trio (GetCapabilities + DescribeFeatureType + DescribeCoverage). Until `v2.0.0` final, **prefer v1.x for production usage**.
+> **Status: stable.** Latest published tag is `v2.0.0`. v2 is the main line at the repo root on `master`; the public API is locked, no breaking changes will land in v2.x. v2 has full v1 feature parity plus surfaces v1 never had — per-service OWS settings, file-upload publishing, layer–style associations, GeoWebCache, the Importer extension, the full ACL surface (`Layers`/`Services`/`REST`/`Catalog`), the Resource API (data-dir byte-stream access), and the OWS read-only trio (GetCapabilities + DescribeFeatureType + DescribeCoverage). v1 is end-of-feature on the `release/v1` branch (security fixes only).
 
 This guide walks through the concrete API differences between v1.x (`github.com/hishamkaram/geoserver`) and v2.x (`github.com/hishamkaram/geoserver/v2`). Each section pairs a v1 snippet with the v2 equivalent.
 

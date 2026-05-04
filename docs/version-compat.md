@@ -40,9 +40,9 @@ The dev / test Docker stack uses **`postgis/postgis:16-3.4`**. Older PostGIS ver
 
 | Path | Status |
 |---|---|
-| `github.com/hishamkaram/geoserver` | v1.x — supported |
-| `github.com/hishamkaram/geoserver/v2` | v2.x — beta (latest `v2.0.0-beta.1`); public API frozen for review until `v2.0.0` final |
-| `gopkg.in/hishamkaram/geoserver.v1` | Legacy alias — deprecated; resolves to the same source. New code should import the canonical path. |
+| `github.com/hishamkaram/geoserver/v2` | v2.x — stable (latest `v2.0.0`); main line at the repo root on `master`. New code should import this. |
+| `github.com/hishamkaram/geoserver` | v1.x — end-of-feature on the `release/v1` branch (latest `v1.1.2`); security fixes only. |
+| `gopkg.in/hishamkaram/geoserver.v1` | Legacy alias — deprecated; resolves to the same v1 source. New code should not use it. |
 
 ## When this matrix changes
 
