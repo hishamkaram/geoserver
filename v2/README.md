@@ -6,19 +6,21 @@
 [![License: MIT](https://img.shields.io/github/license/hishamkaram/geoserver.svg)](../LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/hishamkaram/geoserver?include_prereleases&sort=semver)](https://github.com/hishamkaram/geoserver/releases)
 
-> 🧪 **`v2.0.0-beta.1` is published — public API now frozen for review.** v2 closes the gap-analysis plan's "everyone needs it" surface plus the security and Resource-API tier-2 items. Coverage at `master`:
+> 🧪 **`v2.0.0-beta.3` is published — public API frozen for review.** v2 covers the gap-analysis plan's "everyone needs it" surface, every tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md), plus four longer-tail surfaces (fonts, password rotation, GWC additions, monitoring). Coverage at `master`:
 >
-> - **Catalog**: workspaces, datastores, feature types, coverage stores, coverages, layers (incl. add-style sub-resource), layer groups, styles, namespaces.
+> - **Catalog**: workspaces, datastores, feature types, coverage stores, coverages, layers (incl. add-style sub-resource), layer groups, styles, namespaces. **Fonts**: `c.Fonts.List` (JVM-exposed font families).
 > - **Settings**: global `c.Settings` + per-service `c.Services.WMS()`/`WFS()`/`WCS()`/`WMTS()` (global + per-workspace overrides).
-> - **System**: `c.System.Reload` and `ResetCache`. **About**: ping + version.
-> - **Security**: users, groups, roles, role-user assignment + ACL `Layers()`/`Services()`/`REST()`/`Catalog()`.
-> - **Resources**: `c.Resources` Get / List / Stat / Exists / Put / Move / Copy / Delete against `/rest/resource/{path}` — read or write any file in the data dir.
+> - **System**: `c.System.Reload` and `ResetCache`. **About**: ping, version, manifests, system status. **Logging**: `c.Logging.Get`/`Update` for runtime log-level changes. **Monitoring** (`gs-monitor` ext baked into dev/test image): `c.Monitor.List`/`ListRaw`/`Get` for the request audit log.
+> - **Security**: users, groups, roles, role-user assignment + ACL `Layers()`/`Services()`/`REST()`/`Catalog()` + auth providers / filters / filter chains + URL checks (SSRF allow-list) + `c.Security.MasterPassword` (keystore) + `c.Security.SelfPassword` (auth'd user rotation).
+> - **Resources**: `c.Resources` Get / List / Stat / Exists / Put / Move / Copy / Delete against `/rest/resource/{path}` — read or write any file in the data dir. **Templates (FTL)**: `c.Templates` global + six fluent scopes.
 > - **File-upload publishing**: `c.Datastores.UploadFile` (Shapefile / GeoPackage / external) and `c.CoverageStores.UploadFile` + `HarvestGranule` (GeoTIFF / ImageMosaic / mosaic granules).
-> - **GeoWebCache**: `c.GWC.Layers()` (cache config), `Seed()` (seed/reseed/truncate), `DiskQuota()`.
+> - **Mosaic granules**: `c.Coverages.InWorkspace(ws).InCoverageStore(cs).Granules(cov)` — Schema / List / Get / Delete / DeleteByFilter for image-mosaic / structured coverages.
+> - **Cascaded stores + layers**: `c.WMSStores` / `c.WMSLayers` / `c.WMTSStores` / `c.WMTSLayers` for federation / proxy setups.
+> - **GeoWebCache**: `c.GWC.Layers()` (cache config), `Seed()` (seed/reseed/truncate), `DiskQuota()`, `Global()` (singleton config), `Gridsets()` (named tile-matrix sets), `MassTruncate()` (bulk cache invalidation).
 > - **Importer extension**: `c.Imports` (sessions + tasks). The dev/test docker image bakes the plugin in for CI integration coverage.
-> - **OWS**: `c.WMS` / `c.WFS` / `c.WCS` GetCapabilities; WFS `DescribeFeatureType`; WCS `DescribeCoverage`.
+> - **OWS**: `c.WMS` / `c.WFS` / `c.WCS` GetCapabilities; WFS `DescribeFeatureType`; WCS `DescribeCoverage`. **WFS XSLT transforms**: `c.WFSTransforms` — surface preserved for legacy / custom builds; the `gs-xslt-wfs` extension was removed from upstream in 2.24 and is not shipped for 2.27 / 2.28.
 >
-> Surface is locked — breaking changes will not land in subsequent betas without a strong reason. v1.x remains the recommended import for production code. The remaining tier-2 endpoints tracked in [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md) can be added in subsequent betas without breaking shape.
+> Surface is locked — breaking changes will not land in subsequent betas without a strong reason. v1.x remains the recommended import for production code.
 
 This module ships with its own `go.mod` at `/v2/`; v1 and v2 release independently (`v1.x.y` / `v2.x.y` tags).
 
@@ -35,7 +37,7 @@ This module ships with its own `go.mod` at `/v2/`; v1 and v2 release independent
 ## Install
 
 ```bash
-go get github.com/hishamkaram/geoserver/v2@v2.0.0-beta.1
+go get github.com/hishamkaram/geoserver/v2@v2.0.0-beta.3
 ```
 
 ```go
@@ -200,17 +202,28 @@ Run any with `go run ./v2/examples/<name>` against a `make compose-up` stack, or
 | ACL — service / REST / catalog rules | partial | **ported** in v2 (`c.ACL.Services()`, `c.ACL.REST()`, `c.ACL.Catalog()`) — REST DELETE has documented firewall caveat |
 | Resource API (data-dir byte-stream access) | (none) | **new** in v2 (`c.Resources` Get/List/Stat/Exists/Put/Move/Copy/Delete) |
 | File-upload publishing on stores | (none) | **new** in v2 (`c.Datastores.UploadFile`, `c.CoverageStores.UploadFile` / `HarvestGranule`) |
-| GeoWebCache (cache config + seed + diskquota) | (none) | **new** in v2 (`c.GWC.Layers()`, `Seed()`, `DiskQuota()`) |
+| GeoWebCache (cache config + seed + diskquota) | (none) | **new** in v2 (`c.GWC.Layers()`, `Seed()`, `DiskQuota()`, `Global()`, `Gridsets()`, `MassTruncate()`) |
 | Importer extension (batch ingest) | (none) | **new** in v2 (`c.Imports`; dev/test docker image bakes the plugin in) |
 | WMS GetCapabilities | full | **ported** (`c.WMS.GetCapabilities` + `InWorkspace`) |
 | WFS GetCapabilities + DescribeFeatureType | (none — WMS only) | **new** in v2 (`c.WFS.GetCapabilities`, `DescribeFeatureType`) |
 | WCS GetCapabilities + DescribeCoverage | (none — WMS only) | **new** in v2 (`c.WCS.GetCapabilities`, `DescribeCoverage`) |
+| Mosaic / structured-coverage granules | (none) | **new** in v2 (`c.Coverages.InWorkspace(ws).InCoverageStore(cs).Granules(cov)` — Schema / List / Get / Delete / DeleteByFilter) |
+| FTL templates | (none) | **new** in v2 (`c.Templates` + six fluent scopes; List / Get / Put / Delete) |
+| Auth providers / filters / chains | (none) | **new** in v2 (`c.Security.AuthProviders`, `AuthFilters`, `FilterChains`) |
+| URL checks (SSRF allow-list) | (none) | **new** in v2 (`c.URLChecks`) |
+| Cascaded WMS / WMTS stores + layers | (none) | **new** in v2 (`c.WMSStores`, `c.WMSLayers`, `c.WMTSStores`, `c.WMTSLayers`) |
+| WFS XSLT transforms | (none) | **new** in v2 (`c.WFSTransforms`) — surface preserved for legacy / custom builds; the `gs-xslt-wfs` extension was removed from upstream in 2.24 and is not shipped for 2.27 / 2.28 |
+| About — manifests + system status | (none) | **new** in v2 (`c.About.Manifests`, `c.About.SystemStatus`) |
+| Logging (runtime log-level config) | (none) | **new** in v2 (`c.Logging.Get` / `Update`) |
+| Fonts list | (none) | **new** in v2 (`c.Fonts.List`) |
+| Master password & self password | (none) | **new** in v2 (`c.Security.MasterPassword.Get`/`Update`, `c.Security.SelfPassword.Change`) |
+| Monitoring (request audit log) | (none) | **new** in v2 (`c.Monitor.List`/`ListRaw`/`Get`; dev/test docker image bakes the `gs-monitor` plugin in) |
 
-See [`../ROADMAP.md`](../ROADMAP.md) for the milestone checklist and [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md) for the tier-2 gap-analysis backlog (mosaic granules, Resource API, FTL templates, auth providers, ACL services/REST/catalog, URL checks, cascaded WMS/WMTS, XSLT transforms, manifests, runtime logging) — each tractable as its own follow-up PR.
+See [`../ROADMAP.md`](../ROADMAP.md) for the milestone checklist. The original tier-2 gap-analysis backlog is closed and the longer-tail surfaces above are also done; remaining longer-tail endpoints (`opensearch-eo` is community / SNAPSHOT-only on 2.27 / 2.28; revisit when stable) are tracked in [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md).
 
 ## Contributing to v2
 
-The "everyone needs it" surface is closed; remaining work is the tier-2 list above plus wire-quirk fixes when adopters report them.
+The "everyone needs it" surface and the tier-2 backlog are both closed; remaining work is the longer-tail list above plus wire-quirk fixes when adopters report them.
 
 To add a new sub-client:
 

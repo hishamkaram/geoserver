@@ -18,10 +18,13 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/coveragestores"
 	"github.com/hishamkaram/geoserver/v2/rest/datastores"
 	"github.com/hishamkaram/geoserver/v2/rest/featuretypes"
+	"github.com/hishamkaram/geoserver/v2/rest/fonts"
 	"github.com/hishamkaram/geoserver/v2/rest/gwc"
 	"github.com/hishamkaram/geoserver/v2/rest/imports"
 	"github.com/hishamkaram/geoserver/v2/rest/layergroups"
 	"github.com/hishamkaram/geoserver/v2/rest/layers"
+	"github.com/hishamkaram/geoserver/v2/rest/logging"
+	"github.com/hishamkaram/geoserver/v2/rest/monitor"
 	"github.com/hishamkaram/geoserver/v2/rest/namespaces"
 	"github.com/hishamkaram/geoserver/v2/rest/resources"
 	"github.com/hishamkaram/geoserver/v2/rest/security"
@@ -30,6 +33,12 @@ import (
 	"github.com/hishamkaram/geoserver/v2/rest/styles"
 	"github.com/hishamkaram/geoserver/v2/rest/system"
 	"github.com/hishamkaram/geoserver/v2/rest/templates"
+	"github.com/hishamkaram/geoserver/v2/rest/urlchecks"
+	"github.com/hishamkaram/geoserver/v2/rest/wfstransforms"
+	"github.com/hishamkaram/geoserver/v2/rest/wmslayers"
+	"github.com/hishamkaram/geoserver/v2/rest/wmsstores"
+	"github.com/hishamkaram/geoserver/v2/rest/wmtslayers"
+	"github.com/hishamkaram/geoserver/v2/rest/wmtsstores"
 	"github.com/hishamkaram/geoserver/v2/rest/workspaces"
 
 	"github.com/hishamkaram/geoserver/v2/ows/wcs"
@@ -183,6 +192,59 @@ type Client struct {
 	// type, per coverage store, per coverage — via fluent
 	// `c.Templates.InWorkspace(ws).In...()` chains.
 	Templates *templates.Client
+
+	// URLChecks is the entry point for URL External Access Checks
+	// at /rest/urlchecks. Allow/deny lists for external URL
+	// references in styles, mosaics, and remote stores. Used by
+	// SSRF-conscious deployments to constrain which off-server
+	// URLs GeoServer is permitted to fetch.
+	URLChecks *urlchecks.Client
+
+	// WMSStores is the entry point for cascaded WMS stores —
+	// references to remote WMS servers re-published through this
+	// GeoServer instance. Workspace-scoped via
+	// `c.WMSStores.InWorkspace(ws)`.
+	WMSStores *wmsstores.Client
+
+	// WMSLayers is the entry point for cascaded WMS layers —
+	// individual remote WMS layers published locally. 2-level
+	// scoped: `c.WMSLayers.InWorkspace(ws).InStore(s)` for the
+	// canonical CRUD path, `c.WMSLayers.InWorkspace(ws)` for the
+	// workspace-wide list / get / delete.
+	WMSLayers *wmslayers.Client
+
+	// WMTSStores is the entry point for cascaded WMTS stores.
+	// Same scoping pattern as [Client.WMSStores].
+	WMTSStores *wmtsstores.Client
+
+	// WMTSLayers is the entry point for cascaded WMTS layers.
+	// Same scoping pattern as [Client.WMSLayers].
+	WMTSLayers *wmtslayers.Client
+
+	// WFSTransforms is the entry point for XSLT transforms that
+	// re-shape WFS GetFeature output (HTML reports, KML, custom XML).
+	// The endpoint is part of the gs-xslt-wfs extension; calls
+	// against an unequipped GeoServer return ErrNotFound.
+	WFSTransforms *wfstransforms.Client
+
+	// Logging is the entry point for the singleton logging
+	// configuration document at /rest/logging — adjust the active
+	// log4j profile (DEFAULT_LOGGING, VERBOSE_LOGGING, etc.) and
+	// the stdout-mirror toggle without bouncing the server.
+	Logging *logging.Client
+
+	// Fonts is the entry point for the read-only /rest/fonts
+	// endpoint — list of font families the JVM exposes to GeoServer's
+	// SLD labelling pipeline. Sanity-check before publishing styles
+	// that reference specific fonts; typos would otherwise surface as
+	// silent label-rendering fallbacks.
+	Fonts *fonts.Client
+
+	// Monitor is the entry point for the read-only audit log at
+	// /rest/monitor/requests, exposed by the gs-monitor extension.
+	// The dev/test docker image bakes the extension in; calls
+	// against an unequipped GeoServer return ErrNotFound.
+	Monitor *monitor.Client
 }
 
 // clientCore is the plumbing shared with every sub-client. Sub-clients
@@ -261,6 +323,15 @@ func New(serverURL string, opts ...Option) (*Client, error) {
 	c.Imports = imports.New(adapter)
 	c.Resources = resources.New(adapter)
 	c.Templates = templates.New(adapter)
+	c.URLChecks = urlchecks.New(adapter)
+	c.WMSStores = wmsstores.New(adapter)
+	c.WMSLayers = wmslayers.New(adapter)
+	c.WMTSStores = wmtsstores.New(adapter)
+	c.WMTSLayers = wmtslayers.New(adapter)
+	c.WFSTransforms = wfstransforms.New(adapter)
+	c.Logging = logging.New(adapter)
+	c.Fonts = fonts.New(adapter)
+	c.Monitor = monitor.New(adapter)
 	return c, nil
 }
 

@@ -6,6 +6,101 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0-beta.3] — 2026-05-04
+
+Third beta. Adds four longer-tail surfaces on top of beta.2's tier-2-complete state — fonts, master/self password rotation, GWC global config + gridsets + mass-truncate, and the monitoring (request audit log) extension. The dev/test docker image now bakes the `gs-monitor` plugin in alongside `gs-importer` so CI exercises the full audit-log surface against real GeoServer 2.27.4 LTS and 2.28.0 stable. No breaking changes from `beta.2`; existing callers can `go get @v2.0.0-beta.3` and recompile. Public API stays frozen for review through the beta line.
+
+### Documented — WFS XSLT transforms (`c.WFSTransforms`) extension status
+
+The `gs-xslt-wfs` extension that the beta.2 `c.WFSTransforms` surface targets was removed from upstream GeoServer in 2.24 and is NOT shipped — neither in stable nor in community / SNAPSHOT channels — for any 2.24+ release, including the supported 2.27 LTS and 2.28 stable lines. The upstream OpenAPI YAML still documents the surface. The package godoc now flags this clearly: the surface is preserved for custom builds and pre-2.24 deployments only; CI verifies the "extension absent → ErrNotFound" path.
+
+### Added — Fonts list
+
+Closes the fonts longer-tail item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Sanity-check before publishing styles that reference specific fonts — typos would otherwise surface as silent label-rendering fallbacks.
+
+- **`c.Fonts.List(ctx)`** at `/rest/fonts` — returns the list of font families the JVM exposes to GeoServer's SLD labelling pipeline as `[]string`. The result reflects whatever is on the server's classpath at call time (system fonts plus anything dropped into the data directory's `styles/` subdirectory).
+
+### Added — Monitoring (request audit log)
+
+Closes the monitoring longer-tail item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Read-only access to GeoServer's request audit log, served by the `gs-monitor` extension. The dev/test docker image now bakes the extension in so CI exercises the surface against a real server.
+
+- **`c.Monitor.List(ctx, ListOptions)`** at `/rest/monitor/requests.csv` — returns `[]Request` decoded from the CSV wire form. `Request` covers the daily-driver audit columns (ID / Path / Service / Operation / HTTPMethod / StartTime / EndTime / TotalTime / Status / ResponseStatus / ResponseLength / RemoteAddr / RemoteUser / Resources, …).
+- **`c.Monitor.ListRaw(ctx, ListOptions)`** returns the raw CSV `io.ReadCloser` for streaming-pipeline use cases or to access fields not promoted into the typed `Request`.
+- **`c.Monitor.Get(ctx, id)`** at `/rest/monitor/requests/{id}.csv` for a single audit entry.
+- **`ListOptions`** — `From` / `To` (ISO 8601 timestamps), `Filter` (`attributeName:OP:value`), `Order`, `Offset` / `Count`, `Live` (live-vs-completed), `Fields` (column projection).
+- **Wire-quirk:** `fields` parameter accepts only one column today (despite the docs). Multi-column projection trips a 500 `"No such property 'Id,Path' for object Request"`. Fetch all fields and discard client-side until upstream fixes the parser. Documented on `ListOptions.Fields`.
+
+### Docker image — Monitor extension baked in
+
+- **`docker/Dockerfile`** now downloads and installs the `gs-monitor` plugin during the image build. Without it `GET /rest/monitor/requests.csv` returns 404 and the audit-log integration suite would silently skip.
+
+### Added — GeoWebCache: global config, gridsets, mass-truncate
+
+Three new sub-clients on `c.GWC` cover the GWC endpoints not in the original GWC port. All three are universal (work without any GeoServer extension) and integration-test against the dev/test docker stack.
+
+- **`c.GWC.Global().Get(ctx)` / `Update(ctx, *Global)`** at `/gwc/rest/global` — runtime stats toggle, WMTS CITE compliance flag, backend timeout. Wire envelope `{"global":{...}}`; PUT accepts JSON.
+- **`c.GWC.Gridsets()`** at `/gwc/rest/gridsets` — `List` (`[]string`), `Get(ctx, name) → *GridSet`, `Delete(ctx, name)`. `GridSet` covers the daily-driver fields (Name, SRS, Extent, Resolutions / Scales / ScaleNames, AlignTopLeft / YCoordinateFirst, MetersPerUnit, TileWidth, TileHeight). Create deferred — the XML wire shape for an arbitrary CRS extent is gnarly; the built-in gridsets (EPSG:4326, WebMercatorQuad, dozens of UTM tilings) cover the common case.
+- **`c.GWC.MassTruncate()`** at `/gwc/rest/masstruncate` — `Capabilities`, `TruncateLayer`, `TruncateParameters`, `TruncateOrphans`, `TruncateExtent`. Typed enums for the four documented operation kinds.
+- **Wire-quirk:** mass-truncate POST requires `Content-Type: text/xml`; the parser registered under `application/xml` rejects the body with `"Format extension unknown"`. The SDK always sends `text/xml`.
+
+### Added — Master password & self password (security)
+
+Closes the master-password and self-admin-password longer-tail items from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Two new sub-clients on `c.Security` cover the daily-driver auth-rotation surface.
+
+- **`c.Security.MasterPassword.Get(ctx)`** / **`Update(ctx, oldPwd, newPwd)`** at `/rest/security/masterpw`. The master password unlocks GeoServer's keystore (used for storing connection-string passwords, JKS aliases) — distinct from the admin user's login password. GeoServer exposes the current value via GET (admin-gated) for backup / disaster-recovery flows; treat the returned value with the same care as any other secret.
+- **`c.Security.SelfPassword.Change(ctx, newPwd)`** at `/rest/security/self/password`. PUT-only by design (GeoServer responds 405 "You can not request the password!" to GET); the request's auth header proves possession in lieu of an old-password field.
+- **Wire-quirk:** master password PUT requires both `oldMasterPassword` and `newMasterPassword`; same-value rotation is rejected with `422 "Cannot change master password"`. Self-password PUT body is just `{"newPassword":"..."}` — no old-password field.
+
+## [2.0.0-beta.2] — 2026-05-04
+
+Second beta. **Closes the original tier-2 gap-analysis backlog from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md)** — eight new sub-clients land on top of beta.1's frozen surface: mosaic granules, FTL templates, auth providers / filters / chains, URL checks, cascaded WMS / WMTS stores + layers, WFS XSLT transforms, manifests + system status, and runtime logging. No breaking changes from `beta.1`; existing callers can `go get @v2.0.0-beta.2` and recompile. Public API stays frozen for review through the beta line — breaking changes will not land without a strong reason.
+
+### Added — Logging configuration
+
+Closes the logging tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Adjust the active log4j profile and stdout-mirror toggle at runtime without bouncing the server — the daily-driver use case for production debugging.
+
+- **`c.Logging.Get(ctx)`** / **`c.Logging.Update(ctx, *Config)`** at `/rest/logging`. `Config` has `Level` (e.g. "DEFAULT_LOGGING", "VERBOSE_LOGGING", "QUIET_LOGGING", "PRODUCTION_LOGGING", "GEOSERVER_DEVELOPER_LOGGING"), `Location` (read-only since GeoServer 3.0), `StdOutLogging`.
+- Wire-quirk: PUT bodies use the `{"logging":{...}}` envelope; SDK marshal wraps automatically.
+
+This closes the original tier-2 gap-analysis backlog. The full "everyone needs it" + tier-2 surface from `docs/v2-tier2-gaps.md` is now covered. Remaining future work tracks new GeoServer endpoints as the upstream API grows.
+
+### Added — About: manifests + system status
+
+Closes the manifests-and-system-status tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Two new methods on the existing `c.About` client surface ops / capacity-planning telemetry without leaving the SDK.
+
+- **`c.About.Manifests(ctx, ListManifestsOptions{Manifest, Key, Value})`** at `/rest/about/manifest` — returns `[]ManifestEntry`, one per OSGi bundle / packaged JAR (`~150` on a stock install). `ListManifestsOptions` carries optional regex filters for bundle names, attribute keys, and attribute values. Each entry has a typed `Name` plus a free-form `Fields map[string]json.RawMessage` for the heterogeneous MANIFEST.MF attributes (`Bundle-Version`, `Build-Jdk`, `Implementation-Title`, etc.); helper `(ManifestEntry).String(field)` extracts a string value coercing JSON numbers/bools.
+- **`c.About.SystemStatus(ctx)`** at `/rest/about/system-status` — returns `[]SystemMetric`. Each metric is one OS / JVM / GeoServer telemetry point (`OPERATING_SYSTEM`, `CPU_LOAD`, `MEMORY_USED`, `GEOSERVER_THREADS`, …) categorized by `SYSTEM` / `CPU` / `MEMORY` / `SWAP` / `FILE_SYSTEM` / `NETWORK` / `SENSORS` / `GEOSERVER`. `Available=false` + `Value="NOT AVAILABLE"` is common on Linux containers without OSHI native libs; production hosts populate the values.
+- **Wire-quirk:** Manifest endpoint defaults to HTML; the SDK appends `.json` to the URL. Empty filter result comes back as `{"about":""}` (bare string instead of object) — normalized to a nil slice. Manifest responses commonly exceed 100 KB; `Manifests` streams the body via `DoStream` rather than buffering through the JSON Do path's 8 KiB cap.
+
+### Added — WFS XSLT transforms
+
+Closes the WFS XSLT transforms tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Transforms let WFS-T producers register XSLT files that re-shape `GetFeature` output into custom formats (HTML reports, KML, site-specific XML schemas, etc.). Endpoints live at `/rest/services/wfs/transforms` under the `gs-xslt-wfs` extension; calls against an unequipped GeoServer return `ErrNotFound`.
+
+- **`c.WFSTransforms`** — `List` / `Get` / `Create` (metadata-only) / `Update` / `Delete`, plus `GetXSLT` / `PutXSLT` for the XSLT body, plus a single-shot `CreateWithXSLT` that POSTs the XSLT body directly with metadata as query parameters (per the upstream API's `application/xslt+xml` content-type path).
+- **`Transform`** typed core: `Name`, `SourceFormat`, `OutputFormat`, `OutputMimeType`, `FileExtension`, `XSLT` (the path on disk).
+- Wire-quirk: bodies use the `{"transform":{...}}` envelope GeoServer expects on POST/PUT.
+
+The integration test verifies the "extension absent" path against the dev/test docker stack (which doesn't bake in `gs-xslt-wfs`). To run the full CRUD round-trip, install the extension and set `GEOSERVER_HAS_XSLT_WFS=1`.
+
+### Added — Cascaded WMS / WMTS stores and layers
+
+Closes the cascaded-WMS/WMTS tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Cascaded stores reference a remote WMS / WMTS server; cascaded layers re-publish that remote server's layers through the local GeoServer (federation / proxy setups).
+
+- **`c.WMSStores`** at `/rest/workspaces/{ws}/wmsstores` — workspace-scoped CRUD plus `Iter` for the (single-page) listing. `WMSStore` covers the daily-driver fields: `Name`, `Type`, `Enabled`, `CapabilitiesURL`, `User`/`Password`/`AuthKey`/`HeaderName`/`HeaderValue`, `MaxConnections`, `ReadTimeout`, `ConnectTimeout`, `UseHTTPConnPool`.
+- **`c.WMSLayers`** at `/rest/workspaces/{ws}/wmsstores/{store}/wmslayers` (canonical) and `/rest/workspaces/{ws}/wmslayers` (cross-store list) — 2-level scoped via `InWorkspace(ws).InStore(s)`. Daily-driver fields: `Name`, `NativeName`, `Title`, `Abstract`, `Keywords`, `NativeCRS`/`SRS`, bbox, `ProjectionPolicy`, `Enabled`, `ForcedRemoteStyle`, `PreferredFormat`, `MinScale`/`MaxScale`.
+- **`c.WMTSStores`** + **`c.WMTSLayers`** — parallel surface for cascaded WMTS.
+- **Wire shape:** all four packages MarshalJSON wrap in the documented per-type envelope (`{"wmsStore":{...}}` / `{"wmsLayer":{...}}` / `{"wmtsStore":{...}}` / `{"wmtsLayer":{...}}`); UnmarshalJSON accepts both wrapped and flat. List endpoints handle the empty-collection wire shape (`{"wmsStores":""}` etc.).
+
+Integration tests verify the empty-list and 404 paths against the live stack; full CRUD requires an upstream WMS/WMTS server to cascade FROM and isn't exercised in the test stack — the unit tests cover the wire-shape round-trip.
+
+### Added — URL checks (SSRF allow-list)
+
+Closes the URL-checks tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). URL External Access Checks are allow/deny lists for external URLs that GeoServer is permitted to fetch (SLD external graphics, image-mosaic remote rasters, cascaded WMS sources). SSRF-conscious deployments use them to constrain off-server URL fetching.
+
+- **`c.URLChecks`** at `/rest/urlchecks` — `List` / `Get` / `Create` / `Update` / `Delete`. Typed core: `Name`, `Description`, `Enabled`, `Regex`.
+- **Wire-quirk: POST/PUT bodies require the `regexUrlCheck` class-name envelope.** Flat JSON is rejected with 500. The `URLCheck.MarshalJSON` always wraps; `URLCheck.UnmarshalJSON` accepts both wrapped and flat (so callers don't need to special-case GET responses).
+- **Wire-quirk: empty list comes back as `{"urlChecks":""}`** (bare string instead of object) — same empty-collection pattern as styles, datastores, etc. `List` returns `nil` on the empty form.
+
 ### Added — Auth providers, auth filters, filter chains
 
 Closes the auth-providers + filter-chains tier-2 item from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Three new sub-clients on `c.Security` cover the security-pluggability surface for multi-IdP deployments.

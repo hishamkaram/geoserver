@@ -10,9 +10,10 @@ This directory builds the GeoServer container the project's integration tests ru
 | GeoServer | 2.28.0 by default; 2.27.4 LTS for the test leg | The supported matrix. CI runs both legs on every PR. Override with `--build-arg GEOSERVER_VERSION=...`. |
 | Layout | WAR pre-extracted into `webapps/geoserver/` | Lets the Dockerfile drop extension JARs into `WEB-INF/lib/`. Tomcat happily runs the unpacked form. |
 | Importer extension | Baked in | Required for the v2 SDK's `c.Imports` integration tests. Without it `GET /rest/imports` returns 404 and the suite skips silently. With the bake-in, CI exercises the full `v2/rest/imports` surface against a real server on both 2.27.4 and 2.28.0. |
+| Monitor extension | Baked in | Required for the v2 SDK's `c.Monitor` integration tests (request audit log). Without it `GET /rest/monitor/requests.csv` returns 404. With the bake-in, CI exercises the full `v2/rest/monitor` surface. |
 | Healthcheck | `curl -fsS http://localhost:8080/geoserver/web/` every 30s after a 120s start period | Compose `depends_on` waits on this before starting the test runner. |
 
-The Importer extension is the only non-vanilla piece. Everything else is the upstream GeoServer WAR + standard Tomcat config.
+The Importer and Monitor extensions are the only non-vanilla pieces. Everything else is the upstream GeoServer WAR + standard Tomcat config.
 
 ## Boot the stack
 
@@ -36,7 +37,7 @@ PostGIS exposes port `5436` on the host (mapped from the container's `5432`) so 
 
 | File | Role |
 |---|---|
-| `Dockerfile` | Assembles the image. Pulls the GeoServer WAR + Importer plugin from `downloads.sourceforge.net` over TLS, unpacks the WAR, drops the importer JARs into `WEB-INF/lib/`. |
+| `Dockerfile` | Assembles the image. Pulls the GeoServer WAR + Importer + Monitor plugins from `downloads.sourceforge.net` over TLS, unpacks the WAR, drops the extension JARs into `WEB-INF/lib/`. |
 | `env/geoserver.env` | Environment variables consumed by `docker-compose.yml` (and `docker-compose.test.yml`) at container start: `GEOSERVER_ADMIN_PASSWORD`, JVM `INITIAL_MEMORY` / `MAXIMUM_MEMORY`, plus a few feature toggles (`ENABLE_JSONP`, `MAX_FILTER_RULES`, `OPTIMIZE_LINE_WIDTH`, `XFRAME_OPTIONS`). |
 | `postgis/init/01-lbldyt.sql` | Bootstraps the `public.lbldyt` table the `TestPublishPostgisLayer` integration test publishes against. The PostgreSQL image runs `*.sql` files from `/docker-entrypoint-initdb.d/` alphabetically on first boot of an empty data volume. To re-run after a schema change, recreate the volume: `docker compose down -v && docker compose up -d --wait`. The table name is a historical fixture from the v1.0 era; see [`../docs/geoserver-rest-quirks.md`](../docs/geoserver-rest-quirks.md) quirk #5 for why the seed table needs columns at all. |
 

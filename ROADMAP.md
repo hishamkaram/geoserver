@@ -44,9 +44,12 @@ Lives at module path `github.com/hishamkaram/geoserver/v2` (subdir form). Idioma
 - [x] **v2.0.0-alpha.4** — bundles the top-5 gap closures + docs refresh. *Tagged 2026-05-03.*
 - [x] **Tier-2: ACL services / REST / catalog rules** — closes the security tier-2 item (`c.ACL.Services()`, `c.ACL.REST()`, `c.ACL.Catalog()`).
 - [x] **Tier-2: Resource API** — closes the data-dir tier-2 item (`c.Resources` Get/List/Stat/Exists/Put/Move/Copy/Delete against `/rest/resource/{path}`).
-- [ ] **Tier-2 remaining** — narrower-audience endpoints from the gap-analysis tier-2 list: mosaic granules, FTL templates, auth providers + filter chains, URL checks, cascaded WMS/WMTS stores, XSLT transforms, manifests, runtime logging config. Each is tractable as its own follow-up PR. See [`docs/v2-tier2-gaps.md`](docs/v2-tier2-gaps.md).
+- [x] **Tier-2 backlog closed** — every item from the gap-analysis tier-2 list is shipped: mosaic granules, FTL templates, auth providers + filter chains, URL checks, cascaded WMS/WMTS stores, XSLT transforms (legacy / custom-build only — see below), manifests + system status, runtime logging config. See [`docs/v2-tier2-gaps.md`](docs/v2-tier2-gaps.md) for the per-PR landing log.
 - [x] **v2.0.0-beta.1** — public API frozen for review. *Tagged 2026-05-03.*
-- [ ] **v2.0.0** — final tag. Ships once the beta period absorbs early-adopter feedback (wire-quirk fixes, godoc polish) without surface changes.
+- [x] **v2.0.0-beta.2** — closes the original tier-2 gap-analysis backlog (eight new sub-clients on top of beta.1). *Tagged 2026-05-04.*
+- [x] **Longer-tail surfaces** — fonts (`c.Fonts`), master + self password rotation (`c.Security.MasterPassword` / `SelfPassword`), GWC additions (`c.GWC.Global` / `Gridsets` / `MassTruncate`), monitoring (`c.Monitor` + `gs-monitor` baked into dev/test docker image). Documented `c.WFSTransforms` extension status: `gs-xslt-wfs` was removed from upstream in 2.24 and is not shipped on supported versions; surface preserved for legacy / custom builds only.
+- [x] **v2.0.0-beta.3** — bundles the four longer-tail surfaces + the XSLT extension-status note. *Tagged 2026-05-04.*
+- [ ] **v2.0.0** — final tag. **Gated on adopter feedback on the beta line.** No code changes planned for v2.0.0; it's a CHANGELOG graduation + tag once real-world use of `beta.1`/`.2`/`.3` returns no breaking-change-required signal. Do not auto-tag — wait for an external trigger (issues, discussions, or explicit user instruction).
 
 ## GeoServer 3.0 support
 

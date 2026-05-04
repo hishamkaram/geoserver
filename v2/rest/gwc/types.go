@@ -9,9 +9,20 @@
 //     Asynchronous: POST returns immediately; status is GET-polled.
 //   - DiskQuota — disk-quota policy (LFU/LRU eviction, max disk usage).
 //
-// Other GWC endpoints (masstruncate, blobstores, gridsets, statistics,
-// global) live in the standalone GeoWebCache project docs and aren't
-// covered here yet — same wire-shape pattern, can land in a follow-up.
+// Three additional surfaces ported on top of the original three:
+//
+//   - Global — singleton GWC config (`runtimeStatsEnabled`,
+//     `backendTimeout`, `wmtsCiteCompliant`, …) at `/gwc/rest/global`.
+//   - Gridsets — named tile-matrix sets (`EPSG:4326`, `WebMercatorQuad`,
+//     …) at `/gwc/rest/gridsets`. List + Get + Delete; Create deferred
+//     until adopters need a custom gridset.
+//   - MassTruncate — invalidate caches in bulk at `/gwc/rest/masstruncate`.
+//     Wraps the four documented truncate types (Layer / Parameters /
+//     Orphans / Extent).
+//
+// Statistics and blobstore CRUD remain deferred — the dev/test docker
+// image doesn't expose enough surface area to integration-test the
+// non-default blobstore wire shapes.
 //
 // URL prefix note: `/gwc/rest/` lives outside the v1/v2 `/rest/` tree;
 // the URL builder accepts arbitrary path segments, so `c.core.URL(
@@ -286,4 +297,130 @@ type diskQuotaPutXML struct {
 type quotaPutXMLVal struct {
 	Value int64  `xml:"value"`
 	Units string `xml:"units"`
+}
+
+// ----- Global -----
+
+// Global is the singleton GeoWebCache configuration document at
+// `/gwc/rest/global`. Wire envelope is `{"global":{...}}`.
+type Global struct {
+	Identifier          string `json:"identifier,omitempty"`
+	Location            string `json:"location,omitempty"`
+	Version             string `json:"version,omitempty"`
+	BackendTimeout      int    `json:"backendTimeout,omitempty"`
+	RuntimeStatsEnabled bool   `json:"runtimeStatsEnabled"`
+	WMTSCiteCompliant   bool   `json:"wmtsCiteCompliant"`
+}
+
+// MarshalJSON wraps Global in the `{"global":{...}}` envelope GeoServer
+// expects on PUT bodies.
+func (g Global) MarshalJSON() ([]byte, error) {
+	type alias Global
+	return json.Marshal(map[string]alias{"global": alias(g)})
+}
+
+// UnmarshalJSON accepts both the wrapped and the flat shape.
+func (g *Global) UnmarshalJSON(b []byte) error {
+	type alias Global
+	var wrapped struct {
+		Global *alias `json:"global"`
+	}
+	if err := json.Unmarshal(b, &wrapped); err == nil && wrapped.Global != nil {
+		*g = Global(*wrapped.Global)
+		return nil
+	}
+	var flat alias
+	if err := json.Unmarshal(b, &flat); err != nil {
+		return err
+	}
+	*g = Global(flat)
+	return nil
+}
+
+// ----- Gridsets -----
+
+// GridSet is the named tile-matrix-set definition at
+// `/gwc/rest/gridsets/<name>`. Wire envelope is `{"gridSet":{...}}`.
+//
+// The Resolutions / Scales / ScaleNames slices describe the per-zoom
+// vertical breakdown. They are mutually exclusive on input — supply
+// at most one — but GeoServer always returns ScaleNames on Get.
+type GridSet struct {
+	Name             string         `json:"name"`
+	Description      string         `json:"description,omitempty"`
+	SRS              SRS            `json:"srs"`
+	Extent           GridSetExtent  `json:"extent"`
+	AlignTopLeft     bool           `json:"alignTopLeft,omitempty"`
+	YCoordinateFirst bool           `json:"yCoordinateFirst,omitempty"`
+	MetersPerUnit    float64        `json:"metersPerUnit,omitempty"`
+	PixelSize        float64        `json:"pixelSize,omitempty"`
+	TileWidth        int            `json:"tileWidth,omitempty"`
+	TileHeight       int            `json:"tileHeight,omitempty"`
+	Resolutions      []float64      `json:"resolutions,omitempty"`
+	Scales           []float64      `json:"scales,omitempty"`
+	ScaleNames       []string       `json:"scaleNames,omitempty"`
+	ScaleDenominator []float64      `json:"scaleDenominator,omitempty"`
+}
+
+// GridSetExtent is the geographic envelope of a [GridSet].
+type GridSetExtent struct {
+	Coords []float64 `json:"coords"`
+}
+
+// gridSetEnvelope wraps GridSet in the wire shape on Get.
+type gridSetEnvelope struct {
+	GridSet *GridSet `json:"gridSet"`
+}
+
+// ----- MassTruncate -----
+
+// MassTruncateRequestType is one of the four documented mass-truncate
+// operations.
+type MassTruncateRequestType string
+
+// Documented mass-truncate operation kinds.
+const (
+	// TruncateLayer clears every cache (all gridsets, parameter
+	// permutations, image formats) for the named layer.
+	TruncateLayer MassTruncateRequestType = "truncateLayer"
+	// TruncateParameters removes only the cached tiles for parameter
+	// permutations no longer registered as parameter filters.
+	TruncateParameters MassTruncateRequestType = "truncateParameters"
+	// TruncateOrphans removes cache entries for layers that no longer
+	// exist in the catalog.
+	TruncateOrphans MassTruncateRequestType = "truncateOrphans"
+	// TruncateExtent removes cache entries inside an explicit bounding
+	// box on a named gridset.
+	TruncateExtent MassTruncateRequestType = "truncateExtent"
+)
+
+// MassTruncateLayerRequest is the body shape for [TruncateLayer].
+//
+//	<truncateLayer><layerName>topp:states</layerName></truncateLayer>
+type MassTruncateLayerRequest struct {
+	XMLName   xml.Name `xml:"truncateLayer"`
+	LayerName string   `xml:"layerName"`
+}
+
+// MassTruncateParametersRequest is the body shape for [TruncateParameters].
+type MassTruncateParametersRequest struct {
+	XMLName   xml.Name `xml:"truncateParameters"`
+	LayerName string   `xml:"layerName"`
+}
+
+// MassTruncateOrphansRequest is the body shape for [TruncateOrphans]. The
+// request takes no parameters; GeoServer scans the entire cache.
+type MassTruncateOrphansRequest struct {
+	XMLName xml.Name `xml:"truncateOrphans"`
+}
+
+// MassTruncateExtentRequest is the body shape for [TruncateExtent].
+type MassTruncateExtentRequest struct {
+	XMLName     xml.Name `xml:"truncateExtent"`
+	LayerName   string   `xml:"layerName"`
+	GridSetID   string   `xml:"gridSetId,omitempty"`
+	Format      string   `xml:"format,omitempty"`
+	Bounds      *Bounds  `xml:"bounds,omitempty"`
+	ZoomStart   *int     `xml:"zoomStart,omitempty"`
+	ZoomStop    *int     `xml:"zoomStop,omitempty"`
 }
