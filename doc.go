@@ -1,64 +1,73 @@
-// Package geoserver is a Go client for the GeoServer REST API.
+// Package geoserver is a Go client for the GeoServer REST API (v2 line).
 //
 // # Status
 //
-// This is the v1 line — stable and production-ready. v1.1 kept the v1.0
-// public surface intact (every existing method shape still compiles and
-// behaves the same) while adding context-aware siblings, typed errors,
-// stdlib log/slog logging, and a functional-options [New] constructor.
-// Existing v1.0 callers can upgrade to any v1.x release with only a
-// go.mod bump.
+// v2 has full v1 feature parity at master and exceeds it. The
+// package covers every "everyone needs it" endpoint group identified
+// in the gap analysis: catalog (workspaces, datastores, feature
+// types, coverage stores, coverages, layers, layer groups, styles,
+// namespaces), settings, system (reload + cache reset), about,
+// security (users / groups / roles + layer ACL), per-service OWS
+// configuration (WMS / WFS / WCS / WMTS), file-upload publishing on
+// stores, layer–style associations, GeoWebCache (per-layer cache
+// config + seed/reseed/truncate + diskquota), the Importer
+// extension (batch ingest), and the OWS read-only trio
+// (GetCapabilities + DescribeFeatureType + DescribeCoverage).
 //
-// For the next-generation sub-client SDK, see
-// [github.com/hishamkaram/geoserver/v2] (preview, currently
-// v2.0.0-beta.1).
+// Public API is stable as of v2.0.0 — no breaking changes will land
+// in v2.x. v2 is the recommended line for new integrations; v1 is
+// end-of-feature on the release/v1 branch (security patches only):
+//
+//	import "github.com/hishamkaram/geoserver/v2"     // v2: stable
+//	import "github.com/hishamkaram/geoserver"        // v1: end-of-feature
+//
+// See ROADMAP.md for v2.x milestones and docs/migration-v1-to-v2.md
+// for the v1 → v2 migration guide.
+//
+// # Design tenets
+//
+// v2 is a clean redesign that breaks v1's monolithic *GeoServer surface
+// into a sub-client per resource:
+//
+//   - Immutable [*Client]. All fields private. Configured via functional
+//     options at construction; no post-construction mutation. Concurrent
+//     use is safe.
+//   - Mandatory [context.Context] as first arg on every public method. No
+//     Background shims, no twin pairs.
+//   - Sub-client pattern. Public fields like (*Client).Workspaces and
+//     (*Client).Datastores expose typed per-resource clients with
+//     consistent List / Get / Create / Update / Delete / Iter shapes.
+//     Hierarchical resources fluently chain through scope —
+//     c.Datastores.InWorkspace("topp"), c.FeatureTypes.InWorkspace(ws).InDatastore(ds).
+//   - Single error type. Every HTTP error is a [*APIError] wrapping one
+//     of the package sentinels ([ErrNotFound], [ErrConflict], …) so
+//     errors.Is and errors.As are the supported match styles.
+//   - Auth via http.RoundTripper. Basic / bearer auth attaches to the
+//     transport layer once at construction; per-call paths don't
+//     re-authenticate. Custom RoundTrippers (OpenTelemetry, retry libs,
+//     Vault-rotated creds) layer naturally.
+//   - Streaming uploads. Resources that accept binary payloads take
+//     [io.Reader] and never slurp into memory.
+//   - Pagination via [iter.Seq2]. List endpoints expose Iter for
+//     range-over-func; non-paginating endpoints fall back to a
+//     single-page Seq2.
+//   - Zero runtime third-party dependencies. stdlib net/http,
+//     encoding/json, encoding/xml, log/slog, context, iter only.
+//     Test deps allowed.
 //
 // # Quick start
 //
-//	gs := geoserver.New(
-//	    "http://localhost:8080/geoserver/",
-//	    "admin", "geoserver",
-//	    geoserver.WithTimeout(15*time.Second),
-//	    geoserver.WithLogger(slog.NewTextHandler(os.Stderr, nil)),
+//	c, err := geoserver.New("http://localhost:8080/geoserver/",
+//	    geoserver.WithBasicAuth("admin", "geoserver"),
+//	    geoserver.WithTimeout(10*time.Second),
 //	)
-//
-//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-//	defer cancel()
-//
-//	if _, err := gs.CreateWorkspaceContext(ctx, "demo"); err != nil &&
-//	    !errors.Is(err, geoserver.ErrConflict) {
+//	if err != nil {
 //	    return err
 //	}
 //
-// # Design
-//
-//   - *Context twin pattern. Every public method has a Context-aware
-//     sibling that takes [context.Context] as its first argument; the
-//     non-context name is a one-line wrapper that calls the *Context
-//     version with [context.Background]. Prefer the *Context form in
-//     new code so cancellation and deadlines propagate.
-//   - Typed errors. Every HTTP error is a [*Error] wrapping one of the
-//     package sentinels ([ErrNotFound], [ErrConflict], …). Match with
-//     [errors.Is] and [errors.As]; do not compare error strings.
-//   - Functional options. Configure the HTTP client, timeout, logger,
-//     and user-agent at construction via [Option] helpers
-//     ([WithHTTPClient], [WithTimeout], [WithLogger], [WithUserAgent],
-//     [WithBasicAuth]).
-//   - log/slog logging. The library logs through stdlib [log/slog],
-//     silent by default. Configure via [WithLogger]. No third-party
-//     logger dependency.
-//
-// # Concurrency
-//
-// A *GeoServer constructed via [New] is safe for concurrent reads
-// (i.e. concurrent calls to its methods); however, mutating its
-// exported fields after construction is NOT safe. Construct once and
-// treat as immutable. The v2 line replaces the exported-fields model
-// with a fully private, immutable client.
-//
-// # Versions
-//
-// Supported GeoServer versions: 2.27 (LTS) and 2.28 (current stable).
-// GeoServer 3.0 support is tracked for v2 once Tomcat 11 / Jakarta EE
-// / ImageN settle. See the project ROADMAP for details.
+//	ctx := context.Background()
+//	wss, err := c.Workspaces.List(ctx, workspaces.ListOptions{})
+//	if errors.Is(err, geoserver.ErrUnauthorized) {
+//	    // handle bad credentials
+//	}
 package geoserver

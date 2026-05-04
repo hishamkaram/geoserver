@@ -23,7 +23,7 @@ This guide walks through the concrete API differences between v1.x (`github.com/
 + import "github.com/hishamkaram/geoserver/v2"
 ```
 
-v2 lives at the `/v2/` subdirectory of the same repository, with its own `go.mod`. v1 and v2 ship independent tags (v1.x.y and v2.x.y) and can coexist in the same `go.mod` during incremental migration.
+v2 lives at the repo root on `master` with module path `github.com/hishamkaram/geoserver/v2` (the `/v2` suffix is required by Go's semantic import versioning rule for v2+ modules). v1 is preserved on the [`release/v1` branch](https://github.com/hishamkaram/geoserver/tree/release/v1) for security patches only. v1 and v2 ship independent tags (`v1.x.y` and `v2.x.y`) and can coexist in the same consumer `go.mod` during incremental migration.
 
 ## Design tenets that drive the breakage
 
@@ -353,19 +353,18 @@ if err := c.FeatureTypes.InWorkspace("demo").InDatastore("states_pg").
 
 ## When to upgrade
 
-`v2.0.0-beta.1` ships the gap-analysis "everyone needs it" surface plus the security and Resource-API tier-2 closures, with the public API frozen for review. Exercised against real GeoServer 2.27.4 LTS + 2.28.0 stable in CI on every PR. Reasonable adoption strategy:
+`v2.0.0` is the current stable line, exercised against real GeoServer 2.27.4 LTS + 2.28.0 stable in CI on every PR. v1 is end-of-feature on the [`release/v1` branch](https://github.com/hishamkaram/geoserver/tree/release/v1) — security patches only. Reasonable adoption strategy:
 
-- **Production**: stay on v1.x until v2.0.0 lands.
-- **New projects / internal tools**: try `v2.0.0-beta.1` and file shape-feedback issues. The current API surface is the candidate for `v2.0.0` final.
-- **Migrations from v1 to v2**: use this guide; the catalog mappings above are stable. The non-catalog surfaces (file-upload, services, GWC, imports) are net-new with no v1 equivalent — adoption-time effort.
+- **New projects / internal tools**: target `v2.0.0`.
+- **Existing v1 callers**: migrate at your pace; the v1 line keeps working but receives no new features. The catalog mappings above are stable. The non-catalog surfaces (file-upload, services, GWC, imports, monitor, etc.) are net-new with no v1 equivalent — adoption-time effort.
 
 ## Contributing to v2
 
-v2 development happens in the same repository under `/v2/`. To contribute:
+v2 development happens at the repo root on `master`. To contribute:
 
-1. Open / claim an issue. The "tier-2 also-rans" list in `ROADMAP.md` is a good starting point — each item is tractable as its own PR.
-2. Follow the established sub-client pattern (`v2/rest/<resource>/`). Reference packages: `workspaces` (flat CRUD), `datastores` (workspace-scoped), `featuretypes` (workspace + datastore-scoped), `services` (per-service generic), `gwc` (out-of-`/rest/` URL prefix).
-3. **Run integration tests locally before push** — `make compose-up && cd v2 && go test -tags=integration ./rest/<resource>/`. CI's wire-format coverage runs on real GeoServer 2.27.4 LTS + 2.28.0 stable, but local-first catches quirks faster.
-4. Open a PR. The 7 required CI checks must pass: Lint, Unit, Unit v2, govulncheck, Analyze (Go), GeoServer 2.27.4, GeoServer 2.28.0.
+1. Open / claim an issue. The "longer-tail" list in [`v2-tier2-gaps.md`](v2-tier2-gaps.md) is a good starting point — each item is tractable as its own PR.
+2. Follow the established sub-client pattern (`rest/<resource>/`). Reference packages: `workspaces` (flat CRUD), `datastores` (workspace-scoped), `featuretypes` (workspace + datastore-scoped), `services` (per-service generic), `gwc` (out-of-`/rest/` URL prefix).
+3. **Run integration tests locally before push** — `make compose-up && go test -tags=integration ./rest/<resource>/`. CI's wire-format coverage runs on real GeoServer 2.27.4 LTS + 2.28.0 stable, but local-first catches quirks faster.
+4. Open a PR. The 6 required CI checks must pass: Lint, Unit tests, govulncheck, Analyze (Go), GeoServer 2.27.4, GeoServer 2.28.0.
 
 See [`../CONTRIBUTING.md`](../CONTRIBUTING.md) for the general PR workflow.

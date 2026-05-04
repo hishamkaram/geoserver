@@ -23,27 +23,7 @@ jobs:
           check-latest: true
           cache: true
 
-      - name: Resolve module path for tag
-        id: module
-        run: |
-          set -euo pipefail
-          tag='${{ github.ref_name }}'
-          # v1 tags (v1.x.y, v1.x.y-rc.N, etc.) target the root module;
-          # v2 tags target the /v2/ submodule (separate go.mod, separate
-          # CHANGELOG). Matching on the leading `v2.` covers both stable
-          # and pre-release v2 tags.
-          if [[ "$tag" =~ ^v2\. ]]; then
-            echo "module_dir=v2" >>"$GITHUB_OUTPUT"
-            echo "changelog=v2/CHANGELOG.md" >>"$GITHUB_OUTPUT"
-            echo "Tag $tag → v2 module"
-          else
-            echo "module_dir=." >>"$GITHUB_OUTPUT"
-            echo "changelog=CHANGELOG.md" >>"$GITHUB_OUTPUT"
-            echo "Tag $tag → root module"
-          fi
-
       - name: Verify build
-        working-directory: ${{ steps.module.outputs.module_dir }}
         run: |
           go mod verify
           go vet ./...
@@ -58,9 +38,9 @@ jobs:
             $0 ~ "^## \\["version"\\]" {flag=1; next}
             flag && /^## \[/ {exit}
             flag {print}
-          ' '${{ steps.module.outputs.changelog }}' > /tmp/release-notes.md
+          ' CHANGELOG.md > /tmp/release-notes.md
           if [ ! -s /tmp/release-notes.md ]; then
-            echo "::error::No CHANGELOG stanza found for [$version] (tag $tag) in ${{ steps.module.outputs.changelog }}; refusing to publish a release with empty body."
+            echo "::error::No CHANGELOG stanza found for [$version] (tag $tag) in CHANGELOG.md; refusing to publish a release with empty body."
             exit 1
           fi
 

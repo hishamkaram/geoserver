@@ -66,11 +66,7 @@ jobs:
         run: |
           curl -fsS -u ${GEOSERVER_USER}:${GEOSERVER_PASS} "${GEOSERVER_URL}rest/about/version.json" | head -c 1024 || true
 
-      - name: Run v1 integration tests
-        run: go test -race -tags=integration -timeout=15m ./...
-
-      - name: Run v2 integration tests
-        working-directory: ./v2
+      - name: Run integration tests
         run: go test -race -tags=integration -timeout=15m ./...
 
       - name: Compose logs (on failure)

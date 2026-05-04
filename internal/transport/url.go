@@ -1,9 +1,5 @@
-// Package transport contains the HTTP transport algorithms used by the
-// public GeoServer client. External code must not import this package.
-//
-// The functions here are thin enough that they don't take a *GeoServer —
-// the public methods on *GeoServer are wrappers that pass in the relevant
-// fields.
+// Package transport contains the HTTP transport algorithms for the v2
+// GeoServer client. External code must not import this package.
 package transport
 
 import (
@@ -13,28 +9,20 @@ import (
 	"strings"
 )
 
-// ErrInvalidBaseURL is returned by [BuildURL] when the supplied serverURL
-// does not parse. The public ParseURL wrapper translates this into a
-// logged error and returns an empty string for v1.0 source-compatibility.
+// ErrInvalidBaseURL is returned by [BuildURL] when the supplied base URL
+// fails to parse.
 var ErrInvalidBaseURL = errors.New("transport: invalid base URL")
 
-// BuildURL joins parts onto serverURL with each user-provided segment
+// BuildURL joins parts onto base with each user-provided segment
 // PathEscape'd individually. Empty segments are dropped.
 //
-// The encoded path is preserved through url.URL.String() by setting
-// [url.URL.RawPath] alongside [url.URL.Path]; without RawPath, a segment
+// The encoded path is preserved through [url.URL.String] by setting
+// [url.URL.RawPath] alongside [url.URL.Path]. Without RawPath, a segment
 // PathEscape'd to a sequence containing "%" (e.g., "*" → "%2A") would be
 // re-encoded by String() to "%252A", which GeoServer's StrictHttpFirewall
-// rejects as a potentially malicious URL. See utils_unit_test.go
-// TestParseURL_NoDoubleEncoding for the regression guard.
-//
-// Returns ErrInvalidBaseURL if serverURL fails to parse. Returns the
-// original Go url.PathUnescape error if the built path can't be
-// unescaped (should be unreachable since the path is built from
-// PathEscape outputs, but treated as a logged failure rather than a
-// panic).
-func BuildURL(serverURL string, parts []string) (string, error) {
-	u, err := url.Parse(serverURL)
+// rejects as a potentially malicious URL.
+func BuildURL(base string, parts []string) (string, error) {
+	u, err := url.Parse(base)
 	if err != nil {
 		return "", ErrInvalidBaseURL
 	}

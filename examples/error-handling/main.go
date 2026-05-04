@@ -1,20 +1,20 @@
-// error-handling is a runnable example: match GeoServer errors via
-// errors.Is(err, geoserver.ErrNotFound) and inspect the typed
-// *geoserver.Error via errors.As. Demonstrates the v1.1 typed-error model.
+// error-handling is a runnable v2 example: demonstrate how to match
+// GeoServer errors with `errors.Is` against package sentinels and
+// inspect the typed *geoserver.APIError via `errors.As`.
 //
-// Run with:
-//
-//	go run ./examples/error-handling
+//	go run ./v2/examples/error-handling
 package main
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
-	"github.com/hishamkaram/geoserver"
+	geoserver "github.com/hishamkaram/geoserver/v2"
+	"github.com/hishamkaram/geoserver/v2/rest/workspaces"
 )
 
 func main() {
@@ -22,56 +22,99 @@ func main() {
 	user := envOr("GEOSERVER_USER", "admin")
 	pass := envOr("GEOSERVER_PASS", "geoserver")
 
-	gs := geoserver.New(url, user, pass, geoserver.WithTimeout(10*time.Second))
+	c, err := geoserver.New(url,
+		geoserver.WithBasicAuth(user, pass),
+		geoserver.WithTimeout(10*time.Second),
+		geoserver.WithLogger(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))),
+	)
+	if err != nil {
+		fatal("construct client: %v", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// 1. Sentinel matching via errors.Is. This is the recommended pattern —
-	//    works regardless of message format and survives wrap chains.
-	_, err := gs.GetWorkspaceContext(ctx, "definitely_not_a_real_workspace")
+	// 1. ErrNotFound on a missing workspace.
+	_, err = c.Workspaces.Get(ctx, "definitely_not_a_real_workspace_v2")
 	switch {
-	case err == nil:
-		fmt.Println("unexpected: workspace existed")
 	case errors.Is(err, geoserver.ErrNotFound):
-		fmt.Println("404 mapped to ErrNotFound — handle as caller chooses")
-	case errors.Is(err, geoserver.ErrUnauthorized):
-		fmt.Println("401 — bad credentials")
+		fmt.Println("✓ ErrNotFound matched via errors.Is")
+	case err == nil:
+		fmt.Println("unexpected: workspace exists?")
 	default:
-		fmt.Printf("other error: %v\n", err)
+		fmt.Printf("unexpected error: %v\n", err)
 	}
 
-	// 2. Type assertion via errors.As when you need StatusCode / Body /
-	//    Op / URL. Useful for logging or retry decisions.
-	var apiErr *geoserver.Error
+	// 2. Inspect the underlying *APIError for the same call to read
+	// status code, op, and the (capped) response body.
+	_, err = c.Workspaces.Get(ctx, "still_not_real")
+	var apiErr *geoserver.APIError
 	if errors.As(err, &apiErr) {
-		fmt.Printf("typed error inspection:\n")
-		fmt.Printf("  StatusCode = %d\n", apiErr.StatusCode)
-		fmt.Printf("  Op         = %q\n", apiErr.Op)
-		fmt.Printf("  URL        = %q\n", apiErr.URL)
-		// Body is the truncated GeoServer response (max 8 KiB). Useful
-		// for diagnostics; don't parse it for control flow — use the
-		// sentinel match above instead.
-		bodyPreview := string(apiErr.Body)
-		if len(bodyPreview) > 120 {
-			bodyPreview = bodyPreview[:120] + "..."
-		}
-		fmt.Printf("  Body       = %q\n", bodyPreview)
+		fmt.Printf("✓ *APIError: Op=%q Method=%q Status=%d BodyLen=%d\n",
+			apiErr.Op, apiErr.Method, apiErr.StatusCode, len(apiErr.Body))
 	}
 
-	// 3. The pattern composes — chained sentinels work in switch:
+	// 3. ErrConflict on a duplicate create.
+	const dupName = "v2_examples_error_handling_dup"
+	// best-effort cleanup
+	_ = c.Workspaces.Delete(ctx, dupName, workspaces.DeleteOptions{Recurse: true})
+
+	if err := c.Workspaces.Create(ctx, &workspaces.Workspace{Name: dupName}); err != nil {
+		fatal("first create: %v", err)
+	}
+	defer func() {
+		_ = c.Workspaces.Delete(ctx, dupName, workspaces.DeleteOptions{Recurse: true})
+	}()
+
+	err = c.Workspaces.Create(ctx, &workspaces.Workspace{Name: dupName})
 	switch {
-	case errors.Is(err, geoserver.ErrNotFound),
-		errors.Is(err, geoserver.ErrConflict):
-		fmt.Println("would treat 404 and 409 the same in this code path")
+	case errors.Is(err, geoserver.ErrConflict):
+		fmt.Println("✓ ErrConflict matched on duplicate create")
+	case err == nil:
+		fmt.Println("unexpected: duplicate Create succeeded")
+	default:
+		fmt.Printf("unexpected error on duplicate create: %v\n", err)
 	}
 
-	// 4. Successful calls produce no error; sanity check.
-	if _, err := gs.GetWorkspacesContext(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "note: list-workspaces also failed — server unreachable? %v\n", err)
-		return
+	// 4. ErrUnauthorized — point a fresh client at a deliberately wrong
+	// password and probe a protected endpoint. Note no logger to keep
+	// output clean.
+	bad, err := geoserver.New(url,
+		geoserver.WithBasicAuth(user, "absolutely-wrong-password"),
+		geoserver.WithTimeout(5*time.Second),
+	)
+	if err != nil {
+		fatal("construct bad-auth client: %v", err)
 	}
-	fmt.Println("listing workspaces succeeded — server is reachable")
+	_, err = bad.Workspaces.List(ctx, workspaces.ListOptions{})
+	switch {
+	case errors.Is(err, geoserver.ErrUnauthorized):
+		fmt.Println("✓ ErrUnauthorized matched on bad credentials")
+	case err == nil:
+		fmt.Println("unexpected: list succeeded with bad creds")
+	default:
+		fmt.Printf("unexpected auth error: %v\n", err)
+	}
+
+	// 5. The full sentinel set, for reference.
+	fmt.Println()
+	fmt.Println("Full sentinel set you can match with errors.Is:")
+	for _, s := range []error{
+		geoserver.ErrBadRequest,
+		geoserver.ErrUnauthorized,
+		geoserver.ErrForbidden,
+		geoserver.ErrNotFound,
+		geoserver.ErrMethodNotAllowed,
+		geoserver.ErrConflict,
+		geoserver.ErrUnsupportedMediaType,
+		geoserver.ErrRateLimited,
+		geoserver.ErrServerError,
+		geoserver.ErrBadGateway,
+		geoserver.ErrServiceUnavailable,
+		geoserver.ErrGatewayTimeout,
+	} {
+		fmt.Printf("  - %v\n", s)
+	}
 }
 
 func envOr(key, def string) string {
@@ -79,4 +122,9 @@ func envOr(key, def string) string {
 		return v
 	}
 	return def
+}
+
+func fatal(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, "error: "+format+"\n", args...)
+	os.Exit(1)
 }

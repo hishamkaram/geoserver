@@ -6,125 +6,124 @@ import (
 	"net/http"
 )
 
-// Sentinel errors for common GeoServer REST failure modes. Use with
-// [errors.Is]:
+// Sentinel errors. APIError.Is wraps these so callers can match status
+// codes via errors.Is(err, ErrNotFound) etc.
 //
-//	if errors.Is(err, geoserver.ErrNotFound) { ... }
+// The set mirrors v1's sentinel list; the Error type itself is renamed
+// (v1: *Error → v2: *APIError) and tightened — v2 does not preserve v1's
+// "abstract:%s\ndetails:%s\n" format because v2 is a clean break.
 var (
-	// ErrNotFound matches any 404 response from GeoServer.
-	ErrNotFound = errors.New("geoserver: not found")
-	// ErrUnauthorized matches any 401 response.
-	ErrUnauthorized = errors.New("geoserver: unauthorized")
-	// ErrForbidden matches any 403 response.
-	ErrForbidden = errors.New("geoserver: forbidden")
-	// ErrConflict matches any 409 response.
-	ErrConflict = errors.New("geoserver: conflict")
-	// ErrBadRequest matches any 400 response.
-	ErrBadRequest = errors.New("geoserver: bad request")
-	// ErrMethodNotAllowed matches any 405 response.
-	ErrMethodNotAllowed = errors.New("geoserver: method not allowed")
-	// ErrUnsupportedMediaType matches any 415 response.
+	ErrBadRequest           = errors.New("geoserver: bad request")
+	ErrUnauthorized         = errors.New("geoserver: unauthorized")
+	ErrForbidden            = errors.New("geoserver: forbidden")
+	ErrNotFound             = errors.New("geoserver: not found")
+	ErrMethodNotAllowed     = errors.New("geoserver: method not allowed")
+	ErrConflict             = errors.New("geoserver: conflict")
 	ErrUnsupportedMediaType = errors.New("geoserver: unsupported media type")
-	// ErrRateLimited matches any 429 response.
-	ErrRateLimited = errors.New("geoserver: rate limited")
-	// ErrServerError matches any 5xx response.
-	ErrServerError = errors.New("geoserver: server error")
+	ErrRateLimited          = errors.New("geoserver: rate limited")
+	ErrServerError          = errors.New("geoserver: internal server error")
+	ErrBadGateway           = errors.New("geoserver: bad gateway")
+	ErrServiceUnavailable   = errors.New("geoserver: service unavailable")
+	ErrGatewayTimeout       = errors.New("geoserver: gateway timeout")
 )
 
-// maxBodyBytes caps how much of a non-OK HTTP response body is preserved on
-// an [*Error]. GeoServer error pages can be quite large (HTML stack traces);
-// truncating prevents log/error-string explosions.
-const maxBodyBytes = 8 * 1024
+// statusToSentinel maps HTTP status codes to package sentinel errors.
+var statusToSentinel = map[int]error{
+	http.StatusBadRequest:           ErrBadRequest,
+	http.StatusUnauthorized:         ErrUnauthorized,
+	http.StatusForbidden:            ErrForbidden,
+	http.StatusNotFound:             ErrNotFound,
+	http.StatusMethodNotAllowed:     ErrMethodNotAllowed,
+	http.StatusConflict:             ErrConflict,
+	http.StatusUnsupportedMediaType: ErrUnsupportedMediaType,
+	http.StatusTooManyRequests:      ErrRateLimited,
+	http.StatusInternalServerError:  ErrServerError,
+	http.StatusBadGateway:           ErrBadGateway,
+	http.StatusServiceUnavailable:   ErrServiceUnavailable,
+	http.StatusGatewayTimeout:       ErrGatewayTimeout,
+}
 
-// Error is the typed error returned by *GeoServer when a REST call returns a
-// non-success HTTP status. Match against the sentinel package vars
-// ([ErrNotFound], [ErrServerError], etc.) via [errors.Is]:
-//
-//	if errors.Is(err, geoserver.ErrNotFound) {
-//	    // workspace/layer/style/etc. doesn't exist
-//	}
-//
-// Or unwrap to inspect the full transport details:
-//
-//	var apiErr *geoserver.Error
-//	if errors.As(err, &apiErr) {
-//	    log.Printf("status=%d url=%s body=%s", apiErr.StatusCode, apiErr.URL, apiErr.Body)
-//	}
-//
-// The Error.Error() string format ("abstract:%s\ndetails:%s\n") is preserved
-// from v1.0 so any code that previously matched on error message text
-// continues to work unchanged.
-type Error struct {
-	// Op is the high-level operation that failed (e.g. "GetWorkspace").
-	// May be empty if the construction site did not provide one.
+// APIError represents a non-2xx response from GeoServer. The single error
+// type for the v2 module — every wire-level failure surfaces as
+// *APIError so callers can match either by sentinel ([errors.Is]) or by
+// inspecting fields ([errors.As]).
+type APIError struct {
+	// Op identifies the public operation that produced the error
+	// (e.g., "Workspaces.Create"). Set by the resource-client
+	// wrapper. Useful for logging.
 	Op string
-	// URL is the URL that produced the error.
+
+	// URL is the request URL.
 	URL string
-	// StatusCode is the HTTP status code returned by GeoServer (or 0 for
-	// transport-level failures such as DNS or connection-refused).
+
+	// Method is the HTTP method.
+	Method string
+
+	// StatusCode is the HTTP status code from GeoServer.
 	StatusCode int
-	// Body is the response body, truncated to maxBodyBytes.
+
+	// Body is the response body, truncated to a fixed cap (8 KiB)
+	// to avoid unbounded retention. Useful for diagnostics; do not
+	// parse for control flow — use errors.Is against the package
+	// sentinels instead.
 	Body []byte
-	// Err is an optional wrapped underlying error.
-	Err error
 }
 
-// Error returns the v1.0-compatible "abstract:%s\ndetails:%s\n" format.
-func (e *Error) Error() string {
-	geoserverErr, ok := statusErrorMapping[e.StatusCode]
-	var label string
-	if ok {
-		label = geoserverErr.Error()
-	} else {
-		label = fmt.Sprintf("unexpected error with status code %d", e.StatusCode)
-	}
-	return fmt.Sprintf("abstract:%s\ndetails:%s\n", label, string(e.Body))
-}
-
-// Unwrap returns the wrapped underlying error, if any.
-func (e *Error) Unwrap() error { return e.Err }
-
-// Is reports whether the receiver matches one of the package sentinel errors.
-// Status codes map to sentinels as follows:
+// Error returns a stable, parseable message of the form
 //
-//	400 -> ErrBadRequest
-//	401 -> ErrUnauthorized
-//	403 -> ErrForbidden
-//	404 -> ErrNotFound
-//	405 -> ErrMethodNotAllowed
-//	409 -> ErrConflict
-//	415 -> ErrUnsupportedMediaType
-//	429 -> ErrRateLimited
-//	5xx -> ErrServerError
-func (e *Error) Is(target error) bool {
-	switch target {
-	case ErrBadRequest:
-		return e.StatusCode == http.StatusBadRequest
-	case ErrUnauthorized:
-		return e.StatusCode == http.StatusUnauthorized
-	case ErrForbidden:
-		return e.StatusCode == http.StatusForbidden
-	case ErrNotFound:
-		return e.StatusCode == http.StatusNotFound
-	case ErrMethodNotAllowed:
-		return e.StatusCode == http.StatusMethodNotAllowed
-	case ErrConflict:
-		return e.StatusCode == http.StatusConflict
-	case ErrUnsupportedMediaType:
-		return e.StatusCode == http.StatusUnsupportedMediaType
-	case ErrRateLimited:
-		return e.StatusCode == http.StatusTooManyRequests
-	case ErrServerError:
-		return e.StatusCode >= 500 && e.StatusCode < 600
+//	geoserver: <Op> <Method> <URL>: <statusCode> <statusText>: <body-preview>
+//
+// Body preview is truncated to ~120 bytes.
+func (e *APIError) Error() string {
+	preview := string(e.Body)
+	if len(preview) > 120 {
+		preview = preview[:120] + "…"
+	}
+	op := e.Op
+	if op == "" {
+		op = "request"
+	}
+	return fmt.Sprintf("geoserver: %s %s %s: %d %s: %s",
+		op, e.Method, e.URL, e.StatusCode, http.StatusText(e.StatusCode), preview)
+}
+
+// Unwrap returns the sentinel for this status code, enabling errors.Is.
+func (e *APIError) Unwrap() error {
+	if sentinel, ok := statusToSentinel[e.StatusCode]; ok {
+		return sentinel
+	}
+	return nil
+}
+
+// HTTPStatusCode returns the HTTP status code that produced the
+// error. A stable accessor (in addition to the [APIError.StatusCode]
+// field) so sub-clients in v2/rest/* can branch on the status without
+// importing the root package — that would create an import cycle
+// since the root imports each rest/<resource>.
+func (e *APIError) HTTPStatusCode() int { return e.StatusCode }
+
+// Is reports whether target matches the sentinel for this APIError's
+// status code. Lets callers use errors.Is(err, ErrNotFound) directly on
+// an *APIError.
+func (e *APIError) Is(target error) bool {
+	if sentinel, ok := statusToSentinel[e.StatusCode]; ok && sentinel == target {
+		return true
 	}
 	return false
 }
 
-// newError builds an [*Error] for a non-success HTTP response, truncating
-// the body to maxBodyBytes.
-func newError(op, url string, statusCode int, body []byte) *Error {
-	if len(body) > maxBodyBytes {
-		body = body[:maxBodyBytes]
+// newAPIError constructs an *APIError, truncating the body to bodyCap.
+const bodyCap = 8 << 10 // 8 KiB
+
+func newAPIError(op, method, url string, statusCode int, body []byte) *APIError {
+	if len(body) > bodyCap {
+		body = body[:bodyCap]
 	}
-	return &Error{Op: op, URL: url, StatusCode: statusCode, Body: body}
+	return &APIError{
+		Op:         op,
+		URL:        url,
+		Method:     method,
+		StatusCode: statusCode,
+		Body:       body,
+	}
 }

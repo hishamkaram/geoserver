@@ -1,129 +1,143 @@
 package geoserver
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
 )
 
-// Option configures a [GeoServer] constructed via [New].
-//
-// Options are applied in order; later options override earlier ones.
-type Option func(*GeoServer)
+// Option configures a [*Client] at construction. Options are applied in
+// order; later options override earlier ones for the same field.
+type Option func(*clientConfig) error
 
-// New constructs a [*GeoServer] catalog instance for the given GeoServer base
-// URL and basic-auth credentials, applying any [Option]s.
-//
-// Defaults when no options are supplied:
-//   - HTTP client: &http.Client{Timeout: 30 * time.Second}
-//   - Logger: writes Info-and-above to stderr in slog text format
-//   - User-Agent: not set (Go's default)
-//
-// New is the v1.1+ entry point. The legacy [GetCatalog] is preserved as a
-// deprecated wrapper.
-func New(serverURL, username, password string, opts ...Option) *GeoServer {
-	g := &GeoServer{
-		ServerURL:  serverURL,
-		Username:   username,
-		Password:   password,
-		HttpClient: &http.Client{Timeout: defaultHTTPTimeout},
-		logger:     GetLogger(),
-	}
-	for _, opt := range opts {
-		if opt != nil {
-			opt(g)
-		}
-	}
-	return g
+// clientConfig is the internal accumulator of options. Resolved into a
+// *Client by [New].
+type clientConfig struct {
+	httpClient    *http.Client
+	timeout       time.Duration
+	transport     http.RoundTripper
+	logger        *slog.Logger
+	userAgent     string
+	auth          authCredentials
+	defaultHeader http.Header
 }
 
-// WithHTTPClient sets the *http.Client used for every REST call. The client's
-// own Timeout takes precedence over the package default.
-//
-// Useful for plugging in instrumented transports (OpenTelemetry, custom auth
-// RoundTrippers, retryablehttp, etc.).
+// authCredentials holds the resolved auth strategy. Mutually exclusive:
+// at most one of basic / bearer is set. Empty == no auth header attached.
+type authCredentials struct {
+	kind     authKind
+	username string
+	password string
+	bearer   string
+}
+
+type authKind int
+
+const (
+	authNone authKind = iota
+	authBasic
+	authBearer
+)
+
+// WithHTTPClient supplies a custom *http.Client. The client's Transport
+// (if any) is wrapped — auth and user-agent layers are applied on top.
+// Mutually exclusive with [WithTransport]; later option wins.
 func WithHTTPClient(c *http.Client) Option {
-	return func(g *GeoServer) {
-		if c != nil {
-			g.HttpClient = c
+	return func(cfg *clientConfig) error {
+		if c == nil {
+			return errors.New("geoserver: WithHTTPClient: client is nil")
 		}
+		cfg.httpClient = c
+		return nil
 	}
 }
 
-// WithTimeout sets the Timeout on the underlying http.Client. If the client
-// was previously customized via [WithHTTPClient], its Timeout is overwritten.
-// A non-positive duration disables the request-level timeout.
+// WithTransport supplies the base [http.RoundTripper] for the client's
+// HTTP transport. Auth and user-agent layers wrap this. Mutually
+// exclusive with [WithHTTPClient]; later option wins.
+func WithTransport(rt http.RoundTripper) Option {
+	return func(cfg *clientConfig) error {
+		if rt == nil {
+			return errors.New("geoserver: WithTransport: transport is nil")
+		}
+		cfg.transport = rt
+		return nil
+	}
+}
+
+// WithTimeout sets the *http.Client's Timeout. Zero means no timeout
+// (rely on context deadlines instead). Default: 30 seconds.
 func WithTimeout(d time.Duration) Option {
-	return func(g *GeoServer) {
-		if g.HttpClient == nil {
-			g.HttpClient = &http.Client{}
+	return func(cfg *clientConfig) error {
+		if d < 0 {
+			return errors.New("geoserver: WithTimeout: negative duration")
 		}
-		g.HttpClient.Timeout = d
+		cfg.timeout = d
+		return nil
 	}
 }
 
-// WithLogger configures the library's logger from an [slog.Handler]. Pass nil
-// to silence the library entirely (logs are dropped).
-//
-// Library log levels: Debug for HTTP request/response details, Warn for
-// retry-exhausted, Error for protocol failures and decode errors. The default
-// (when [WithLogger] is not used) writes Info-and-above to stderr.
-func WithLogger(h slog.Handler) Option {
-	return func(g *GeoServer) {
-		g.logger = loggerFromHandler(h)
+// WithLogger sets the *slog.Logger the client uses for HTTP-level
+// logging. Default: a discard handler (silent).
+func WithLogger(l *slog.Logger) Option {
+	return func(cfg *clientConfig) error {
+		if l == nil {
+			return errors.New("geoserver: WithLogger: logger is nil; pass slog.New(slog.DiscardHandler) to silence")
+		}
+		cfg.logger = l
+		return nil
 	}
 }
 
-// WithUserAgent sets a User-Agent header on every outgoing request via a
-// transport wrapper around the configured http.Client. Calling [WithUserAgent]
-// after [WithHTTPClient] preserves the caller's transport and layers the UA
-// header on top.
+// WithUserAgent sets the User-Agent header sent on every request.
+// Default: "geoserver-go/v2".
 func WithUserAgent(ua string) Option {
-	return func(g *GeoServer) {
-		if ua == "" || g.HttpClient == nil {
-			return
+	return func(cfg *clientConfig) error {
+		if ua == "" {
+			return errors.New("geoserver: WithUserAgent: empty user-agent")
 		}
-		base := g.HttpClient.Transport
-		if base == nil {
-			base = http.DefaultTransport
+		cfg.userAgent = ua
+		return nil
+	}
+}
+
+// WithBasicAuth attaches HTTP basic-auth headers to every request.
+// Mutually exclusive with [WithBearerToken]; later option wins.
+func WithBasicAuth(username, password string) Option {
+	return func(cfg *clientConfig) error {
+		if username == "" {
+			return errors.New("geoserver: WithBasicAuth: empty username")
 		}
-		g.HttpClient.Transport = &userAgentTransport{rt: base, ua: ua}
+		cfg.auth = authCredentials{kind: authBasic, username: username, password: password}
+		return nil
 	}
 }
 
-// WithBasicAuth overrides the basic-auth credentials on the client. Useful
-// when chaining options (e.g. constructing with empty creds and supplying
-// them via a later option).
-func WithBasicAuth(user, pass string) Option {
-	return func(g *GeoServer) {
-		g.Username = user
-		g.Password = pass
+// WithBearerToken attaches a bearer token to every request.
+// Mutually exclusive with [WithBasicAuth]; later option wins.
+func WithBearerToken(token string) Option {
+	return func(cfg *clientConfig) error {
+		if token == "" {
+			return errors.New("geoserver: WithBearerToken: empty token")
+		}
+		cfg.auth = authCredentials{kind: authBearer, bearer: token}
+		return nil
 	}
 }
 
-// userAgentTransport sets the User-Agent header on every request and delegates
-// to an underlying RoundTripper.
-type userAgentTransport struct {
-	rt http.RoundTripper
-	ua string
-}
-
-// RoundTrip implements [http.RoundTripper], setting User-Agent on the request.
-func (t *userAgentTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	if t.ua != "" && req.Header.Get("User-Agent") == "" {
-		// Clone first so we don't mutate the caller's request.
-		clone := req.Clone(req.Context())
-		clone.Header.Set("User-Agent", t.ua)
-		return t.rt.RoundTrip(clone)
+// WithHeader adds a default header sent on every request. Multiple calls
+// accumulate. Authoritative for headers set before request-level
+// overrides apply.
+func WithHeader(key, value string) Option {
+	return func(cfg *clientConfig) error {
+		if key == "" {
+			return errors.New("geoserver: WithHeader: empty key")
+		}
+		if cfg.defaultHeader == nil {
+			cfg.defaultHeader = http.Header{}
+		}
+		cfg.defaultHeader.Add(key, value)
+		return nil
 	}
-	return t.rt.RoundTrip(req)
 }
-
-// Default slog level used by [GetLogger] / [WithLogger].
-//
-// Library guidance for log levels:
-//   - Debug: per-request URL + status + duration (verbose; opt in via Handler)
-//   - Info:  startup-shape events (none in v1.x today)
-//   - Warn:  recoverable failures, retries (none implemented yet)
-//   - Error: protocol failures, decode errors, transport errors
-var _ = slog.LevelInfo

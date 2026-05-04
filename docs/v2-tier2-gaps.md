@@ -1,6 +1,6 @@
 # v2 — tier-2 gap-analysis backlog
 
-The v2 client closes every "everyone needs it" REST API surface, the original tier-2 backlog, and the longer-tail surfaces (fonts, password rotation, GWC additions, monitoring) as of `v2.0.0-beta.3` (see [`../v2/CHANGELOG.md`](../v2/CHANGELOG.md)). What's documented here is the **complete shipped surface** plus the few extension-gated endpoints whose extensions aren't packaged in stable releases for 2.27 / 2.28.
+The v2 client closes every "everyone needs it" REST API surface, the original tier-2 backlog, and the longer-tail surfaces (fonts, password rotation, GWC additions, monitoring) as of `v2.0.0` (see [`../CHANGELOG.md`](../CHANGELOG.md)). What's documented here is the **complete shipped surface** plus the few extension-gated endpoints whose extensions aren't packaged in stable releases for 2.27 / 2.28.
 
 Each entry below is independently tractable as its own follow-up PR. None block `v2.0.0`. Each is grounded in the official GeoServer REST docs (`https://docs.geoserver.org/latest/en/user/rest/`) and reuses the existing v2 plumbing (`internal/transport.BuildURL`, `transport.DoJSON` / `DoXML` / `DoRaw`, the per-resource `Core` interface, the `*Client → InWorkspace(ws) → *WorkspaceClient` scoping pattern). PRs welcome — open an issue first if the work touches a new wire-format quirk so the design conversation can happen in public.
 
@@ -28,8 +28,8 @@ The original tier-2 list is now closed. Beyond it, narrower-audience endpoints t
 ## How to contribute
 
 1. Pick an item, file an issue summarizing the surface you intend to add (URL paths, request shapes, return shapes — verify against the official docs and the upstream OpenAPI YAML at `geoserver/geoserver/doc/en/api/1.0.0/`).
-2. Match the existing v2 patterns — see [`../v2/README.md#contributing-to-v2`](../v2/README.md#contributing-to-v2) for the per-pattern reference subpackage to copy from.
-3. Run integration locally before push — `make compose-up && cd v2 && go test -tags=integration ./rest/<resource>/`.
+2. Match the existing v2 patterns — see [`../README.md#contributing-to-v2`](../README.md#contributing-to-v2) for the per-pattern reference subpackage to copy from.
+3. Run integration locally before push — `make compose-up && go test -tags=integration ./rest/<resource>/`.
 4. CI's wire-format coverage runs on real GeoServer 2.27.4 LTS + 2.28.0 stable; both legs must pass.
 
 ## Out of scope this round

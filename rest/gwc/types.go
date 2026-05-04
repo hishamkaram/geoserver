@@ -346,20 +346,20 @@ func (g *Global) UnmarshalJSON(b []byte) error {
 // vertical breakdown. They are mutually exclusive on input — supply
 // at most one — but GeoServer always returns ScaleNames on Get.
 type GridSet struct {
-	Name             string         `json:"name"`
-	Description      string         `json:"description,omitempty"`
-	SRS              SRS            `json:"srs"`
-	Extent           GridSetExtent  `json:"extent"`
-	AlignTopLeft     bool           `json:"alignTopLeft,omitempty"`
-	YCoordinateFirst bool           `json:"yCoordinateFirst,omitempty"`
-	MetersPerUnit    float64        `json:"metersPerUnit,omitempty"`
-	PixelSize        float64        `json:"pixelSize,omitempty"`
-	TileWidth        int            `json:"tileWidth,omitempty"`
-	TileHeight       int            `json:"tileHeight,omitempty"`
-	Resolutions      []float64      `json:"resolutions,omitempty"`
-	Scales           []float64      `json:"scales,omitempty"`
-	ScaleNames       []string       `json:"scaleNames,omitempty"`
-	ScaleDenominator []float64      `json:"scaleDenominator,omitempty"`
+	Name             string        `json:"name"`
+	Description      string        `json:"description,omitempty"`
+	SRS              SRS           `json:"srs"`
+	Extent           GridSetExtent `json:"extent"`
+	AlignTopLeft     bool          `json:"alignTopLeft,omitempty"`
+	YCoordinateFirst bool          `json:"yCoordinateFirst,omitempty"`
+	MetersPerUnit    float64       `json:"metersPerUnit,omitempty"`
+	PixelSize        float64       `json:"pixelSize,omitempty"`
+	TileWidth        int           `json:"tileWidth,omitempty"`
+	TileHeight       int           `json:"tileHeight,omitempty"`
+	Resolutions      []float64     `json:"resolutions,omitempty"`
+	Scales           []float64     `json:"scales,omitempty"`
+	ScaleNames       []string      `json:"scaleNames,omitempty"`
+	ScaleDenominator []float64     `json:"scaleDenominator,omitempty"`
 }
 
 // GridSetExtent is the geographic envelope of a [GridSet].
@@ -416,11 +416,11 @@ type MassTruncateOrphansRequest struct {
 
 // MassTruncateExtentRequest is the body shape for [TruncateExtent].
 type MassTruncateExtentRequest struct {
-	XMLName     xml.Name `xml:"truncateExtent"`
-	LayerName   string   `xml:"layerName"`
-	GridSetID   string   `xml:"gridSetId,omitempty"`
-	Format      string   `xml:"format,omitempty"`
-	Bounds      *Bounds  `xml:"bounds,omitempty"`
-	ZoomStart   *int     `xml:"zoomStart,omitempty"`
-	ZoomStop    *int     `xml:"zoomStop,omitempty"`
+	XMLName   xml.Name `xml:"truncateExtent"`
+	LayerName string   `xml:"layerName"`
+	GridSetID string   `xml:"gridSetId,omitempty"`
+	Format    string   `xml:"format,omitempty"`
+	Bounds    *Bounds  `xml:"bounds,omitempty"`
+	ZoomStart *int     `xml:"zoomStart,omitempty"`
+	ZoomStop  *int     `xml:"zoomStop,omitempty"`
 }
