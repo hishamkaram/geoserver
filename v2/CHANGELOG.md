@@ -12,6 +12,14 @@ Closes the fonts longer-tail item from [`../docs/v2-tier2-gaps.md`](../docs/v2-t
 
 - **`c.Fonts.List(ctx)`** at `/rest/fonts` — returns the list of font families the JVM exposes to GeoServer's SLD labelling pipeline as `[]string`. The result reflects whatever is on the server's classpath at call time (system fonts plus anything dropped into the data directory's `styles/` subdirectory).
 
+### Added — Master password & self password (security)
+
+Closes the master-password and self-admin-password longer-tail items from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md). Two new sub-clients on `c.Security` cover the daily-driver auth-rotation surface.
+
+- **`c.Security.MasterPassword.Get(ctx)`** / **`Update(ctx, oldPwd, newPwd)`** at `/rest/security/masterpw`. The master password unlocks GeoServer's keystore (used for storing connection-string passwords, JKS aliases) — distinct from the admin user's login password. GeoServer exposes the current value via GET (admin-gated) for backup / disaster-recovery flows; treat the returned value with the same care as any other secret.
+- **`c.Security.SelfPassword.Change(ctx, newPwd)`** at `/rest/security/self/password`. PUT-only by design (GeoServer responds 405 "You can not request the password!" to GET); the request's auth header proves possession in lieu of an old-password field.
+- **Wire-quirk:** master password PUT requires both `oldMasterPassword` and `newMasterPassword`; same-value rotation is rejected with `422 "Cannot change master password"`. Self-password PUT body is just `{"newPassword":"..."}` — no old-password field.
+
 ## [2.0.0-beta.2] — 2026-05-04
 
 Second beta. **Closes the original tier-2 gap-analysis backlog from [`../docs/v2-tier2-gaps.md`](../docs/v2-tier2-gaps.md)** — eight new sub-clients land on top of beta.1's frozen surface: mosaic granules, FTL templates, auth providers / filters / chains, URL checks, cascaded WMS / WMTS stores + layers, WFS XSLT transforms, manifests + system status, and runtime logging. No breaking changes from `beta.1`; existing callers can `go get @v2.0.0-beta.2` and recompile. Public API stays frozen for review through the beta line — breaking changes will not land without a strong reason.
